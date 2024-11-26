@@ -1,0 +1,182 @@
+[
+    {
+        "序号": 280,
+        "问题现象": "在某局点的分层AC组网中，AP在使用过程中大量掉线。重启AP后，虽然可以在CentralAC上正常注册，但无法注册到LocalAC，导致终端无法获取IP地址，手动配置地址也无法上网。",
+        "问题描述": "该局点使用分层AC组网部署，CentralAC旁挂在总部核心交换机，LocalAC旁挂在分支核心交换机。在稳定运行一段时间后，AP出现大面积掉线现象。检查CentralAC和LocalAC的相关配置均未发现明显问题。在CentralAC上查看LocalAC和AP的注册情况，显示正常。但在LocalAC上查看CentralAC和AP状态时，发现AP在LocalAC上无法注册。其他局点的LocalAC和AP均能正常注册并使用，只有该局点的AP出现此类问题。重启CentralAC和LocalAC后，AP可以上线，但一段时间后又会掉线。",
+        "结论": "问题可能由于LocalAC与CentralAC之间的链路带宽不足导致消息同步失败。LocalAC和CentralAC之间的同步消息机制对丢包非常敏感，需要保证链路质量。从LocalAC上pingCentralAC的测试结果显示，丢包率较高，发出20000个报文，只有19812个报文得到回应。",
+        "解决办法": "1.排查运营商链路丢包问题：通过ping测试和流量统计确认链路质量。2.优化链路质量：与运营商沟通，确保链路带宽和稳定性，减少丢包。3.监控链路状态：定期检查链路的流量统计和丢包情况，确保链路质量持续稳定。通过以上步骤，可以有效解决LocalAC和CentralAC之间同步消息失败的问题，保证AP的正常注册和终端的正常上网。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/34119",
+        "备注": ""
+    },
+    {
+        "序号": 281,
+        "问题现象": "在进行PORTAL认证时，用户能够被重定向到PORTAL登录页面，但在输入用户名和密码后，提示AC认证失败，导致PORTAL认证不成功。",
+        "问题描述": "现场组网环境如下：AC设备版本为V7。VLAN1000作为客户端的网关地址。认证服务器为第三方服务器。AC设备的配置如下：WLAN服务模板配置了SSID\"JTYH\"，VLAN1000作为客户端网关。PORTAL认证启用，方法设置为直接，PORTAL域设置为\"w-portal\"。指定了PORTAL服务器的IP地址为192.168.2.3，密钥和端口均已确认无误。RADIUS服务器配置为192.168.2.3，认证和计费密钥均已设置。通过收集现场的debug信息（`debugportalall`和`debugradiusall`），发现重定向报文正常，设备也收到了服务器侧发来的RADIUS`req_auth`报文，并开始处理AAA请求。但在处理过程中出现了两条报错：`FailedtofillRADIUSattributeinpacket.``Failedtocomposerequestpacket.`",
+        "结论": "经过分析，发现报错的原因是设备侧和服务器侧配置的PORTAL协议版本不一致。设备侧配置的PORTAL服务器类型为`cmcc`（即PORTAL1.0协议），而服务器侧配置的PORTAL协议版本为`portal2.0`。这导致了RADIUS属性填充和请求报文组成失败，进而导致认证失败。",
+        "解决办法": "将服务器侧配置的PORTAL协议版本修改为与设备侧一致（即从`portal2.0`修改为`cmcc`，即PORTAL1.0协议）。修改后，PORTAL认证成功。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/44516",
+        "备注": ""
+    },
+    {
+        "序号": 282,
+        "问题现象": "融合AC加载无线特征包后，导致V5AP掉线，AP设备一直处于IDLE状态，无法上线。",
+        "问题描述": "在原有网络中，V5AC正常管理AP设备。现场新安装了一台融合AC，用于管理新采购的AP设备。但在新融合AC上安装无线特征包后，原本由V5AC管理的AP设备全部掉线。问题发生的具体时间为13:08激活特性包，15:56卸载特性包。在此期间，设备没有License，因此融合AC的无线管理功能并未启用，排除了AP注册到融合AC的可能性。",
+        "结论": "问题可能是因为核心交换机的无线模块在融合AC加载无线特征包后，拦截了V5lwapp端口号的报文，导致这些报文没有被转发到V5AC，从而引发AP掉线。即便此时融合AC的无线管理功能未启用，核心交换机的无线模块仍可能受到影响，导致AP无法正常上线。",
+        "解决办法": "建议在现场这种组网环境中避免使用两台AC。如果需要管理新增的AP设备，建议考虑扩容现有的V5AC，而不是新增融合AC。这样可以避免由于核心交换机无线模块的报文拦截问题导致的AP掉线。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/174700",
+        "备注": ""
+    },
+    {
+        "序号": 283,
+        "问题现象": "在某局点配置了H3C无线控制器WX2540H（V7平台，版本R5208P03）和瘦APWA4320-ACN-SI，部署WLAN无线网络覆盖，并配合第三方服务器进行Portal认证和短信认证功能的调试。在Portal认证过程中，用户输入手机号并点击获取密码后，手动输入密码点击登录，页面无响应，需多次尝试才能成功认证。",
+        "问题描述": "1.终端设备能够正常获取IP地址并重定向到Portal页面，说明终端与PortalServer之间连通性正常。2.无线控制器（AC）与接入点（AP）运行状态正常，AC与PortalServer之间的ping测试也显示时延正常且未丢包。3.检查AC的Portal相关配置，包括SSID指定的认证域domain配置和domain对应的RADIUS配置，未发现异常。4.收集AC侧的debug信息并分析，发现AC在收到PortalServer发送的`reqauth`报文后，立即回复`ackauth`报文，错误码`errcode=1`，表示认证请求被拒绝。5.进一步分析发现，AC在收到PortalServer的`ackchallenge`报文后，启动了一个15秒的计时器。如果15秒内未收到PortalServer的`reqauth`报文，AC会删除用户信息。6.当PortalServer发送`req_auth`报文的时间间隔超过15秒时，AC会因无法找到用户表项而直接拒绝认证请求。",
+        "结论": "问题的根本原因是PortalServer在发送`ackchallenge`报文后，未能在15秒内发送`reqauth`报文，导致AC设备超时并删除用户信息，从而拒绝后续的认证请求。",
+        "解决办法": "1.调整PortalServer的处理机制：协调第三方服务器调整其处理机制，确保在发送`ackchallenge`报文后，能够在15秒内发送`reqauth`报文。2.延长AC的计时器时间：如果调整PortalServer的处理机制不可行，可以考虑在AC设备上延长计时器时间，以适应PortalServer的处理速度。通过上述调整，最终解决了Portal认证成功率低的问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/22824",
+        "备注": ""
+    },
+    {
+        "序号": 284,
+        "问题现象": "在使用集中转发和Portal认证的组网环境下，IMC（IntelligentManagementCenter）平台上不显示终端的SSID和MAC地址。",
+        "问题描述": "1.设备配置检查：-首次检查AC（AccessController）的配置，确认URL中是否包含终端的MAC地址和SSID参数，配置无误。-查看`displayportaluser`命令输出，未发现终端MAC地址信息。-检查重定向URL是否携带了相关参数，确认已携带。-查看RADIUS报文，发现报文中没有包含终端MAC地址信息。2.日志信息收集：-收集了UAM（UserAccessManagement）的日志信息，同样未发现终端MAC地址信息。",
+        "结论": "设备上不显示终端的MAC地址信息，导致Portal和RADIUS报文中也没有终端的MAC地址信息，IMC平台自然无法显示这些信息。可能的原因有两个：1.Portal认证方式为Layer3：Layer3认证方式仅以IP地址唯一标识用户，不关心用户的MAC地址，因此AC不会存储或使用MAC地址。2.组网方式为本地转发，AP三层注册，且AC不是业务网关：在这种组网方式下，AC不会获取到终端的MAC地址信息。",
+        "解决办法": "1.修改Portal认证方式：-如果需要使用三层认证方式，建议将AC的版本升级到最新，并联系研发团队获取补丁以实现MAC地址的传递。-如果不强制要求使用三层认证方式，可以将认证方式改为Direct（二层认证），这样AC会获取并存储终端的MAC地址信息。2.组网方式调整：-如果组网方式为本地转发，AP三层注册，并且AC不是业务网关，可以通过添加命令`portalhost-checkenable`来开启根据DHCPSnooping表项或客户端WLAN绑定表项信息进行主机合法性检查的功能。这样，只有主机信息在DHCPSnooping表项中查询到的Portal用户才允许进行Portal认证，从而确保AC能够获取到终端的MAC地址信息。实际解决现场的Portal认证方式为Layer3，将其改为Direct后，问题得以解决。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/56033",
+        "备注": ""
+    },
+    {
+        "序号": 285,
+        "问题现象": "某局点新增的AP管理地址池70、71、72上线异常，连接至S5130交换机的电脑无法自动获取IP地址，需手动配置IP地址后才能正常ping通AC和网关。",
+        "问题描述": "在AC（WX3510H）上开启debug后，观察到地址池70、71、72分发地址时存在异常，具体表现为只有DHCP请求报文，但显示无可用IP地址。通过命令行检查发现这些地址池均无可用IP地址，但已使用的IP地址、超期地址和冲突地址列表中也未显示这些地址被占用。",
+        "结论": "经现场排查，发现AC上配置的`dhcpserverforbidden-ip`命令误将地址池70、71、72的地址范围192.168.50.251至192.168.91.255标记为禁用，导致这些地址池中的IP地址无法被正确分配，从而引起AP上线异常和设备无法自动获取IP地址的问题。将DHCP地址池全部配置移至思科核心设备后，地址分发恢复正常，AP能够成功上线。",
+        "解决办法": "1.检查AC上的`dhcpserverforbidden-ip`配置，确认是否存在误配置。2.修正误配置的`dhcpserverforbidden-ip`命令，确保地址池70、71、72的IP范围不在禁用列表中。3.重新配置AC上的DHCP地址池，确保这些地址池有可用的IP地址。4.重启DHCP服务或相关设备，使配置生效。5.验证AP和客户端设备是否能够正常获取IP地址并上线。通过上述步骤优化配置后，AP正常获取到地址并成功上线。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/178887",
+        "备注": ""
+    },
+    {
+        "序号": 286,
+        "问题现象": "某局点使用WA5320H-HI（4300h.ipe）型号的AP，需要对单个AP进行版本升级测试，但发现该AP不支持通过命令行执行tftp/ftp命令。此外，该AP使用mini-console口，而现场没有mini-console线。",
+        "问题描述": "在进行单个AP版本升级时，遇到了以下两个主要问题：1.该AP型号的命令行不支持tftp/ftp命令，无法通过这些协议直接从服务器下载版本文件。2.该AP使用mini-console口进行低级操作，但现场没有mini-console线，无法通过物理接口进行手动升级。",
+        "结论": "虽然该AP不支持通过命令行执行tftp/ftp命令，也没有mini-console线，但可以通过其他方法进行版本升级。具体方法包括使用`copy`命令从远程服务器下载文件，或者通过AC（接入控制器）使用`download`命令进行版本传输。",
+        "解决办法": "1.使用`copy`命令从远程服务器下载文件-命令格式：```shellcopysource-file{dest-file|dest-directory}[source-interfaceinterface-typeinterface-number]```-支持协议：-FTP：`ftp://FTP用户名[:密码]@服务器地址[:端口号]/文件路径`-TFTP：`tftp://服务器地址[:端口号]/文件路径`-示例：-FTP：```shell<Sysname>copyftp://user:private@1.1.1.1/test.cfgtestbackup.cfgCopyftp://user:private@1.1.1.1/test.cfgtoflash:/testbackup.cfg?[Y/N]:yCopyingfileftp://user:private@1.1.1.1/test.cfgtoflash:/testbackup.cfg...Done.```-TFTP：```shell<Sysname>copytftp://1.1.1.1/test.cfgtestbackup.cfgCopytftp://1.1.1.1/test.cfgtoflash:/testbackup.cfg?[Y/N]:yCopyingfiletftp://1.1.1.1/test.cfgtoflash:/testbackup.cfg...Done.```2.通过AC进行版本传输-前提条件：确保AP已经在AC上线。-命令格式：```shell[WX5540E-v7-wlan-ap-1]downloadfile?STRING[drive][path][filename]cfa0:Devicenameslot2#cfa0:Devicename```-步骤：1.在AC上使用`download`命令将版本文件传输到AP。2.传好版本文件后，在AP上指定bootloader并重启AP。通过上述两种方法，可以成功为单个AP导入并升级版本文件。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/214601",
+        "备注": ""
+    },
+    {
+        "序号": 287,
+        "问题现象": "某局点WX2540X-LI设备对接信锐Portal短信认证失败。",
+        "问题描述": "1.第一次抓包：-AC设备收到服务器发来的req_auth报文，获取了用户名和密码。-但在创建用户时，AC设备未能获取到用户物理信息（MAC地址），导致3A认证失败。-具体错误信息包括：获取用户信息失败、Portal在接口上被禁用、用户MAC地址无效、无法通过用户MAC地址获取SSID。2.第二次抓包：-AC设备通过WLANSnooping成功获取了终端的MAC地址和接口信息。-但服务器拒绝了认证请求，返回“认证被拒绝”的消息。-通过debug信息发现，发给服务器的用户名包含了域的名称，导致认证失败。",
+        "结论": "1.第一次抓包的问题：AC设备未能获取到终端的MAC地址，导致无法完成Portal认证。2.第二次抓包的问题：虽然AC设备成功获取了终端的MAC地址，但发给服务器的用户名包含了域的名称，导致服务器拒绝认证。",
+        "解决办法": "1.第一次抓包的解决方法：-在AC设备上启用`portalhost-checkenable`功能。该功能允许设备在收到未认证Portal用户的认证报文后，通过WLANSnooping表、DHCPSnooping表和ARP表对其进行合法性检查，从而获取终端的MAC地址。2.第二次抓包的解决方法：-配置AC设备的RADIUS方案，使发给服务器的用户名不带域名。具体配置命令为：`radiusscheme1user-name-formatwithout-domain`。-配置完成后，终端Portal认证成功。注意事项在业务空窗期进行排查和配置修改，以避免对正常业务造成影响。确保AC设备和服务器的配置一致，特别是用户名格式方面的设置。如果问题仍然存在，建议进一步检查AC设备和服务器之间的网络连接和配置。发表日期2023-10-31举报与反馈若您有关于案例的建议，请反馈。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/222013",
+        "备注": ""
+    },
+    {
+        "序号": 288,
+        "问题现象": "在某局点使用AC（接入控制器）与第三方服务器进行802.1x认证的过程中，第三方服务器上显示的大部分终端IP地址为0.0.0.0。",
+        "问题描述": "该局点由于需要对终端进行审计，因此通过第三方服务器获取终端的IP地址。获取IP地址的方式是通过RADIUS计费更新报文来更新终端的IP。然而，通过抓包分析发现，AC发送的部分RADIUS计费更新报文中并未正常携带终端的IP地址，导致第三方服务器无法准确获取终端的IP信息。",
+        "结论": "在802.1x认证过程中，RADIUS计费报文中的终端IP地址并不是必须携带的属性。AC在某些情况下可能未正常携带终端的IP地址，这可能是导致第三方服务器显示0.0.0.0的原因。",
+        "解决办法": "可以通过配置计费延时功能来强制AC在携带终端IP地址后才发起计费请求。具体配置命令如下：对于V7版本的AC，使用命令：`client-securityaccounting-delay-time`对于V5版本的AC，使用命令：`dot1xaccounting-delay`配置上述命令后，AC会在终端成功获取IP地址后再发送RADIUS计费更新报文，从而确保第三方服务器能够正确获取到终端的IP信息。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/62088",
+        "备注": ""
+    },
+    {
+        "序号": 289,
+        "问题现象": "：某局点的客户终端搜索不到WA2620i-AGN瘦AP的SSID，有时可以接收到信号，但上网速度慢且ping测试有丢包现象。该瘦AP的版本为Version5.20,Release1308P04，现场仅使用2.4G射频口。",
+        "问题描述": "：1.设备配置检查：检查AC上的配置，未发现异常，配置均为正常的WLAN接入配置。2.终端测试：更换不同平台的终端（如手机、Pad）进行测试，结果一致，无法搜索到SSID，排除终端问题。3.位置测试：将瘦AP拿到其他楼层测试，发现正常工作，但在特定楼层出现问题。4.射频口空口利用率：搜集AP的诊断信息，发现2.4G射频口的空口利用率非常高，其中CtlBusy占用率接近100%，导致射频口几乎无法正常收发信号。5.Beacon发送失败：检查射频口统计信息，Beacon发送失败次数较高，进一步印证了信道利用率高的问题。6.干扰源确认：现场排查发现特定楼层安装了移动运营商的3/4G天线，且距离AP较近，导致强烈干扰。",
+        "结论": "：该问题的主要原因是瘦AP的2.4G射频口受到强烈干扰，导致信号无法正常发射和接收。具体干扰源为同一楼层的移动运营商3/4G天线。",
+        "解决办法": "：1.减少干扰：如果可能，建议移除或调整干扰源（如移动运营商的3/4G天线）的位置，以减少对AP的干扰。2.更换射频口：在无法移除干扰源的情况下，建议启用AP的5G射频口进行信号发射。5G射频口的干扰相对较少，且大多数终端支持5G频段。3.配置检查：检查AP的配置，确保射频口的配置正确无误。4.终端测试：使用不同平台和类型的终端进行测试，确认问题是否与终端相关。通过上述方法，该问题最终通过启用5G射频口得到了有效解决。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/8325",
+        "备注": ""
+    },
+    {
+        "序号": 290,
+        "问题现象": "客户在使用v5ac设备进行本地Portal认证时，尝试在`portallocal-serverbindssid`命令后绑定中文SSID，如果SSID超过两个汉字，则会出现错误提示。",
+        "问题描述": "客户在服务模板下可以正常写入中文SSID，但在执行`portallocal-serverbindssid`命令绑定中文SSID时，超过两个汉字会报错。例如：```[20G]portallocal-serverbindssid服务模板?^%Wrongparameterfoundat'^'position.```通过更改字符集为GB2312，该问题得以解决，推测是不同字符集在字符转换时出现了问题。",
+        "结论": "该问题的根本原因在于UTF-8字符集下，`portallocal-serverbindssid`命令对超过两个汉字的中文SSID处理不当，导致字符转换错误。而在GB2312字符集下，这一问题不存在。",
+        "解决办法": "在UTF-8字符集下，通过在中文SSID前后添加英文引号，可以正常绑定中文SSID。例如：```[20G]portallocal-serverbindssid\"服务模板\"filemini_biaozhun.zip```实验室测试显示，添加英文引号后，SSID的显示和Portal的使用均无问题，英文引号的作用仅限于字符集转换过程中。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/49188",
+        "备注": ""
+    },
+    {
+        "序号": 291,
+        "问题现象": "在某局点的AC+FitAP组网环境中，手机和电脑在连接5G频段时偶尔出现802.1X认证失败的情况，而连接2.4G频段时802.1X认证均能成功。三楼AP接入的用户普遍较多（大于20），5G频段终端偶尔无法接入网络，提示“网络不可用”。",
+        "问题描述": "1.日志分析：收集了`debugradiuspacket`、`debuggingdot1xerror`、`debuggingdot1xevent`信息，发现日志中只有终端主动下线的信息，后续没有其他debug信息，可能是终端在重新关联时出现异常，未能到达RADIUS认证环节。2.负载均衡配置：查看了负载均衡的配置，发现是基于负载均衡组的，切换门限配置为`wlanload-balancemodesession10gap3`。猜测负载均衡可能导致了认证失败。3.终端行为：苹果手机没有重复连接机制，连接一次失败后显示“网络暂时不可用”且无回显。安卓手机则会自动重复连接，最多尝试10次后可以认证通过。4.负载均衡理论：-工作机制：当AP的Radio负载达到或超过设定的门限值，并且与同一AC内负载最轻的Radio的负载差值达到或超过最大负载差值门限时，该Radio会拒绝其他客户端的关联请求。-拒绝命令：设备拒绝客户端关联请求的最大次数默认为10次，如果客户端反复请求关联且达到最大次数，Radio会允许其接入。-作用范围：负载均衡可以基于Radio或负载均衡组进行，不加入任何负载均衡组的Radio不会参与负载均衡。5.现场情况：二楼有11个AP，三楼有4个AP，每个AP有3个Radio口（radio1和radio2为5G，radio3为2.4G）。二楼的3个射频口都处于负载均衡组1，三楼的3个射频口都处于负载均衡组2。由于二楼终端用户较少，没有出现连接问题，而三楼终端用户较多，5G频段负载较高，导致部分终端无法接入网络。",
+        "结论": "不同频段的Radio口不应放在同一个负载均衡组内，因为5G和2.4G频段发射的信号不同，负载均衡时可能会导致终端无法找到合适的信号接入。在三楼，5G频段的用户较多，负载均衡尝试将用户切换到2.4G频段，但由于2.4G频段的SSID与5G频段不同，终端无法成功连接，从而导致802.1X认证失败。",
+        "解决办法": "1.调整负载均衡组：将不同频段的Radio口放在不同的负载均衡组内。例如，将2.4G频段的Radio口放在负载均衡组1，将5G频段的Radio口放在负载均衡组2。2.优化SSID配置：确保5G频段和2.4G频段使用相同的SSID，以便终端在切换频段时能够无缝连接。3.监控和调整负载门限：根据现场实际情况，适当调整负载均衡的门限值，确保负载均衡在合理范围内生效，避免频繁切换导致终端连接失败。4.终端配置：对于苹果手机等没有重复连接机制的终端，建议用户手动重新连接或考虑设备的固件更新，以提高连接成功率。通过上述措施，可以有效解决5G频段终端偶尔802.1X认证失败的问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/195817",
+        "备注": ""
+    },
+    {
+        "序号": 292,
+        "问题现象": "某局点开局后，终端设备连接到无线网络后无法获取到IP地址。终端业务VLAN为VLAN1，而非客户预期的业务VLAN（VLAN142和VLAN143）。",
+        "问题描述": "现场工程师在配置无线服务时，误将`clientforwarding-locationhybridac-vlan142to143`命令理解为无线服务集中转发，并且业务VLAN为142-143。实际上，这条命令的含义是：VLAN142-143的客户端数据报文走集中转发（即通过AC进行转发），而其他VLAN的客户端数据报文则走本地转发（即通过AP进行转发）。由于终端业务VLAN为VLAN1，这条命令并没有正确地将VLAN1的客户端数据报文配置为走集中转发，导致终端无法获取到IP地址。",
+        "结论": "现场工程师对`clientforwarding-locationhybridac-vlan142to143`命令的理解有误，导致终端设备在连接到无线网络后无法正确获取到预期的业务VLAN（VLAN142和VLAN143）的IP地址。实际上，该命令只指定了VLAN142和VLAN143的客户端数据报文走集中转发，并没有指定终端业务VLAN的作用。",
+        "解决办法": "1.在服务模板中指定终端业务VLAN：-在`wlanservice-templatetest`下配置终端业务VLAN为VLAN142和VLAN143。-例如：```plaintextwlanservice-templatetestssidtestclientforwarding-locationhybridac-vlan142to143vlan142vlan143akm-modedot1xcipher-suiteccmpcipher-suitetkipsecurity-iersnclient-securityauthentication-modedot1xdot1xdomaindot1xservice-templateenable```2.在无线射频下增加服务模板并指定VLAN：-在每个无线射频（radio）下增加服务模板，并指定终端业务VLAN。-例如：```plaintextwlanap-groupgroup1vlan1ap001ap002ap003ap-modelWA6530map-configurationflash:/apcfg.txtradio1radioenableservice-templatetestradio2radioenableservice-templatetestradio3radioenableservice-templatetest```通过上述方法，可以确保终端设备在连接到无线网络后能够正确获取到VLAN142和VLAN143的IP地址，从而实现正常的业务访问。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/216554",
+        "备注": ""
+    },
+    {
+        "序号": 293,
+        "问题现象": "在AC（接入控制器）对接IMC（智能管理中心）Portal进行认证时，偶发出现“向设备发送请求超时”和“向Portal服务器发送请求超时”的错误。",
+        "问题描述": "1.第一次交互：22:27:05，AC对服务器发起RADIUS请求后，4秒后服务器才回复RADIUSAccess-Accept，导致报文超时，认证不成功。2.第二次交互：22:27:12，AC再次发起RADIUS请求，服务器很快回复了RADIUS报文，此次认证成功。",
+        "结论": "问题的原因在于网络中的微软LDAP服务器对RADIUS校验账号信息的响应时间过长，导致IMC回复RADIUS请求的速度变慢，从而引发认证请求超时。",
+        "解决办法": "1.通过排查网络中的微软LDAP服务器，发现RADIUS校验账号信息耗时过长。2.修改微软服务器的配置，优化账号信息校验的响应时间。3.问题在修改微软服务器后得到解决。希望这个总结对您有帮助。如果您有更多问题或需要进一步的建议，请随时告诉我。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/142051",
+        "备注": ""
+    },
+    {
+        "序号": 294,
+        "问题现象": "H3CWX5540E交换板在尝试保存当前配置时失败，使用`dir/all`命令查看交换板的flash显示无任何文件。",
+        "问题描述": "1.保存配置时，系统提示“Failedtowritetodevice!Failedtosavethecurrentconfiguration.”2.使用`dir/all`命令检查flash，显示“Devicecan'tbefoundorfilecan'tbefoundinthedirectory”。3.长时间运行后，WX5540E产品交换侧文件系统中的文件可能丢失。",
+        "结论": "交换板的flash文件系统可能已损坏，导致无法保存配置文件。长时间运行可能导致文件系统中的文件丢失。",
+        "解决办法": "1.格式化flash：-在交换板上执行以下命令格式化flash：```formatflash:Alldataonflash:willbelost,proceedwithformat?[Y/N]:Y```-注意：格式化操作将删除flash上的所有数据，请确保备份重要信息后再执行。2.升级软件版本：-升级至R2609P43或更高版本，以解决可能存在的软件问题。-详细步骤请参考H3C官方文档或技术支持。希望这些信息对您有所帮助。如果您有更多问题或需要进一步的帮助，请随时联系H3C技术支持。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/5048",
+        "备注": ""
+    },
+    {
+        "序号": 295,
+        "问题现象": "：在进行AP注册时，发现AP与AC之间的通信受阻，注册过程无法顺利完成。",
+        "问题描述": "：在组网环境中，AP和AC之间存在一台防火墙。为了实现AP和AC之间的互通性，需要在防火墙上放通特定的端口。CAPWAP（ControlAndProvisioningofWirelessAccessPointsProtocol）协议定义了无线接入点（AP）与无线控制器（AC）之间通信的接口规范，提供了一个通用的封装和传输机制，确保两者之间的安全通信。CAPWAP协议采用标准的UDP客户端/服务器模型，使用5247端口进行数据隧道通信，使用5246端口进行控制隧道通信。此外，V7（或V9）平台使用了其他端口，包括6633（用于OpenFlow协议）和12223（用于V5AP升级至V7平台的Lwapp协议）。",
+        "结论": "：为了确保AP能够成功注册到AC，并实现V7平台的全部功能，防火墙上需要放通以下端口：UDP5246：用于CAPWAP控制隧道UDP5247：用于CAPWAP数据隧道TCP6633：用于OpenFlow协议TCP12223：用于V5AP升级至V7平台的Lwapp协议",
+        "解决办法": "：1.配置防火墙规则：在防火墙上配置规则，放通上述端口，确保AP与AC之间的通信不受阻。2.验证端口放通：使用网络工具（如telnet或netcat）验证这些端口是否已经成功放通。3.测试AP注册：重新尝试AP的注册过程，确保注册成功并且AP能够正常工作。4.监控通信：监控AP与AC之间的通信，确保所有必要的数据和控制信息能够顺利传输。通过以上步骤，可以确保AP成功注册到AC，并且V7平台的各项功能能够正常运行。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/223300",
+        "备注": ""
+    },
+    {
+        "序号": 296,
+        "问题现象": "某局点使用WX3540X设备进行固定账号认证时，尽管可以弹出认证界面，但输入账号和密码后提示登录失败。",
+        "问题描述": "1.配置检查：现场按照官网的云简平台认证手册实施开局，配置大部分由云简平台下发。与手册中的固定账号认证配置对比后，未发现明显问题。2.云简平台认证方案：AP跨公网注册解决方案选择了“配置CMCC方案”，默认情况下设备侧提供HTTP服务的端口为80端口。因运营方无法为AC或路由器设备申请对外提供服务的80端口，进行了额外配置，将HTTP服务端口改为8088。3.TCP连接检查：检查AC本地与云简网络互联的TCP连接信息，发现AC与错误的云简网络IP和端口（101.36.161.143:443）建立了连接，而正确的云简网络IP地址和端口应为101.36.161.146:80。",
+        "结论": "AC与错误的云简网络IP和端口建立了连接，导致固定账号认证失败。",
+        "解决办法": "1.手动指定域名对应的正确IP地址：在AC的配置中增加`iphost`命令，手动指定`oasisauth.h3c.com`对应的正确IP地址（101.36.161.146）。2.重启AC：保存配置并重启AC设备，以确保新的配置生效。3.配置示例：```shelldnsserver119.X.X.Xiphostoasisauth.h3c.com101.36.161.146```4.验证：重启后再次进行固定账号认证测试，确认问题是否解决。通过上述步骤，问题成功解决。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/195627",
+        "备注": ""
+    },
+    {
+        "序号": 297,
+        "问题现象": "某局点AC（无线控制器）的CPU使用率持续在60%左右，导致console设备卡顿，影响设备的正常运行。",
+        "问题描述": "1.CPU使用率监控：-`displaycpu`命令显示CPU使用率在60%左右。-`displaycpu-usagehistoryslot1`命令显示过去60分钟内CPU使用率一直较高，最高达到65%。2.内存使用情况：-总内存：31775M-可用内存：22337M-页面大小：4K3.进程分析：-`apmgrd`进程占用CPU最高，达到3.59%。-多个`[kdrvfwd]`进程占用CPU较高，每个进程的CPU占用率约为3.16%。4.用户数量：-设备上共有2488个客户端，但2000多个用户不至于打满CPU。5.服务模板配置：-设备上配置了两个服务模板，均未进行认证。-服务模板1和2都启用了硬件转发。-服务模板1配置了APVLAN3002并启用了用户隔离。-服务模板2配置了VLAN3002。6.排查过程：-后续排查发现，MAP文件重新下发时删除了二层隔离的命令。-删除服务模板下的二层隔离后，CPU使用率仍然较高。-重新在MAP文件中下发二层隔离命令，并在AC上配置基于VLAN的二层隔离。",
+        "结论": "问题的根本原因是MAP文件重新下发时删除了二层隔离的命令，导致AC控制器的CPU负载过高。重新配置二层隔离后，CPU使用率显著下降至20%。",
+        "解决办法": "1.恢复二层隔离配置：-在MAP文件中重新下发二层隔离命令。-在AC上配置基于VLAN的二层隔离。2.具体配置命令：```shell在服务模板1中恢复二层隔离wlanservice-template1ssidxxxclientforwarding-locationapvlan3002user-isolationenableservice-templateenable在服务模板2中恢复二层隔离wlanservice-template2ssidxxxvlan3002user-isolationenableservice-templateenable确认硬件转发模式wlanfast-forwardingmodehardware```3.效果验证：-重新配置后，使用`displaycpu`和`displaycpu-usagehistoryslot1`命令监控CPU使用率，确认CPU使用率降至20%左右。-确认console设备卡顿现象消失，设备运行恢复正常。通过上述步骤，可以有效解决AC控制器CPU使用率过高的问题，确保设备的稳定运行。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/212160",
+        "备注": ""
+    },
+    {
+        "序号": 298,
+        "问题现象": "某局点新添加的一批WA2610H的AP在配置完成后无法注册到控制器（WCME040G无线插卡，版本7.1.064,Release5121P32），但能正常获取到地址。所有AP的状态均为“I”。",
+        "问题描述": "通过在AC和AP上开启调试命令（`debuggingwlancapwapall`），发现AP不断发送发现请求（discoveryrequest）但AC无法处理这些请求。具体错误信息显示AC对于发送请求的AP没有可用的配置。进一步检查发现，现场工程师在配置V7版AC时，错误地使用了V5版本的MAC地址注册方式，导致配置不匹配。",
+        "结论": "问题的原因是V7版本的AC在配置AP时，MAC地址注册和序列号注册的命令不同。V5版本的AC使用`serial-id`命令来注册MAC地址或序列号，而V7版本的AC使用`mac-address`命令来注册MAC地址，使用`serial-id`命令来注册序列号。由于现场工程师按照V5版本的方式配置了MAC地址，导致AP无法正确注册到AC。",
+        "解决办法": "1.修改AP的序列号配置：-将`serial-idB0F9-630D-78C0`修改为`serial-id219801A11S916AQ00953`。2.重新配置AP：-确保使用正确的命令来注册AP的序列号或MAC地址。对于V7版本的AC，如果使用序列号注册，命令应为`serial-id<序列号>`；如果使用MAC地址注册，命令应为`mac-address<MAC地址>`。3.重启AP和AC：-修改配置后，重启AP和AC以确保配置生效。通过上述步骤，AP成功注册到AC，问题得以解决。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/9045",
+        "备注": ""
+    },
+    {
+        "序号": 299,
+        "问题现象": "某局点使用H3CWA6620X无线设备提供无线覆盖，接入各种终端均正常工作，但一批特殊工业级终端在该环境下出现高概率的丢包和延迟现象。而这些终端在连接某友商的AP产品时运行稳定。",
+        "问题描述": "1.终端特性：这批特殊工业级终端由于自身驱动原因，工作在802.11A模式下。2.抓包分析：通过在H3CAP上开启无线抓包功能，捕获到的报文显示丢包和延迟主要来自于终端回包慢。3.友商AP对比：友商AP产品在驱动机制上存在两点异常：-能够与终端发送BA和QOSDATA，似乎不受WMM影响。-终端在友商AP下表现稳定，但在H3C环境下ping延迟和丢包严重，怀疑与友商AP的异常降速重传机制有关。4.重传机制差异：友商AP在首包未响应后立即降速重传，而H3CAP则按最高速率重传，多次失败后才考虑降速。",
+        "结论": "1.终端不规范：这些特殊终端没有按照协议规范工作，错误地工作在802.11A模式下，并且对无线信噪比容忍度较差，高阶编码报文如54Mbps容易丢失。2.友商产品兼容性：友商AP产品通过反常的降速重传机制，误打误撞地与这些终端实现了较好的兼容性。3.H3CAP调整：H3CAP在默认配置下为了保持高吞吐性能，重传策略较为严格，导致这些特殊终端在高阶编码报文下无法正常工作。",
+        "解决办法": "1.关闭高速率协商：在H3CAP上关闭高速率协商，强制终端工作在低速协商下。具体配置如下：```bashpacket-capturelocalapXXXradioXmonitor-modechannelXXXwriteurlftp://x.x.x.x/abc.pcapusernamexxxxxpasswordsimplexxxxx```2.测试结果：按照上述配置调整后，测试了多个信道，终端表现非常稳定，与友商产品的表现相当。通过上述调整，解决了特殊终端在H3C环境下高概率的丢包和延迟问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/203175",
+        "备注": ""
+    }
+]

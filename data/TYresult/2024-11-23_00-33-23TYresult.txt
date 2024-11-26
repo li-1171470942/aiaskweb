@@ -1,0 +1,182 @@
+[
+    {
+        "序号": 1280,
+        "问题现象": "：某局点无线终端无法关联信号，核心设备pingAC（无线控制器）时出现持续丢包现象。",
+        "问题描述": "：1.无线网络部署完成后，正常使用了半天。2.终端开始无法关联信号。3.测试发现核心设备pingAC时持续丢包。4.查看AC的CPU使用情况，正常时使用率在3%到5%，故障时使用率稳定在50%到60%。5.收集AC的CPU使用情况，发现转发进程的CPU使用率较高：```<H3C>disprocesscpuCPUutilizationin5secs:55.1%;1min:55.2%;5mins:55.5%JID5Sec1Min5MinName389825.2%25.2%25.2%[kdrvfwd2]389925.2%25.2%25.2%[kdrvfwd3]```6.由于现场是本地转发模式，业务流量不经过AC，理论上不应该出现流量大的情况。7.查看AC和核心互联的接口配置，发现接口放通了所有VLAN：```interfaceBridge-Aggregation1portlink-typetrunkundoporttrunkpermitvlan1porttrunkpermitvlan2to4094link-aggregationmodedynamic```8.嫌疑原因：旁挂口收到了太多广播流量，导致CPU升高，出现故障。",
+        "结论": "：旁挂口配置不当，放通了所有VLAN，导致AC收到了大量的广播流量，进而引起CPU使用率升高，最终导致终端无法关联信号和核心设备pingAC丢包。",
+        "解决办法": "：1.修改AC和核心互联的聚合口配置，只放通必要的VLAN。2.具体配置命令如下：```interfaceBridge-Aggregation1portlink-typetrunkundoporttrunkpermitvlan1porttrunkpermitvlan<必要VLAN范围>link-aggregationmodedynamic```3.修改配置后，观察AC的CPU使用率恢复正常，ping测试正常，终端关联信号也恢复正常。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/220572",
+        "备注": ""
+    },
+    {
+        "序号": 1281,
+        "问题现象": "在某局点中，无线802.1x逃生功能不生效。具体表现为，当RADIUS认证服务器失效时，无线客户端无法通过配置的备用认证方式（none）实现逃生，导致客户端无法上网。而在有线组网中，同样的配置却能够正常实现1x逃生功能。",
+        "问题描述": "现场使用的无线控制器型号为WX3508H，软件版本为C5417P01。技术人员尝试通过命令`authenticationlan-accessradius-schemexxxnone`配置1x逃生功能，但发现该命令在无线组网中不生效。查看debug日志，确认在三次尝试RADIUS报文交互失败后，RADIUS服务器被置为block状态，但客户端仍无法通过备用认证方式none实现逃生。",
+        "结论": "802.1x协议在WLAN中分为认证部分和密钥协商部分。认证部分需要客户端、设备和RADIUS服务器共同参与，成功后才会进行4次握手密钥协商，生成用于802.11链路加密的密钥。如果认证失败，密钥协商部分无法进行，进而无法加密传输数据。因此，无线1x逃生功能在中继模式下无法实现。只有在CHAP（终结）模式下，结合inode客户端，才能实现非加密的逃生操作，但这并不安全。",
+        "解决办法": "将1x认证方式从EAP（中继）模式修改为CHAP（终结）模式，并结合inode客户端实现逃生功能。具体配置如下：1.进入WLAN服务模板配置：```shellwlanservice-template4ssidfree1xvlan100client-securityauthentication-modedot1xchapdot1xdomainfree1x1service-templateenable```2.进入域配置：```shelldomainfree1x1authenticationlan-accessradius-schemefree1xnoneauthorizationlan-accessradius-schemefree1xnoneaccountinglan-accessradius-schemefree1xnone```3.配置RADIUS方案：```shellradiusschemefree1xprimaryauthentication172.31.3.252primaryaccounting172.31.3.252keyauthenticationcipher$c$3$zI9cHsibr6OzK+mUhvFN5OjxoPU1tGlbkeyaccountingcipher$c$3$MUVG3WeorUCni84aGrmNZKHCvPHmvEkGretry2timerquiet10timerresponse-timeout2nas-ip172.31.3.5```通过上述配置，无线1x逃生功能在CHAP模式下生效，客户端在RADIUS认证服务器失效时能够正常上网。但需要注意的是，这种方式是非加密的，存在安全隐患，建议仅在必要时使用。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/54026",
+        "备注": ""
+    },
+    {
+        "序号": 1282,
+        "问题现象": "某局点终结者本体（WT）和分体（WTU）在内网AC上能正常三层注册上线，但在外网AC上无法注册上线。具体表现为WT无法从外网核心交换机获取管理网段（vlan200）的IP地址，即使手动配置IP地址也无法ping通外网核心交换机的网关。",
+        "问题描述": "1.内外网组网方案：-内网AC旁挂连接内网核心交换机，外网AC旁挂连接外网核心交换机。-内网核心交换机连接WT的XGE2口，外网核心交换机连接WT的XGE1口。-内网AC使用vlan300的IP地址段，内网AP使用vlan100的管理地址段，外网无线业务地址段是vlan111。-外网AC使用vlan400的IP地址段，外网AP使用vlan200的管理地址段，外网无线业务地址段是vlan222。2.配置检查：-内外网AC均已使能虚拟AP功能。-内网AC上配置了指定虚拟AP的外网AC地址和外网AP的管理vlan，但只在WTU分体上配置了，WT本体未配置。-WT的vlanif200接口无法从外网核心交换机获取IP地址，且手动配置IP地址后无法ping通外网核心交换机的网关。-WT的XGE1口配置为trunk口，放通了vlan200，但未打pvid200。-为了防止形成8字环，WT的上行XGE1口需要undoporttrunkpermitvlan1。3.路由问题：-WT的vlanif1和vlanif200分别从内网和外网核心交换机的DHCP地址池获取了IP地址，但默认路由未生效，导致WT无法ping通外网AC。-手动添加指向外网AC的明细路由后，WT可以ping通外网AC并上线，但此时无法ping通内网AC并掉线。-再次手动添加指向内网AC的明细路由后，WT可以在内外网AC同时上线。4.WTU分体问题：-WTU分体在上线时也出现了类似的问题，同样需要手动配置两条明细路由才能在内外网AC上线。",
+        "结论": "问题的根本原因在于WT和WTU的vlanif200接口在trunk口配置时未正确处理PVID，导致无法获取外网核心交换机的管理网段IP地址。此外，WT的默认路由未能正确生效，导致无法同时访问内外网AC。通过调整trunk口的PVID配置和手动添加明细路由，最终解决了WT和WTU在内外网AC同时上线的问题。",
+        "解决办法": "1.调整PVID配置：-确保WT和WTU的外网接口（如XGE1口）在放通vlan200的同时，要么同时打上PVID200，要么同时都不打PVID200。-例如：```shell[WT]interfaceXGE1[WT-XGE1]undoporttrunkpermitvlan1[WT-XGE1]porttrunkpermitvlan200[WT-XGE1]pvidvlan200```2.手动配置明细路由：-在WT上手动添加指向外网AC的明细路由：```shell[WT]iproute-static192.168.4.024192.168.2.254```-在WT上手动添加指向内网AC的明细路由：```shell[WT]iproute-static192.168.3.024192.168.1.254```-对WTU分体同样进行上述配置，确保其也能在内外网AC上线。3.验证配置：-确保所有配置正确无误，WT和WTU的vlanif200接口能成功获取IP地址。-验证WT和WTU能ping通内外网核心交换机的网关，并且能在内外网AC上正常上线。通过上述步骤，最终解决了WT和WTU在外网AC上无法注册上线的问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/222682",
+        "备注": ""
+    },
+    {
+        "序号": 1283,
+        "问题现象": "某用户在使用WX6100E无线控制器进行Portal功能配置时，发现Portal功能无法正常生效。用户直接可以上网，但不弹出Portal页面，并且在恢复配置时出现了报错信息：“Warning:Portalisenabledbutitisnotfunctioning.”",
+        "问题描述": "1.用户在一次网络测试中删除了Portal在某些接口下的配置，之后尝试恢复配置但未成功。2.恢复配置后，Portal功能虽然显示已开启，但实际上并未正常工作。3.用户配置了多个Portal免认证规则，其中包括一条匹配组播MAC地址的规则。4.其他接口使用相同的Portal服务器配置可以正常弹出Portal页面，但问题接口无法弹出。",
+        "结论": "问题的原因在于配置的Portal免认证规则中包含了一条匹配组播MAC地址的规则。当配置Portal时，如果存在这样的免认证规则，Portal模块会检测不通过，导致Portal功能无法正常生效。然而，如果先启用Portal功能，再配置这条免认证规则，则不会进行检测，因此也不会报错，但Portal功能仍然不会正常工作。",
+        "解决办法": "1.检查所有Portal免认证规则，确认是否有匹配组播MAC地址的规则。2.删除匹配组播MAC地址的免认证规则。3.重新配置Portal功能，确保配置正确无误。4.避免在Portal配置中使用组播MAC地址的免认证规则，以防止类似问题再次发生。附加建议在配置Portal功能时，建议仔细检查所有免认证规则，确保它们符合设备的规格要求和功能限制，避免使用不支持的MAC地址类型，如组播MAC地址。如果遇到Portal功能不生效的情况，可以首先从免认证规则入手进行排查。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/20804",
+        "备注": ""
+    },
+    {
+        "序号": 1284,
+        "问题现象": "某局点使用WX5540E设备（版本R2609P58）实现802.1X认证后，Win10终端在自适应连接无线网络时无法通过802.1X认证，而手机终端可以正常关联网络并完成认证。",
+        "问题描述": "1.设备配置：局点使用WX5540E设备进行802.1X认证。2.测试结果：Win10终端自适应连接无线网络时，802.1X认证失败，手机终端则可以正常连接。3.抓包对比：-认证成功：手机终端的认证过程正常，设备透传到RADIUS服务器的用户名等信息无误。-认证失败：Win10终端的认证过程中，RADIUS服务器拒绝了终端的接入请求，但拒绝报文中未记录具体拒绝原因。4.Debug信息：-`DOT1XUSERONLINE_FAIL`：用户名为`xxxxong1`的用户被RADIUS服务器拒绝，未记录具体原因。-`PORTSECDOT1XLOGIN_FAILURE`：用户名为`xxxxong1`的用户802.1X认证失败。",
+        "结论": "经过进一步排查，发现RADIUS服务器上的相应证书已过期，导致Win10终端未通过802.1X认证。手机终端的认证成功可能是因为其认证机制或配置与Win10终端有所不同，未受证书过期影响。",
+        "解决办法": "1.替换证书：在RADIUS服务器上替换过期的证书。2.验证配置：确保替换后的证书配置正确，并重新测试Win10终端的802.1X认证。3.终端更新：建议Win10终端用户更新终端的证书信任库，确保终端能够识别新的证书。通过上述步骤，Win10终端应能够正常通过802.1X认证并连接无线网络。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/21140",
+        "备注": ""
+    },
+    {
+        "序号": 1285,
+        "问题现象": "在某局点的无线WX3510H设备上配置了WIPS（无线入侵防御系统），以反制发射与自身相同SSID的其他AP，防止钓鱼现象导致用户账号密码被窃取。配置后，发现一些未发射此SSID的AP被错误检测为RogueAP并被反制。",
+        "问题描述": "1.检测结果：从MAC地址（BSSID）来看，被反制的AP是一个特定的AP，且从检测结果状态及记录来看，这些AP确实被检测为RogueAP并进行了反制。2.反制类型：被反制的AP属于其他AC网络，且其SSID并不匹配配置的反制SSID（GUEST）。3.WIPS配置：AC01的WIPS配置为简单标准配置，定义SSID为GUEST的其他AP为RogueAP，并进行反制。4.有线MAC检测：产品线研发确认，这些AP被有线MAC检测分类为RogueAP，因为AC上没有发现这些AP上线，即使没有匹配到自定义的SSID分类规则。5.网络拓扑：两套环境通过trunk连接到同一个三层交换机，二层互通。",
+        "结论": "1.检测机制：WIPS的检测机制不仅基于自定义的SSID分类规则，还会进行有线MAC检测。如果AC上没有发现某个AP上线，即使其SSID不匹配自定义规则，也会被分类为RogueAP。2.手册说明：官网手册中的描述“是否配置自定义检测”不够准确，应修改为“是否匹配到配置的自定义检测”，以避免误解。3.网络互通：尽管两套环境二层互通，但AC01没有检测到对端AC上的AP上线，因此将其分类为RogueAP。",
+        "解决办法": "1.信任设备MAC添加：将被错误检测为RogueAP的BSSID添加为信任设备MAC，以规避误判。2.配置示例：```plaintext[AC01-wips]classification-policy1[AC01-wips-classification-policy-1]applyap-classification-rule1rogue-ap[AC01-wips-classification-policy-1]trustmac-addressxxxx-xxxx-19e0[AC01-wips-classification-policy-1]trustmac-addressxxxx-xxxx-19e1[AC01-wips-classification-policy-1]trustmac-addressxxxx-xxxx-19f0[AC01-wips-classification-policy-1]trustmac-addressxxxx-xxxx-19f1[AC01-wips-classification-policy-1]return```3.验证：添加信任MAC地址后，被误判为RogueAP的设备将变为Auth状态，不再被反制。通过以上措施，可以有效避免未发射指定SSID的AP被错误检测为RogueAP并被反制的问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/57042",
+        "备注": ""
+    },
+    {
+        "序号": 1286,
+        "问题现象": "在某局点的AP（无线接入点）配置中，当尝试在radio口下绑定新的服务模板时，系统报错并提示“JustpermitttobindonlyoneSRandonenotSRservicetemplates”，绑定操作失败。",
+        "问题描述": "AP组下radio口已绑定多个服务模板，但在尝试绑定新的服务模板时，系统报错提示“JustpermittobindonlyoneSRandonenotSRservicetemplates”。尽管一个radio口通常最多可绑定16个无线服务模板，当前配置并未达到满规格。进一步检查发现，该radio口下已绑定了一个开启SR（SeamlessRoaming，无线零漫游）功能的服务模板。",
+        "结论": "问题的根源在于该radio口下已经存在一个开启了SR功能的服务模板。根据系统限制，一个radio口只能绑定一个SR服务模板和一个非SR服务模板。因此，无法在已绑定SR服务模板的radio口下再绑定新的服务模板。",
+        "解决办法": "1.检查现有配置：确认该radio口下是否已存在开启了SR功能的服务模板。2.删除测试用的SR服务模板：在AP视图下，删除已经绑定的测试用SR服务模板。3.重新绑定新的服务模板：删除旧的SR服务模板后，尝试重新绑定新的服务模板。具体操作命令示例如下：```shellundowlanservice-templateX```其中，`X`为已绑定的测试用SR服务模板的编号。修订记录2022-02-23：发表该案例。2022-03-15：对案例进行了修订。反馈若您有关于案例的建议，请反馈。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/194170",
+        "备注": ""
+    },
+    {
+        "序号": 1287,
+        "问题现象": "在升级无线AC板卡LSUM1WCME0至V7版本7.1.064,ESS5116后，新增的同型号WA4330-ACNAP无法通过手动注册方式正常上线。而旧版本7.1.064,Alpha5115P11下，手动注册AP均能成功。现场确认网络和授权均无问题，且通过自动注册方式，新增AP能够成功上线。",
+        "问题描述": "1.网络环境：AP属于二层注册，可以正常获取地址，AC上ping1500大包到AP没有问题。2.授权情况：AC的license授权充足，fitAP授权剩余99个，WTU授权剩余161个。3.手动注册失败：-AP上报“ReceivedJoinresponseError”和“NoACinformationavailabletoJoin”错误。-AC报“APfailedtocomeonlineinjoin,Reason:Failedtogetlicensetypebyapmodel”错误。4.自动注册成功：-通过自动注册方式，AP能够成功上线，AC能够正确识别AP的license类型和型号。",
+        "结论": "问题主要在于AC板卡的V7版本7.1.064,ESS5116中，手动注册流程存在软件缺陷，导致新增的WA4330-ACNAP无法成功注册。而自动注册方式能够绕过这一问题，成功上线。",
+        "解决办法": "1.排查网络、配置、授权等问题：确保网络环境正常，AP能够获取到正确的地址，且AC的license授权充足。2.采用自动注册方式：如果手动注册失败，建议使用自动注册方式来解决AP注册问题。3.软件升级：如果是案例中提到的版本或更低版本遇到类似问题，建议升级到最新版本的软件。如果无法升级，可选择自动注册方式作为临时解决方案。后续研发会发布新版本修复此问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/6497",
+        "备注": ""
+    },
+    {
+        "序号": 1288,
+        "问题现象": "在使用`wlanlink-test`命令对部分终端进行无线链路质量检测时，出现了以下几种情况：1.终端`60a4-4cda-eff0`各个速率收发包都是5，没有丢包。2.终端`a086-c644-32a9`休眠中，无法进行链路质量检测。3.终端`6894-23bc-5748`的AP的radio不支持`wlanlink-test`功能。",
+        "问题描述": "`wlanlink-test`命令用于检测客户端与AP之间的无线链路质量。具体检测过程包括：AP根据客户端上线时协商的速率集，以每个速率发送5个空数据报文。客户端响应这些报文，AP根据响应报文获取链路质量信息，如信号强度（RSSI）、报文重传次数（Retries）和往返时间（RTT）。无线链路质量检测的超时时间为10秒，如果AP在超时时间内没有收到响应报文，将无法获取链路质量检测结果，表明AP与客户端二层链路不通。",
+        "结论": "1.终端`60a4-4cda-eff0`：各个速率收发包均为5，没有丢包，说明二层链路通信正常。2.终端`a086-c644-32a9`：终端处于休眠状态，导致无法进行链路质量检测，表明二层链路无法通信。3.终端`6894-23bc-5748`：AP的radio不支持`wlanlink-test`功能，导致无法进行链路质量检测。",
+        "解决办法": "1.终端`60a4-4cda-eff0`：无需处理，链路通信正常。2.终端`a086-c644-32a9`：等待终端从休眠状态唤醒后再次进行测试。3.终端`6894-23bc-5748`：升级AC版本至5477版本及以后，以支持`wlanlink-test`功能对11ax终端的检测。其他注意事项在部分V7AC5477版本之前，`wlanlink-test`命令仅能显示11ac终端的信息，11ax终端的测试结果仅显示MAC地址。升级AC版本可以解决对11ax终端的检测问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/227532",
+        "备注": ""
+    },
+    {
+        "序号": 1289,
+        "问题现象": "：手机终端漫游后，会自动断开WiFi，需手动重新连接后才能正常使用。电脑终端漫游成功后，仍显示连接WiFi，但与网关不通，需手动开关WiFi重新连接后才能恢复正常。",
+        "问题描述": "：客户使用40G插卡，设备版本为5444P03。无线网络采用WT1020（本体）和WTU430（分体）的无线终结者方案。终端漫游后，与网关的通信中断。在分体WTU430上起一个业务地址，终端与AP的ping测试可以互通。在本体上起业务地址，终端ping本体时发现不能通。检查arp表项，发现本体上的arp表项显示终端仍然从WTU1口学到，而实际上终端已从WTU1口漫游到WTU2口。进一步检查mac-address表项，发现终端的mac地址仍然从WTU1口学习到，怀疑mac表项更新不及时。",
+        "结论": "：问题的根本原因是mac表项刷新不及时。在本体上配置mac-addresstimeraging10，让mac表项以10秒的速度老化后，漫游体验显著提升。历史软件问题显示，本体存在终端mac转发表项不正常的问题。",
+        "解决办法": "：规避方式：在本体上配置mac-addresstimeraging10，加速mac表项的老化速度。最终解决：将设备版本升级到5447P01以上，以彻底解决mac表项刷新不及时的问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/227305",
+        "备注": ""
+    },
+    {
+        "序号": 1290,
+        "问题现象": "在使用SNMP（简单网络管理协议）进行网络设备管理时，希望能够获取到AP（无线接入点）的MAC地址及其关联的终端MAC地址，但不清楚具体的操作步骤和MIB（管理信息库）对象。",
+        "问题描述": "如何通过MIB获取AP的MAC地址（APmac）以及与该AP关联的终端设备的MAC地址（客户端MAC地址）？了解这一过程有助于熟悉MIB的使用方法，特别是如何结合多个MIB对象来获取所需信息。",
+        "结论": "通过查询H3C设备的MIB对象，可以实现APmac及其关联终端MAC地址的获取。具体步骤如下：1.通过查询`h3cDot11APTemplateNameOfAP`对象（OID:1.3.6.1.4.1.2011.10.2.75.2.1.1.1.5），获取AP的序列号及对应的AP名称。2.通过查询`h3cDot11CurrAPID`对象（OID:1.3.6.1.4.1.2011.10.2.75.3.1.2.1.1），获取客户端编号及其关联的AP序列号。3.通过查询`h3cDot11StationMACAddress`对象（OID:1.3.6.1.4.1.2011.10.2.75.3.1.1.1.23），获取客户端编号及其对应的MAC地址。",
+        "解决办法": "1.查询AP名称及序列号：-使用SNMP查询`h3cDot11APTemplateNameOfAP`对象，获取AP的序列号和名称。例如：```snmpsnmpwalk-v2c-ccommunity<设备IP>1.3.6.1.4.1.2011.10.2.75.2.1.1.1.5```-将查询结果中的ASCII码转换为对应的AP序列号，并记录每个AP的名称。2.查询客户端编号及其关联的AP序列号：-使用SNMP查询`h3cDot11CurrAPID`对象，获取客户端编号及其关联的AP序列号。例如：```snmpsnmpwalk-v2c-ccommunity<设备IP>1.3.6.1.4.1.2011.10.2.75.3.1.2.1.1```-记录每个客户端编号及其对应的AP序列号。3.查询客户端MAC地址：-使用SNMP查询`h3cDot11StationMACAddress`对象，获取客户端编号及其对应的MAC地址。例如：```snmpsnmpwalk-v2c-ccommunity<设备IP>1.3.6.1.4.1.2011.10.2.75.3.1.1.1.23```-记录每个客户端编号及其对应的MAC地址。4.关联查询：-将上述三个查询结果进行关联，例如，通过客户端编号将AP序列号和客户端MAC地址进行匹配，得出每个AP关联的客户端MAC地址。通过这一过程，可以获取到AP的MAC地址及其关联的终端MAC地址，从而实现对网络设备的精细化管理。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/104327",
+        "备注": ""
+    },
+    {
+        "序号": 1291,
+        "问题现象": "某省儿童医院在进行无线网络优化时，大部分原终端和新增终端的业务无法接入无线网络，导致医院办公查房业务中断。少部分以前使用的终端业务正常。",
+        "问题描述": "1.现场故障情况：无线网络突然中断。2.故障前后操作：故障前对AP射频下的功率、信道等信息进行了修改，并在AC上新增了测试终端进行业务测试。3.配置信息：发现MAC地址认证用户名存在两种格式：-原用户MAC地址认证用户名格式：`local-user88308ade0c1apasswordsimple88308ade0c1aaccess-limit6service-typelan-access`-新增测试用户MAC地址认证用户名格式：`local-user8830-8ade-584apasswordsimple8830-8ade-584aaccess-limit6service-typelan-access`4.AC配置问题：AC配置中指定MAC地址认证用户名格式为`with-hyphen`，即带连字符“-”的MAC地址格式。",
+        "结论": "问题的根本原因是将MAC地址认证用户名格式从`without-hyphen`（不带连字符）改为`with-hyphen`（带连字符），而未同步更改已存在的MAC地址认证用户名格式。这导致了新格式的用户无法正常接入网络，而旧格式的用户在更改配置后也无法继续使用。",
+        "解决办法": "1.修改MAC地址认证格式为`without-hyphen`：-推荐使用此方案，因为现网存在大量已配置的MAC地址认证用户。-执行命令：`#mac-authenticationdomainsystemmac-authenticationuser-name-formatmac-addresswithout-hyphen#`2.修改MAC地址认证用户名格式为`xx-xx-xx-xx-xx-xx`格式：-如果选择此方案，需要将所有已配置的MAC地址认证用户名格式统一修改为带连字符的格式。-执行命令：`#mac-authenticationdomainsystemmac-authenticationuser-name-formatmac-addresswith-hyphen#`鉴于现网有大量MAC地址认证用户，推荐使用方案(1)进行操作。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/2305",
+        "备注": ""
+    },
+    {
+        "序号": 1292,
+        "问题现象": "客户在使用Telnet远程方式登录AP（WA6320）时，无法成功登录，并且提示AAA认证失败。",
+        "问题描述": "1.设备信息：-AC设备型号：WX3540H-RADIUS服务器型号：R5441P01-上线AP型号：WA63202.初步排查：-确认用户名和密码正确。-查看本地用户权限配置，确认用户权限设置无误。-本地用户配置如下：```plaintextlocal-useradminclassmanagepasswordhashxxxxxxxxxxxxxxxxxxxxxxxxservice-typesshtelnetterminalhttphttpsauthorization-attributeuser-rolelevel-3authorization-attributeuser-rolenetwork-adminlinevty016authentication-modeschemeuser-rolenetwork-adminuser-rolenetwork-operator```3.进一步调试：-使用`debugtelnetserver`和`debugradiuspacket`命令进行调试。-发现RADIUS服务器地址不可达，调试日志显示RADIUS响应超时：```plaintext*Aug2601:59:03:1012020H3CRADIUS/7/EVENT:Responsetimedout.*Aug2601:59:03:1012020H3CRADIUS/7/EVENT:Foundrequestcontext,dstIP:172.16.xxx.xxx;dstPort:1812;VPNinstance:--(public);socketfd:28;pktID:175.*Aug2601:59:03:1012020H3CRADIUS/7/EVENT:Retransmittingrequestpacket,currentTries:2,maxTries:3.*Aug2601:59:06:1012020H3CRADIUS/7/EVENT:```-查看配置发现默认域（domain）被修改为业务相关的域，而不是系统默认域。",
+        "结论": "问题的原因是RADIUS服务器地址不可达，导致AAA认证失败。进一步检查发现，默认域被修改为业务相关的域，而不是系统默认域，这导致了认证失败。",
+        "解决办法": "将默认域改回系统默认域（system），具体操作如下：```plaintextdomaindefaultenablesystem```执行上述命令后，Telnet远程登录AP的问题得到解决。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/198568",
+        "备注": ""
+    },
+    {
+        "序号": 1293,
+        "问题现象": "某局点使用的AP型号为WA4620i-ACN，采用二层注册方式，注册到V7AC（AC型号为5540H，版本为R5215P01），但是现场AP无法正常注册到AC上，即使多次重启AP也无效。",
+        "问题描述": "1.AP注册状态：通过命令`displaywlanapall`查看AP注册信息，状态显示为`I80f6-2e4d-XXXX33IWA4620i-ACN210235A1BRC1450XXXXX`。2.网络连通性：AP能够从DHCP池中获取地址192.168.10.2，并且可以ping通AC。3.AC上的调试信息：在AC上开启`debuggingwlancapwapwapall`，发现没有来自AP的发现请求信息。4.AP上的调试信息：在AP上收集`debuggingwlancapwapwapall`的信息，显示AP发送广播报文来发现AC，但提示发现请求最大时间超时，且通过广播方式无法发现AC。",
+        "结论": "问题的根源在于AC上配置了`wlancapwapdiscovery-policyunicast`命令，该命令开启了单播发现策略功能，导致AC只对发送单播发现请求报文的AP进行响应，而不对发送广播或组播请求报文的AP进行响应。因此，AP的广播发现请求无法被AC识别和响应。",
+        "解决办法": "1.方法1：在AC上配置`undowlancapwapdiscovery-policyunicast`，恢复缺省情况下AC响应发送广播发现请求报文的AP。2.方法2：若AC上配置了`wlancapwapdiscovery-policyunicast`，需要在AP上配置`wlanacip192.168.10.11`，使AP发送的请求报文形式为单播报文并指向AC。按照上述任一方法操作后，问题得到解决，AP可以成功注册到AC上。现场工程师在不理解配置含义的情况下误操作配置了`wlancapwapdiscovery-policyunicast`命令，导致AP的广播报文请求无法到达AC。通过debug信息定位了问题产生的根源。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/22535",
+        "备注": ""
+    },
+    {
+        "序号": 1294,
+        "问题现象": "某局点在使用云AP时，尝试通过Web界面修改管理WIFI的IP地址失败，Web界面提示报错。",
+        "问题描述": "1.云AP产品特性：-云AP是FatAP，初次上电后默认开启4个无线服务。-其中一个服务称为管理WIFI（内部WIFI），SSID为H3C_XXXXXX，XXXXXX为设备MAC地址后六位，一般在2.4G频段工作。-管理WIFI供商铺内部员工管理使用，当设备未连接到绿洲平台时，可以通过连接管理WIFI并访问10.40.94.1或myap.h3c.com在本地Web页面进行无线服务管理配置。-一旦设备连接上绿洲平台，将只能通过绿洲平台进行统一的无线服务配置管理。-其余3个服务称为用户WIFI（商业WIFI），SSID分别为H3CWiFi1、H3CWiFi2、H3CWiFi3，不加密、不认证、不隐藏。2.网络配置：-云AP的物理口默认均为二层口，默认启用VLAN1和VLAN4094。-VLAN1通过DHCP从上行设备获取IP地址。-VLAN4094启用地址池10.40.94.0/24。-管理WIFI绑定VLAN4094，连接管理WIFI的STA从云AP获取与VLAN4094同网段的IP地址，用于管理云AP。-有线口和用户WIFI全部绑定VLAN1，所有有线口均以untag方式处理。-设备上联的三层交换机或路由器给VLAN1和STA提供地址池。3.限制条件：-由于VLAN1和VLAN4094的地址池可能存在冲突，云AP产品设计上做了限制：当VLAN1未通过DHCP从上行交换机获取到IP地址时，禁止修改管理WIFI（VLAN4094）的IP地址。",
+        "结论": "该局点修改管理WIFI的IP地址失败的原因是VLAN1未通过DHCP从上行交换机获取到IP地址，导致系统为了防止地址冲突而禁止修改管理WIFI的IP地址。",
+        "解决办法": "1.确保DHCP配置正确：-检查上行链路中的三层交换机或路由器的DHCP服务器配置，确保VLAN1的DHCP服务正常运行。-确认云AP的物理口与上行设备的连接是否正常，确保云AP能够接收到DHCP分配的IP地址。2.验证IP获取：-在云AP的Web管理界面中，检查VLAN1的IP地址配置，确认是否已经成功获取到IP地址。-如果VLAN1仍未获取到IP地址，尝试重启云AP或上行设备，确保DHCP请求能够成功。3.修改管理WIFIIP地址：-一旦VLAN1成功获取到IP地址，即可通过Web管理界面正常修改管理WIFI（VLAN4094）的IP地址。通过以上步骤，可以解决云AP管理WIFIIP地址修改失败的问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/94171",
+        "备注": ""
+    },
+    {
+        "序号": 1295,
+        "问题现象": "在WA4320H面板AP开启快转功能（optionclientfast-forwardingenable）后，无线终端无法ping通连接在AP面板口下的有线终端。",
+        "问题描述": "WA4320H面板AP在快转功能开启的情况下，ARP报文只能从无线端向有线端的上行口转发，而不会通过面板口进行转发。这导致了无线终端和有线终端之间的通信中断，表现为无线终端无法与有线终端进行正常的网络通信，如ping测试失败。",
+        "结论": "快转功能的开启限制了ARP报文的转发路径，仅允许从无线端到有线端的上行口，而不支持通过面板口转发，这是导致无线终端无法ping通有线终端的根本原因。",
+        "解决办法": "1.不使用快转功能：关闭快转功能，恢复默认的网络转发模式，以确保无线终端可以正常ping通有线终端。2.改变组网需求：如果必须使用快转功能，建议重新规划网络拓扑，确保无线终端和有线终端之间的通信路径不依赖于面板口的ARP报文转发。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/104927",
+        "备注": ""
+    },
+    {
+        "序号": 1296,
+        "问题现象": "部分AP无法与备AC建立R/B（主备）状态。",
+        "问题描述": "在某局点中，两台AC（无线控制器）采用双链路备份机制，AP（无线接入点）通过三层注册方式上线，并通过交换机下发option43进行注册。尽管AP能够与主AC和备AC进行ping测试通信，但在主备AC倒换后，部分AP无法正常倒换到备AC上线。进一步检查发现，AP注册上线时使用的主ACIP地址与备ACIP地址不在同一地址段，且备AC的IP地址不是通过option43下发的地址。",
+        "结论": "问题的根本原因是AP视图下配置的备ACIP地址与通过option43下发的IP地址不一致。AP注册上线时使用的是option43下发的IP地址，而建立主备关系时使用的是AC上配置的backup-acip地址。由于实际AP与AC上配置的backup-acip地址不通，导致部分AP无法与备AC建立R/B关系。",
+        "解决办法": "1.修改AC上backup-acip与option43下发IP一致：将AC上配置的backup-acip地址修改为与option43下发的IP地址一致。2.修改option43下发IP与AC上backup-acip一致：将option43下发的IP地址修改为与AC上配置的backup-acip地址一致。通过上述任一方法，确保AP注册上线和建立主备关系时使用相同的IP地址，从而解决AP与备AC无法建立R/B状态的问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/221310",
+        "备注": ""
+    },
+    {
+        "序号": 1297,
+        "问题现象": "在某局点中，当终端设备频繁在两个SSID之间切换时，部分终端设备会出现“向PortalServer发送请求超时”的错误，导致Portal无感知认证小概率性失败。",
+        "问题描述": "正常情况下，终端连接到Portal无感知的SSID时，认证流程顺利进行。然而，在频繁切换SSID的情况下，某些终端在连接到无感知SSID后，未及时发送免费ARP更新表项，而是直接发送IP数据包触发Portal认证流程。设备在处理这些IP数据包时，由于未能从WLANSnooping表项中查找到对应的客户端信息，导致设备回复IMC服务器的ack_info信息中缺失关键信息，最终认证失败。",
+        "结论": "问题的根本原因在于终端设备在获取IP地址后未能及时发送免费ARP更新表项，导致设备在处理Portal认证请求时无法正确反查客户端信息。具体表现为：终端获取IP地址后立即发送IP数据包，触发Portal认证。设备在处理认证请求时，发现WLANSnooping表项中没有该终端的记录。由于IP反查失败，设备无法携带有效的客户端信息到ackinfo报文中，导致IMC服务器认为客户端信息不合法，继续发送reqinfo请求，最终认证超时。",
+        "解决办法": "为了解决这个问题，可以在集中转发模式下开启无线Portal客户端合法性检查功能：1.命令配置：在AC上执行以下命令启用该功能：```[AC]portalhost-checkenable```2.功能说明：此功能开启后，设备在收到未认证Portal用户的认证报文后，将使用WLANSnooping表、DHCPSnooping表和ARP表对其进行合法性检查。如果在这三个表中查询到该Portal客户端信息，则认为其合法并允许进行Portal认证。3.预期效果：通过多表项检查，设备在处理认证请求时能够更准确地识别客户端信息，提高Portal认证的成功率，尤其是在终端设备频繁切换SSID的场景下。通过上述方法，可以有效解决终端频繁切换SSID导致的Portal无感知认证失败问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/183114",
+        "备注": ""
+    },
+    {
+        "序号": 1298,
+        "问题现象": "5G终端在某局点无法完成附着和驻留5G小区，且话统中没有有效的msg1接入统计信息。",
+        "问题描述": "1.基站状态：CU小区正常，RRU发射功率正常。2.终端接收情况：终端能够接收到5G小区的MIB消息和SIB1消息，但没有继续接收SIB2等系统消息和随机接入。3.SIB1消息对比：异常小区的SIB1消息中，PLMN下的`cellreservedforoperatoruse`参数设置为`reserved`，而正常小区的此参数设置为`notreserved`。4.参数分析：`cellreservedforoperatoruse`参数在DU逻辑小区管理中对应的是`CellReservedForOpInd`小区运营商保留标识参数，默认设置为`NO`，现场异常配置设置为`YES`。",
+        "结论": "该局点5G终端无法接入的问题，是由于DU逻辑小区中的`CellReservedForOpInd`小区运营商保留标识参数被错误地设置为`YES`，导致终端无法驻留和接入5G小区。",
+        "解决办法": "1.修改参数：将DU逻辑小区中的`CellReservedForOpInd`参数从`YES`改为默认设置`NO`。2.验证：在实验室镜像环境中进行了多次修改验证，确认修改参数后终端可以正常接入并进行业务。3.实施：在现网中实施参数修改，并进行终端接入测试，确保问题得到解决。希望上述总结对您有所帮助。如果您有任何进一步的建议或需要更多详细信息，请随时反馈。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/223363",
+        "备注": ""
+    },
+    {
+        "序号": 1299,
+        "问题现象": "在网络设备的调试与维护过程中，收集到大量APWLANforwarddebug报文，但手动解析这些报文耗时且容易出错。",
+        "问题描述": "每条WLANforwarddebug报文的头部格式固定，以“*”为起始，随后是英文月份的缩写字母、日期、时间、年份、AP名称，并以“WLANFW/7/PACKET”或“WLANFW/7/ERROR”结尾。报文内容包含payload的hex字符串、prompt信息和interface信息。手动解析这些报文不仅复杂，而且效率低下，需要一种自动化的方法来解析这些报文，以便快速定位问题和优化网络性能。",
+        "结论": "通过使用正则表达式匹配报文头部格式，可以自动化地判断并提取WLANforwarddebug报文。进一步通过特定的正则表达式提取报文的payload、prompt和interface信息，再结合报文类型和协议格式进行深度解析，可以实现报文内容的自动化解析和可视化呈现。这种方法不仅提高了解析效率，还减少了手动解析的错误率。",
+        "解决办法": "1.判断和提取报文头部：-使用正则表达式`startpos_pattern`匹配报文头部，判断是否存在WLANforwarddebug报文并定位报文的起始位置。-使用正则表达式`startpospatterntail`匹配报文头部的结尾部分，进一步确认报文类型（PACKET或ERROR）。2.提取报文内容：-使用正则表达式`framecontentpattern`提取payload的hex字符串内容。-使用正则表达式`prompt_pattern`提取prompt信息。-使用正则表达式`interface_pattern`提取interface信息，记录报文通过哪个接口发送。3.深度解析：-按照前文介绍的报文解析方法或各种类型报文的协议格式，对提取的payloadhex字符串进行深度解析。-将解析结果逐一回传并通过表格形式展示，最终呈现出类似Wireshark的报文解析结果。4.工具使用：-该自动化解析和可视化呈现功能已在Release2.2.x版本正式合入。-使用前需在“过滤”按钮正下方的下拉选框中选择“ar5drv”或“WLANFW”，分别对应ar5drv驱动debug解析和WLANforwarddebug解析。-该工具目前仅限于无线L3组内使用，适用于复杂问题的调试与分析。附注ar5drv驱动debug：记录AP驱动至Comware平台或平台至驱动的过程，每条报文只会记录一次。WLANforwarddebug：记录报文在平台转发中所经历的多个步骤，如IPv4转发、CAPWAP转发等，因此记录的报文数量比ar5drv驱动debug更多，但实际是同一条报文的多个转发步骤的记录。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/216258",
+        "备注": ""
+    }
+]

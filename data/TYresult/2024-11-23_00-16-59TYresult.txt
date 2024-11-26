@@ -1,0 +1,182 @@
+[
+    {
+        "序号": 1220,
+        "问题现象": "某局点使用EGT904-H-TW这一带无线功能的ONU设备（即极简PONAP），三层注册时AP无法上线AC。",
+        "问题描述": "1.版本确认：已确认AC版本和ONU版本满足最低版本要求，具体参考H3C官网相关资料。2.配置优化：端口隔离和OLT只放通必要VLAN的优化配置已经完成，且MAP文件正确下发了二层隔离的配置。3.DHCP配置：极简PONAP三层注册，DHCPserver上option43配置正确。在PONAP上查看日志信息，发现AP确实发出了discovery请求。4.抓包分析：沿途设备抓包显示，discovery请求报文没有到达AC，怀疑报文在中间设备丢失。",
+        "结论": "问题的主要原因在于discovery请求报文在中间设备处丢失，导致AP无法成功注册到AC。",
+        "解决办法": "1.排查中间设备：详细检查中间设备的配置，确保没有配置错误或过滤规则导致报文丢失。2.检查路由配置：确认中间设备的路由配置正确，确保报文能够正确转发到AC。3.检查VLAN配置：确保中间设备的VLAN配置与OLT和PONAP一致，没有VLAN冲突或遗漏。4.日志和抓包：在中间设备上进行日志记录和抓包分析，进一步确认报文丢失的具体位置和原因。5.联系技术支持：如果以上步骤无法解决问题，建议联系H3C技术支持，获取更专业的指导和帮助。希望以上总结对您有帮助。如果您有任何其他问题或需要进一步的建议，请随时告知。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/228244",
+        "备注": ""
+    },
+    {
+        "序号": 1221,
+        "问题现象": "某局点使用WX3520H-F无线控制器结合LDAP服务器进行Portal认证时，用户在Portal页面输入用户名和密码后提示认证失败，即使加上域信息也依旧认证失败。",
+        "问题描述": "1.组网及说明：-现场有一台无线控制器WX3520H-F旁挂在核心交换机上，使用集中转发的方式进行终端业务数据的转发。-无线控制器与LDAP服务器通信，并结合LDAP服务器进行终端认证。2.初始检查：-检查无线控制器的配置，发现配置中已正确设置了Portal服务模板、LDAP服务器信息、认证域等参数，未发现明显异常。3.Debug分析：-通过开启调试日志，发现用户31013的认证过程如下：-成功绑定管理员DN。-开始进行用户搜索。-搜索用户时使用了CN类型的用户名属性。-搜索结果为DN为空，导致认证失败。-最终接收到的认证响应代码为26，表示认证失败。4.现场反馈：-检查LDAP服务器上的用户信息，发现用户属性类型为UID类型，而不是无线设备配置中默认的CN类型。",
+        "结论": "问题的原因在于无线控制器在配置LDAP服务器时，默认使用CN类型的用户名属性进行用户搜索，而现场的LDAP服务器中用户的属性类型为UID类型，导致用户搜索失败，进而认证失败。",
+        "解决办法": "1.配置调整：-进入系统视图：`system-view`-进入LDAP服务器视图：`ldapserverldap`-配置用户查询的用户名属性为UID：`user-parametersuser-name-attributeuid`2.最终配置：```plaintextldapserverldaplogin-dnuid=wlan,ou=manager,dc=scst,dc=edu,dc=cnuser-parametersuser-name-attributeuidsearch-base-dnou=jzg,ou=people,dc=scst,dc=edu,dc=cnip10.1.2.25login-passwordcipher$c$3$mXkuOQSeD/QLKOw1b+ZmKbyHmkl4nYodD7gN8OO9hVs=```3.结果验证：-配置调整后，用户31013的认证过程正常，Portal认证成功。备注此问题的解决方法适用于类似场景，即无线控制器与LDAP服务器结合使用时，用户属性类型不匹配导致的认证失败。建议在配置时仔细核对LDAP服务器的用户属性类型，确保与无线控制器的配置一致。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/43185",
+        "备注": ""
+    },
+    {
+        "序号": 1222,
+        "问题现象": "当手机终端连接到公司无线网络，并在V7AC设备上启用Portal认证时，用户反馈手机弹出Portal页面的速度较慢。尤其是iOS设备，在首次连接Portal网络时会等待几十秒，而Android设备以及其他设备也会出现非首次连接时弹出页面慢的情况。",
+        "问题描述": "手机终端在连接无线网络后，会根据自身的判断逻辑来决定是否需要弹出Portal页面。通常，这些判断逻辑基于设备能否成功访问互联网或特定的URL。对于iOS设备，由于其处理逻辑的特殊性，首次连接Portal网络时的等待时间无法优化。然而，对于非首次连接的情况，可以通过配置无线网络设备来优化弹出Portal页面的速度。",
+        "结论": "通过在无线网络设备上配置特定的Portal-free规则和安全重定向规则，可以显著提高非首次连接时弹出Portal页面的速度。这些配置允许设备在连接时快速确认网络状态，从而减少页面弹出的延迟。",
+        "解决办法": "1.Portal正常配置：确保Portal服务已正确配置。2.添加Portal-free规则：```plaintextportalhostcheckenable按照现场DNS配置portalfree-rule1destinationip114.114.114.114255.255.255.255portalfree-rule2destinationipanyudp53portalfree-rule3destinationipanytcp53portalfree-rule4destinationipanytcp5223如果没有微信认证，可以不放通微信portalfree-rule10destinationshort.weixin.qq.comportalfree-rule11destinationmp.weixin.qq.comportalfree-rule12destinationlong.weixin.qq.comportalfree-rule13destinationdns.weixin.qq.comportalfree-rule14destinationminorshort.weixin.qq.comportalfree-rule15destinationextshort.weixin.qq.comportalfree-rule16destinationszshort.weixin.qq.comportalfree-rule17destinationszlong.weixin.qq.comportalfree-rule18destinationszextshort.weixin.qq.comportalfree-rule19destinationisdspeed.qq.comportalfree-rule20destination*.*portalfree-rule21destinationwifi.weixin.qq.comportalfree-rule22destinationoasisauth.h3c.com```3.启用安全重定向：```plaintextportalsafe-redirectenableportalsafe-redirectmethodgetpostportalsafe-redirectuser-agentAndroidportalsafe-redirectuser-agentCaptiveNetworkSupportportalsafe-redirectuser-agentMicroMessengerportalsafe-redirectuser-agentMozillaportalsafe-redirectuser-agentWeChatportalsafe-redirectuser-agentiPhoneportalsafe-redirectuser-agentmicromessenger```4.服务模板下添加优化配置：```plaintextportaltemp-passperiod20enableportalserver下配置添加如下配置（高亮处替换为现场Portal页面的链接）captive-bypassiosoptimizeenableif-matchuser-agentCaptiveNetworkSupportredirect-urlhttp://oasisauth.h3c.com/generate_404if-matchuser-agentDalvik/2.1.0(Linux;U;Android7.0;HUAWEIredirect-urlhttp://oasisauth.h3c.com/generate_404if-matchoriginal-urlhttp://captive.apple.com/hotspot-detect.htmluser-agentMozillatemp-passredirect-urlhttp://XXXXXXXXXif-matchoriginal-urlhttp://www.apple.comuser-agentMozillatemp-passredirect-urlhttp://XXXXXXif-matchoriginal-urlhttp://10.168.168.168temp-pass```通过以上配置，可以有效优化非首次连接时手机终端弹出Portal页面的速度，提升用户体验。对于iOS设备首次连接的延迟问题，目前没有有效的优化方法。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/19857",
+        "备注": ""
+    },
+    {
+        "序号": 1223,
+        "问题现象": "：某局点的WX2540H控制器下的AP无线信号周期性消失，大约每2小时消失一次，30秒后自动恢复。登录AP时可以观察到CAPWAP隧道down，一分钟左右又up，故障周期性复现。",
+        "问题描述": "：经过检查，发现AP上的日志显示故障原因为“DeletedAPIPaddress”。进一步分析发现，用户的第三方核心交换机上DHCPServer配置了AP管理VLAN的DHCP租期为2小时。当租期到期后，AP未能成功续期，导致其管理IP地址被删除，通信中断，从而CAPWAP隧道断开。故障每隔2小时复现一次。",
+        "结论": "：问题的根本原因是AP管理VLAN的DHCP租期设置过短（2小时），导致AP在租期到期后无法成功续期，管理IP地址被删除，进而引发CAPWAP隧道断开和无线信号消失。第三方设备上的DHCPSnooping功能进一步影响了DHCP续约确认报文的正常传输，使得AP无法接收到确认报文，导致续约失败。",
+        "解决办法": "：1.修改AP管理VLAN的DHCP租期，建议设置为较长的时间（如24小时或更长），以避免频繁的租期续期问题。2.在第三方核心交换机上关闭DHCPSnooping功能，确保DHCP续约确认报文能够正常传输到AP。3.问题在实施上述措施后得到解决，无线信号和CAPWAP隧道恢复正常，不再周期性中断。希望这个总结对您有所帮助。如有进一步的问题或建议，请随时告知。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/9020",
+        "备注": ""
+    },
+    {
+        "序号": 1224,
+        "问题现象": "支持WPA3的终端在连接无线网络后几秒内掉线。",
+        "问题描述": "现场配置了WPA3的无线网络，终端在连接几秒后会掉线。日志显示终端在漫游到另一个接入点后成功上线，但很快又掉线，掉线原因是发送的SA请求超过允许的阈值。",
+        "结论": "WPA3-SAE（SimultaneousAuthenticationofEquals）个人网络通过WPA3-PWE（WPA3PersonalwithEasyConnect）技术允许用户通过扫描二维码等方式接入无线网络。WPA3-PWE支持两种衍生PWE的方法：HnP（Hunting-and-Pecking）和H2E（Hash-to-Element）。实际使用中，不同终端厂商对这两种方法的支持情况存在差异，尤其是新方法H2E，可能导致连接不稳定。强制使用传统方法HnP时，终端的兼容性问题基本得到解决。",
+        "解决办法": "遇到类似问题时，建议先尝试使用传统方法HnP进行WPA3-PWE配置，具体命令如下：```[AC-wlan-st-1]akmsaepwehnp```此配置可以提高终端的兼容性，避免因SA请求超过阈值而导致的掉线问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/220567",
+        "备注": ""
+    },
+    {
+        "序号": 1225,
+        "问题现象": "某局点使用V5WX5510E无线控制器部署无线网络，并基于用户网络安全部署了802.1X认证。认证服务器为LDAP服务器。配置完成后，发现手机终端和电脑使用iNode客户端可以正常认证成功，但Windows7自带的拨号客户端无法认证成功。",
+        "问题描述": "关键配置信息：-802.1X认证方法：EAP-LDAP方案：non-gda-认证服务器：114.213.144.4-授权服务器：114.213.144.4-登录DN：cn=directorymanager-用户参数搜索基础DN：ou=people,dc=ahau,dc=edu,dc=cn-用户名属性：uid-RADIUS方案：non-gda-主认证服务器：210.45.176.26-主计费服务器：210.45.176.26-认证密钥：已加密-计费密钥：已加密-用户名格式：不带域名-NASIP：10.3.255.253-域名：h3c-EAP配置：默认使用TLS和GTC方法分析：-手机和iNode客户端支持PEAP-GTC认证方法。-Windows7自带的拨号客户端仅支持PEAP-MSCHAPv2认证方法。-尝试将设备上的EAP认证方法从PEAP-GTC改为PEAP-MSCHAPv2后，Windows7自带的客户端仍然无法认证成功，同时手机和iNode客户端也受到影响，认证失败。",
+        "结论": "经过与研发团队确认，发现V5WX5510E无线控制器在结合LDAP认证时，仅支持TLS和GTC这两种EAP认证方法，不支持PEAP-MSCHAPv2。",
+        "解决办法": "1.更改配置，采用TLS证书认证方式：-配置设备使用TLS证书进行802.1X认证。-在Windows7电脑上安装必要的证书，并配置客户端以支持TLS认证。2.电脑使用iNode客户端认证：-在Windows7电脑上安装iNode客户端，并配置客户端使用PEAP-GTC方法进行认证。3.更改认证方式，使用普通的RADIUS认证：-不使用LDAP认证，改为普通的RADIUS认证方式。-配置RADIUS服务器支持PEAP-MSCHAPv2方法，确保Windows7自带的拨号客户端可以正常认证。备注该案例最初发表于2017年12月18日，并在2019年6月8日进行了修订。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/22280",
+        "备注": ""
+    },
+    {
+        "序号": 1226,
+        "问题现象": "现场使用两台设备（AP和POE交换机）进行链路聚合配置时，AP频繁出现上下线的现象，且在POE交换机上查看聚合组的成员接口均为unselect状态。",
+        "问题描述": "为了增加上行带宽，现场工程师试图将AP的两个以太网口（GigabitEthernet1/0/1和GigabitEthernet1/0/2）进行链路聚合。具体步骤如下：1.首先，通过一个以太网口（例如GigabitEthernet1/0/1）将AP与POE交换机互连并注册。2.待MAP文件下发完成后，再将另一个以太网口（GigabitEthernet1/0/2）与POE交换机连接。3.一旦下发MAP文件，AP就开始频繁上下线，且聚合组成员接口（GigabitEthernet1/0/1和GigabitEthernet1/0/2）均变为unselect状态。",
+        "结论": "经过日志分析和配置检查，发现AP的以太网口默认开启了端口隔离功能，而聚合组默认未开启端口隔离功能。这种配置不一致导致了链路聚合失败，进而引发了AP频繁上下线的问题。",
+        "解决办法": "将AP的以太网口取消端口隔离功能，具体配置命令如下：```plaintextsystem-viewinterfaceGigabitEthernet1/0/1undoport-isolateenableinterfaceGigabitEthernet1/0/2undoport-isolateenable```取消端口隔离后，链路聚合恢复正常，AP不再频繁上下线。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/47687",
+        "备注": ""
+    },
+    {
+        "序号": 1227,
+        "问题现象": "某局点配置了中文SSID的无线网络，当用户尝试通过IMCPortal进行认证时，认证失败。",
+        "问题描述": "在IMC上收集UAM日志进行分析，发现Radius交互中的SSID字段显示为省略号（...）。具体日志内容如下：```%%2022-09-1316:57:43.737;[LDBG];[26080];LAN;[1]che;1;882e8c2988c94e19b59adf3fdc5e46b6;;Receivedmessagefrom10.10.X.X:CODE=1ID=213User-Name(1)=...XXXCHAP-Password(3)=2ed2a9e63XXXXXXXX369992078763CHAP-Challenge(60)=0aa39806XXXXXXXXXXXXeb8b154e013Service-Type(6)=2.Framed-Protocol(7)=255.NAS-Identifier(32)=XXXXX-WX2580XNAS-Port(5)=16777370.NAS-Port-Type(61)=19.NAS-Port-Id(87)=0100000000000154Calling-Station-Id(31)=E6-61-1E-3B-XX-XXCalled-Station-Id(30)=90-F7-B2-94-XX-XX:...........................Acct-Session-Id(44)=0000000720XXXXXXXXXXX002e08110103H3CUSERVLANID(133)=154.Framed-IP-Address(8)=28867XXXX5.hwIPHostAddr(60)=172.16.XXX.XXXe6:61:1e:3b:XX:XXH3CDHCPOption55(208)=017XXXXXXXXX277fcH3CDHCPOPTION(218)=7..y...lrw.H3CMACPROXYAUTHENCATOR(150)=4...Y.NAS-IP-Address(4)=16XXXX134.hwProductID(255)=H3CWX2580XhwNasStartupTimetamp(59)=166XXXXX30.```进一步分析发现，无线中文SSID配置时使用的编码方式为UTF-8，而IMC上的EIA（EnhancedIdentityAuthentication）模块只支持GBK编码，导致插入在线表和接入明细表时出现乱码，从而引起认证失败。",
+        "结论": "问题的根本原因是无线设备上的中文SSID配置使用了UTF-8编码，而IMC的EIA模块只支持GBK编码，导致SSID字段在Radius交互中显示为省略号，进而引发认证失败。",
+        "解决办法": "将IMC的EIA模块的编码方式修改为GBK，以支持中文SSID的正确显示和认证。具体步骤如下：1.登录IMC管理界面。2.导航到EIA模块的配置页面。3.修改EIA模块的编码方式为GBK。4.保存配置并重启相关服务。通过上述步骤，可以解决中文SSID导致的Portal认证失败问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/213692",
+        "备注": ""
+    },
+    {
+        "序号": 1228,
+        "问题现象": "某局点使用LSU3WCMD0无线板卡结合IMC（IntelligentManagementCenter）对用户进行微信认证时，发现所有终端（包括Android和iOS）在成功认证并上线后，两分钟后会自动下线，IMC侧显示终端下线原因为“SessionTimeout”。",
+        "问题描述": "1.终端认证成功：所有终端都能正常通过微信认证并上线，说明设备侧的Portal和微信放通域名的配置是正确的。2.终端下线原因：从IMC侧的调试日志中可以看到，设备向IMC发送了计费结束的报文，导致终端下线。3.具体日志：-设备侧日志显示在认证成功后收到了IMC发送的下线请求报文。-IMC侧日志显示收到了设备发送的计费结束报文，并执行了下线操作。",
+        "结论": "问题的原因在于IMC侧的配置中，缺省“访客服务”对应的“接入策略”中设置了“单次最大在线时长”为2分钟。这个配置导致所有终端在上线两分钟后被强制下线。",
+        "解决办法": "1.检查IMC配置：仔细检查IMC侧“访客服务”对应的“接入策略”配置，确认是否存在“单次最大在线时长”的设置。2.修改配置：将“单次最大在线时长”设置删除或调整为合适的值。3.验证效果：修改配置后，重新测试终端的微信认证，确认终端是否能够正常在线超过两分钟。通过以上步骤，可以解决终端两分钟后自动下线的问题。建议在遇到类似问题时，首先检查IMC侧的配置，特别是与认证和在线时长相关的设置。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/15630",
+        "备注": ""
+    },
+    {
+        "序号": 1229,
+        "问题现象": "：通过云简网络平台下发配置后，总部与分支之间的ADVPN隧道无法正常建立，仅建立了IPsec的第一阶段。",
+        "问题描述": "：总部设备为MSR3600-28-XS，分支设备为MSG360-4。总部设备上配置了两个IKEProfile：ikeprofileA和ikeprofileB。其中，ikeprofileB的配置为匹配所有远程地址（即matchremote0.0.0.0），而其下的算法配置与分支设备的算法配置不一致，导致IKE协商在第二阶段失败。日志显示IKESApayload解析失败，并且构建了NOPROPOSALCHOSEN的通知包。",
+        "结论": "：总部设备上的ikeprofileB配置与分支设备的算法不匹配，导致ADVPN隧道无法正常建立。具体表现为IKE协商在第一阶段成功，但在第二阶段失败。",
+        "解决办法": "：1.删除总部设备上的ikeprofileB配置。2.确认是否有使用matchremote全零地址（0.0.0.0）的组网需求。3.如果确实需要使用matchremote全零地址的IKEProfile，确保其下的算法配置与分支设备一致，以避免误伤其他分支设备的上线。希望这些总结对您有帮助。如果您有任何进一步的问题或建议，欢迎随时反馈。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/171502",
+        "备注": ""
+    },
+    {
+        "序号": 1230,
+        "问题现象": "部分安卓用户在某局点的无线网络环境下无法打开钉钉应用中的一个特定网站，而苹果和电脑终端可以正常访问。",
+        "问题描述": "1.局点环境：某局点的无线网络采用AC旁挂核心设备的方式进行集中转发。2.初步测试：只有部分安卓用户无法访问钉钉应用中的特定网站，其他上网行为正常。3.家用环境对比：用户在家中使用TPLINK路由器可以正常访问该网站。4.DNS抓包分析：在故障环境中，故障安卓手机对网站请求的DNS报文没有收到回复，而电脑终端可以正常收到回复。5.进一步抓包定位：采用二分法抓包，逐步排查网络设备，发现出口设备的NAT地址池配置有误。",
+        "结论": "问题的根因在于出口设备的NAT地址池配置错误，将钉钉服务器的映射地址包含在了NAT地址池中，导致部分安卓手机无法收到DNS回复，进而无法访问特定网站。",
+        "解决办法": "1.修改NAT地址池配置：将钉钉服务器的映射地址从出口设备的NAT地址池中移除。2.验证修改效果：修改配置后，重新测试故障安卓手机的访问情况，确认问题已解决。总结对于复杂的网络故障问题，应尽量细化问题点，结合抓包分析具体的故障位置。当无法一步定位时，可以采用二分法逐步排查，缩小故障范围，最终找到并解决根因。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/76618",
+        "备注": ""
+    },
+    {
+        "序号": 1231,
+        "问题现象": "某局点在扩充AP地址池后，AP无法上线AC。AP上线后，终端又无法成功关联无线网络。",
+        "问题描述": "1.AP无法上线AC：-AC与AP之间的连通性正常。-查看`displaywlanapstatisticsassociation-failure-record`发现AP无法上线的原因是“Timerforwaitingchangestateeventrequestexpired”（等待改变状态请求报文超时）。-在AC上查看`[WX5540E-V7-probe]dissysintwlanapmacx-x-xcapwappacket-statistics`发现报文收发数据不一致。2.AP上线后终端无法接入网络：-AC上启用了MAC认证。-查看`[WX5540E-V7-probe]dissysintwlanclienthistory-recordmacxxx`发现终端上线失败的原因是“2023,ReceivedstatetimetimeoutinAuthstate”（在认证状态中收到状态超时）。-使用`debugwlanclientmacxxx`、`debugwlanusersecall`、`debugwlanaccess-securityall`等命令进行调试，发现AC成功处理了终端的认证请求并发送了认证响应，但未收到终端的关联请求（associationrequest）。-终端在无线接入过程中产生异常，未完成关联过程。",
+        "结论": "1.AP无法上线：-问题原因是CAPWAP控制报文或数据报文分片的最大长度（fragment-size）设置不当导致报文传输超时。-通过逐步减小`fragment-sizecontrol/data`的值，AP成功上线。2.终端无法接入网络：-问题原因是客户在修改配置时产生了路由环路，导致终端的关联请求报文在中间设备丢失。-通过修正路由配置，终端成功接入网络。",
+        "解决办法": "1.AP无法上线：-在AP或AP组视图下配置`fragment-sizecontrol/data`，逐步减小其值，直至AP成功上线。-默认值为1500，可以尝试减小到1400或更小的值。2.终端无法接入网络：-与客户确认并修正配置错误，消除路由环路。-修正配置后，终端能够正常发起关联请求并成功接入网络。-最后，将改小了的`fragment-sizecontrol/data`恢复成默认值1500，AP仍能稳定在线。总结该故障主要由两个问题引起：一是CAPWAP报文分片长度设置不当导致AP无法上线，二是配置错误产生的路由环路导致终端无法成功关联无线网络。通过逐步调整`fragment-size`并修正路由配置，最终解决了这两个问题，使AP和终端恢复正常工作。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/227848",
+        "备注": ""
+    },
+    {
+        "序号": 1232,
+        "问题现象": "终端设备连接到无线接入点（AP）后，无法弹出门户（Portal）认证页面，即使直接输入`oasisauth.h3c.com`也无法访问。",
+        "问题描述": "在当前的网络环境中，交换机连接了AC（无线控制器，配置为本地转发）和本地绿洲（Portal认证系统），且该环境未接入互联网，也没有DNS服务器。AC的地址为`10.x.x.x`，WBC（无线业务控制器）的地址为`x.x.x.252`。根据Debug信息，重定向过程已经成功，但终端设备没有回显Portal认证页面。进一步测试发现，终端设备无法通过域名解析到目标地址。",
+        "结论": "问题的原因在于当前网络环境中没有DNS服务器，导致终端设备无法解析`oasisauth.h3c.com`域名，从而无法访问Portal认证页面。",
+        "解决办法": "1.配置AC作为DNS服务：-在AC上开启DNS代理功能，将DNS服务器指向公共DNS服务器（如114.114.114.114或8.8.8.8）。-配置AC的DHCP地址池，使其分配的DNS地址为AC本身的地址。-在AC上配置静态DNS解析，将`oasisauth.h3c.com`解析到WBC的IP地址`x.x.x.252`。具体配置命令如下：```plaintextdnsserver114.114.114.114dnsproxyenableiphostoasisauth.h3c.comx.x.x.252```2.配置PortalFree规则：-在AC上配置PortalFree规则，允许终端设备在未认证前访问特定的IP地址（如WBC的IP地址`x.x.x.252`），以便进行Portal认证。具体配置命令如下：```plaintextportalfree-rule6description\"ip10.x.x.x\"```3.终端测试：-终端设备获取地址后，使用任意IP地址（如`http://x.x.x.x`）进行测试，确认是否可以成功重定向到Portal认证页面。-如果测试成功，当用户后期接入互联网时，可以通过AC指向NAT服务器的方式来解析域名，实现Portal重定向。通过上述配置，终端设备可以在未接入互联网的情况下成功重定向到Portal认证页面，完成认证过程。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/198933",
+        "备注": ""
+    },
+    {
+        "序号": 1233,
+        "问题现象": "客户反馈在有线业务高峰期间出现丢包现象，通过重启本体设备WT1020后业务恢复正常，但两周后该现象再次复现。",
+        "问题描述": "1.链路问题排查：通过流量统计确认丢包发生在WT1020设备上。2.CPU及内存状态：在丢包期间，发现某个转发进程的CPU使用率激增，但业务流量与未丢包设备相差不大。3.转发机制：本体设备WT1020使用CPU软件转发，但只按照三元组（源MAC、源IP、端口号）进行匹配分流。由于有线流量全部走PPPoE认证，来自BRAS设备的有线流量同源，这可能导致单一转发进程的CPU使用率极高。4.临时版本升级：开发提供了一个五元组转发的临时版本，升级个别设备观察两周后，发现所有转发进程的CPU使用率都较高，但丢包现象有所缓解。5.数据包分析：在学生PC上抓包发现，抵达PC的报文中有很多不属于自己的MAC地址，表明设备存在洪泛转发问题。进一步检查本体设备的MAC地址表项，发现MAC地址学习不全。6.级联问题：问题本体设备上行口级联了普通AP，而该型号设备不允许级联。当STA（终端设备）从普通AP漫游到分体AP时，本体设备的MAC地址表项更新不及时，导致老的表项资源无法释放，最终MAC表项占满，新的MAC地址无法学习，从而进行未知单播转发，导致丢包。",
+        "结论": "1.MAC地址学习不全：本体设备WT1020在级联普通AP的情况下，存在MAC地址学习不全的问题，导致大量未知单播帧被洪泛转发，消耗了CPU资源，从而引发丢包。2.软件Bug：设备在STA漫游过程中，MAC地址表项更新存在Bug，老的表项资源无法及时释放，随着时间积累，MAC表项占满，新的MAC地址无法学习，进一步加剧了丢包问题。",
+        "解决办法": "1.修改级联组网：将级联普通AP的接口配置为端口隔离，避免STA漫游过程中MAC地址表项更新不及时的问题。2.禁止级联普通AP：根据设备的使用规范，本体WT1020设备不允许级联普通AP，建议现场移除级联的普通AP，改为直接连接或使用支持级联的设备。3.软件升级：联系开发团队获取最新版本的软件升级，修复STA漫游过程中MAC地址表项更新的Bug，提高设备的稳定性和性能。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/22781",
+        "备注": ""
+    },
+    {
+        "序号": 1234,
+        "问题现象": "绿洲微信连WiFi功能在与微信公众号对接后，无法导入门店信息。",
+        "问题描述": "在绿洲平台选择微信公众号时，系统无法显示对应的门店信息。经排查，发现微信平台为了加强安全性，新增了“获取access_token”接口的IP白名单保护功能。如果之前在微信公众号平台的IP白名单中增加了其他地址，导致绿洲平台的IP地址未被包含在内，从而无法正常导入门店信息。",
+        "结论": "微信公众号平台的IP白名单保护功能限制了绿洲平台的访问权限，使得绿洲无法获取微信公众号中的门店信息，进而导致无法导入门店。",
+        "解决办法": "1.登录微信公众平台：进入微信公众平台的管理后台。2.添加IP白名单：在“基本配置–IP白名单”中进行配置。3.配置绿洲平台IP：将绿洲平台的三个IP地址添加到白名单中，具体地址为：139.217.7.53，139.217.17.204，139.219.0.33。4.注意事项：此白名单功能是2017年5月才开通的，因此之前没有配置过的客户不受影响。如果客户后来增加了其他白名单地址，需确保将绿洲的三个IP地址也添加进去。希望以上总结对您有所帮助。如果您有任何建议或需要进一步的帮助，请随时反馈。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/18038",
+        "备注": ""
+    },
+    {
+        "序号": 1235,
+        "问题现象": "两台V5版本的接入点（AP）在连接至V7版本的无线控制器（AC）上时无法注册上线，且在尝试通过手动导入V7版本（.ipe文件）进行升级时，一台AP升级成功，而另一台AP始终提示“Somethingwrongwiththefile”，无法完成升级。",
+        "问题描述": "经检查，成功升级的AP的Bootware版本为“Version7.07”，这是V7的Bootware版本；而升级失败的AP的Bootware版本为“Version1.15”，这是V5的Bootware版本。问题根源在于V5的Bootware无法识别和处理V7的.ipe版本文件，导致升级失败。",
+        "结论": "V5版本的AP需要先将其Bootware升级到V7版本，才能正确识别并处理V7的.ipe版本文件，从而完成软件版本的升级。",
+        "解决办法": "1.格式化AP的Flash存储：-进入V5AP的Bootware菜单，按Ctrl+F选择格式化Flash存储，确认格式化操作。-提示：“Warning:Allfilesonflashwillbelost!Areyousuretoformat?[Y/N]”，输入Y并按Enter键，等待格式化完成。2.更新Bootware版本：-进入V5AP的Bootware菜单，选择“EnterEthernetSubMenu”。-设置TFTP参数，包括服务器IP地址、本地IP地址等。-选择“DownloadApplicationProgramToSDRAMAndRun”（选项1），输入TFTP服务器上的wa4300_update.bin文件路径，下载并运行文件。-系统提示“ExtendBootWareVersionisnotequal,updating?[Y/N]”，输入Y并按Enter键，等待Bootware更新完成。3.再次格式化AP的Flash存储：-重启AP，进入新的Bootware菜单。-重复第一步的格式化操作，确保Flash存储被彻底清理。4.导入V7版本的.ipe文件：-进入新的Bootware菜单，选择“EnterEthernetSubMenu”。-设置TFTP参数，包括服务器IP地址、本地IP地址等。-选择“UpdateMainImageFile”（选项2），输入TFTP服务器上的wa4300.ipe文件路径，下载并更新AP的主软件版本。-等待升级过程完成，系统会自动解压缩并保存文件。5.重启AP，验证版本：-重启AP，使用命令`<H3C>displayversion`检查AP的软件版本，确认已成功升级至V7版本。通过以上步骤，V5版本的AP可以顺利升级到V7版本，从而解决无法在V7AC上注册上线的问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/22199",
+        "备注": ""
+    },
+    {
+        "序号": 1236,
+        "问题现象": "多个终端在连接WiFi后会立刻自动下线，此现象随机出现。",
+        "问题描述": "通过查看终端的下线记录，发现下线原因为AC（接入控制器）检测到IP地址冲突。具体下线记录如下：时间：02-2115:24:52MAC地址：c27f-5fcd-6d17AP名称：AP11/2SSID：test状态：Offline原因：5111（IP地址冲突检测）时间：02-1915:53:13MAC地址：f238-32ef-b4a2AP名称：AP11/1SSID：test状态：Offline原因：5111（IP地址冲突检测）进一步查看IP地址冲突的新旧客户端统计信息，发现确实存在IP地址与MAC地址变化的情况：IP地址：192.168.1.1新MAC地址/APID：a4c1-5b79-fa5b/11旧MAC地址/APID：111-e121-ff00/2时间：03-2210:00:00IP地址：192.168.1.1新MAC地址/APID：2d3-c5b7-a4b5/20旧MAC地址/APID：00d-88f8-0577/1时间：03-2210:01:00",
+        "结论": "AC检测到IP地址冲突，导致终端设备在连接WiFi后立即被强制下线。这可能是由于多个无线客户端在同一网络中使用了相同的IP地址，而AC的IP地址冲突检测功能默认是开启的。",
+        "解决办法": "1.关闭IP地址冲突检测功能：-在分层AC组网中，如果不对用户进行Poa认证、802.1X认证或MAC地址认证，并且没有计费需求，可以在CentralAC上关闭IP地址冲突检测功能。-命令：`undowlanclientip-conflict-detectionenable`2.配置DHCP服务器：-确保DHCP服务器配置正确，避免分配相同的IP地址给不同的无线客户端。-检查DHCP服务器的地址池设置，确保地址池足够大且没有重复。3.检查终端设备：-确认终端设备是否正确获取IP地址，避免手动设置静态IP地址导致冲突。-检查终端设备的网络配置，确保它们正确连接到DHCP服务器。4.监控和日志：-定期监控网络日志，及时发现和处理IP地址冲突问题。-使用网络管理工具或设备的内部诊断功能来进一步分析和定位问题。通过以上方法，可以有效解决多个终端因IP地址冲突导致的自动下线问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/224258",
+        "备注": ""
+    },
+    {
+        "序号": 1237,
+        "问题现象": "现场使用WX5540H配合第三方深澜服务器进行Portal认证，并尝试对Portal用户下发26号私有属性携带的限速属性时，发现限速不生效。",
+        "问题描述": "1.初始问题：服务器下发的26号私有属性携带的是华为的参数，而WX5540H不支持华为的Vendor-ID（2011），只支持H3C的Vendor-ID（25506）。2.中间问题：即使修改了Vendor-ID为25506，但VSA（Vendor-SpecificAttributes）里的属性值为空，导致限速属性无法下发。3.无感知认证问题：在通过Portal+Mac地址认证实现无感知认证的情况下，用户限速属性依然无法正常下发。通过命令`displaymac-authenticationconnection`查看Mac地址认证用户的连接表项信息，发现没有car（CommitedAccessRate）的属性。",
+        "结论": "1.Vendor-ID问题：WX5540H设备仅支持H3C的Vendor-ID（25506），不支持华为的Vendor-ID（2011）。2.VSA属性值问题：VSA属性值不能为空，必须按照指定的格式和子类型填充限速属性。3.无感知认证问题：无感知认证通过Portal+Mac地址认证实现时，限速属性的下发与设备版本有关。R5228版本的设备不支持Mac地址认证用户的car属性下发，需要升级到C54XX版本。",
+        "解决办法": "1.Vendor-ID调整：-服务器下发26号私有属性时，必须使用H3C的Vendor-ID（25506），不能使用华为的Vendor-ID（2011）。-确保不将H3C的Vendor-ID（25506）和华为的Vendor-ID（2011）同时下发。2.VSA属性值填充：-按照以下格式和子类型填充VSA属性值：-属性名|属性数据|功能描述|编号|类型-Input-Peak-Rate|integer|用户接入到NAS的峰值速率，以bps为单位|1|integer-Input-Average-Rate|integer|用户接入到NAS的平均速率，以bps为单位|2|integer-Input-Basic-Rate|integer|用户接入到NAS的基本速率，以bps为单位|3|integer-Output-Peak-Rate|integer|从NAS到用户的峰值速率，以bps为单位|4|integer-Output-Average-Rate|integer|从NAS到用户的平均速率，以bps为单位|5|integer-Output-Basic-Rate|integer|从NAS到用户的基本速率，以bps为单位|6|integer3.无感知认证方式确认：-确认无感知认证是通过`portalmac-trigger`还是`portal+Mac地址认证`实现。-`portalmac-trigger`是给Portal用户下发限速属性，而`portal+Mac地址认证`是给Mac用户下发限速属性。4.设备版本升级：-如果使用的是Mac地址认证实现无感知认证，需要将设备版本升级到C54XX系列版本，以便支持Mac地址认证用户的car属性下发。现场设备从R5228版本升级到C54XX版本后，问题得以解决。附加建议在进行设备配置和属性下发时，务必参考设备的最新版本手册，确保所有配置符合设备的要求。在遇到类似问题时，可以通过抓包和查看设备日志来进一步排查问题，确保属性下发的格式和内容正确无误。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/94982",
+        "备注": ""
+    },
+    {
+        "序号": 1238,
+        "问题现象": "某局点组网中，新增的WAP712H无线接入点（AP）无法自动注册到特定的WAC380-120无线接入控制器（AC），但手动注册可以正常上线。",
+        "问题描述": "1.组网及说明：现场已有WAP712HAP在线正常运行，新增的WAP712HAP无法自动注册到现有的WAC380-120AC。2.配置检查：自动AP注册及固化功能已开启，且AC的License数量有剩余，总支持AP数量为240，现有连接AP数量为127，剩余APLicense数量为4。3.调试信息分析：-AC调试信息：显示新增AP向AC发送了discoveryrequest，AC也回应了discoveryresponse，但后续AP一直重复发送discoveryrequest，无法完成注册。-AP调试信息：发现新增AP收到了两台不同AC的discoveryresponse报文，其中一台为TP-LINK路由器。",
+        "结论": "新增AP无法自动注册的原因是现场网络中存在一台TP-LINK路由器也给AP回应了discoveryresponse报文，导致AP无法确定正确的AC进行注册。手动注册时，AP注册报文的内容和优先级不同，因此可以正常上线。",
+        "解决办法": "1.排除TP-LINK路由器：将TP-LINK路由器从网络中移除，避免其干扰AP的自动注册过程。2.开启二次发现功能：在WAC380-120AC上开启二次发现功能，配置如下：```[H3C-wlan-global-configuration]control-addressenable```二次发现功能会在AC发送的Discoveryresponse报文中携带CAPWAPControlIPAddress消息元素，AP收到后将向该IP地址发送Discoveryrequest报文，从而实现AP的正确注册。通过以上措施，可以确保新增AP能够自动注册到特定的WAC380-120AC。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/40131",
+        "备注": ""
+    },
+    {
+        "序号": 1239,
+        "问题现象": "某局点在对WX5540H设备进行AC升级后，设备重启后无法进入Comware命令行界面，重启设备也无法恢复正常操作。",
+        "问题描述": "设备重启过程中出现以下报错信息：```BootWareValidating...PressCtrl+BtoaccessEXTENDED-BOOTWAREMENU...Loadingthemainimagefiles...Loadingfilecfa0:/system.bin.........................................Done.Imagefilecfa0:/system.binisinvalid!```该报错信息表明，设备在加载`system.bin`文件时发现该文件无效，可能是由于在执行boot-loader时解压缩出现问题，或者是文件在升级过程中被破坏。",
+        "结论": "设备无法进入Comware命令行的原因是`system.bin`文件损坏或无效，导致系统无法正常启动。",
+        "解决办法": "1.进入Bootware界面：在设备启动过程中，按`Ctrl+B`键进入EXTENDED-BOOTWAREMENU。2.删除system.bin文件：-在Bootware界面选择进入文件控制（选项4）。-删除`cfa0:/system.bin`文件。3.重新导入版本文件：-返回Bootware根目录菜单。-选择重新导入版本文件的选项。-上传新的、完好的版本文件到设备中。通过上述步骤，可以修复`system.bin`文件，使设备恢复正常启动并进入Comware命令行。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/191543",
+        "备注": ""
+    }
+]

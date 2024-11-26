@@ -1,0 +1,182 @@
+[
+    {
+        "序号": 660,
+        "问题现象": "客户反馈在某局点使用无线Portal进行认证的过程中，有时认证成功后却无法上网。受影响的终端数量较少，为极个别用户。",
+        "问题描述": "组网及说明：-无线AC型号为WX3540H，旁挂在核心交换机S5560X-EI上。-无线用户的DHCP服务器配置在核心交换机上。-核心交换机的DHCP地址租约设置为1小时，而无线AC的闲置切断时间设置为30分钟。具体问题：-通过查看核心交换机和无线AC的配置，发现DHCP地址租约时间与闲置切断时间不匹配。-认证后不能上网的Portal用户在线的IP地址对应的MAC地址不是客户端的真实MAC地址。-AC在终端接入WiFi后发起MAC无感知查询，查询结果失败，导致服务器要求AC进行Portal认证，发送req_auth报文。-AC在处理REQ_AUTH报文时，发现无法获取SSID和APMAC地址，导致认证失败。",
+        "结论": "根本原因：-无线AC的IPCIM（存储无线客户端IP和MAC地址关系的容器）在极小概率下会出现反查失败的情况，导致IP和MAC地址绑定关系混乱。-该问题是由于IPCIM多次重复学习导致表项混乱，属于已知问题。",
+        "解决办法": "1.等待新版本更新：-D016SP24之后的版本已经解决了该问题，建议客户等待正式版本发布后进行升级。2.重启AC：-由于IP地址循环使用且问题发生概率极低，建议重启AC以清理IPCIM表项，观察问题是否得到改善。目前该AC已经运行20多周未重启。3.延长DHCP租约时长：-建议将核心交换机的DHCP租约时长从2小时延长到24小时，以减少IP地址的频繁变动。-如果终端客户流动性较大，可以适当增加DHCP的网段范围，以减少IP地址的重复使用。总结该问题主要由无线AC的IPCIM表项混乱引起，建议客户采取上述措施进行观察和处理。由于影响范围较小，可以先采用重启AC或延长DHCP租约时长的方法来改善用户体验，等待新版本发布后再进行升级以彻底解决问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/36325",
+        "备注": ""
+    },
+    {
+        "序号": 661,
+        "问题现象": "在本地转发模式下，多个局点为了简化配置，直接在下发的map文件中配置`permitvlanall`，导致上行口放通了过多的VLAN，使得有线侧其他VLAN的流量通过AP传输，影响了网络性能。",
+        "问题描述": "在本地转发模式的网络架构中，AC（无线控制器）旁挂在交换机上，AP（接入点）通过交换机与AC连接。配置`permitvlanall`虽然简化了管理，但会放通所有VLAN，包括不必要的VLAN流量，这可能对AP的性能和稳定性造成负面影响。",
+        "结论": "在本地转发模式下，应根据实际需求精确配置AP的VLAN放通，避免放通不必要的VLAN，以减少对网络性能的影响。如果需要修改已下发的map文件，可以通过特定的配置操作实现平滑更新，避免重启AP导致的业务中断。",
+        "解决办法": "1.修改map文件中的VLAN配置：-直接修改map文件中的VLAN配置（例如将`permitvlanall`改为`permitvlan10`）。-重新下发新的map文件，并在AC的AP视图下指定新配置文件。-注意：如果旧map文件中没有`save`命令，配置会直接更新；如果有`save`命令，配置不会更新。2.使用undo命令行：-在map文件中加入`undo`命令行，例如：```plaintextundoporttrunkpermitvlan2to9undoporttrunkpermitvlan11to4094```-重新下发新的map文件并在AC的AP视图下指定新配置文件。-配置会立即更新，且无需重启AP。3.修改接口类型：-将map文件中的trunk口临时修改为access口，不需配置放通其他VLAN。-再将access口改回trunk口，并配置放通所需的VLAN（例如`permitvlan10`）。-重新下发新的map文件并在AC的AP视图下指定新配置文件。-配置会立即更新，且接口不会down，CAPWAP隧道不会断开，业务不中断。4.处理旧map文件中的save命令：-如果旧map文件中包含`save`命令，需要在AP上执行`resetsaved-configuration`后重启AP，以更新配置。-为了保证业务不中断，可以在map文件中加入`undo`命令行，并重新下发配置文件，这样AP无需重启即可更新配置。总结为了在本地转发模式下避免不必要的VLAN流量对AP性能的影响，应精确配置VLAN放通。通过在map文件中加入`undo`命令行或临时修改接口类型，可以实现平滑的配置更新，避免业务中断。如果旧配置文件中包含`save`命令，需要额外处理以确保配置更新生效。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/130632",
+        "备注": ""
+    },
+    {
+        "序号": 662,
+        "问题现象": "在使用和维护H3CFatAP产品过程中，可能会遇到设备安装、调试、配置不规范，导致无线网络性能不佳、客户端无法正常接入、设备稳定性差等问题。",
+        "问题描述": "1.设备验货与安装：设备开箱验货完成后，未按照规范进行安装和基本调试。2.设备初始化配置：设备初始化配置不完整，未能验证设备状态是否正常。3.设备版本：设备未升级到最新版本，可能导致兼容性问题或功能缺失。4.安装环境：设备安装环境不达标，包括有线网络质量、无线干扰源等，影响无线网络的稳定性和性能。5.线路连接：线路连接不符合设计要求，线路质量差或走线方式不当，导致信号传输问题。6.无线接入配置：无线基本接入功能配置不正确，客户端无法正常接入网络。7.信号测试：未对已部署的接入点覆盖区域进行信号测试，信号强度和覆盖范围不满足业务需求。8.网络配置：未按照设计的网络建设方案进行完整性配置，功能项实现测试不充分。",
+        "结论": "H3CFatAP产品的安装、调试和维护需要严格按照规范进行，确保设备的稳定性和性能。忽视任何一个步骤都可能导致无线网络性能下降、客户端接入困难等问题。",
+        "解决办法": "1.设备开箱验货：完成设备开箱验货后，立即进行设备的安装和基本调试，确保设备无损坏。2.设备初始化配置：进行设备初始化配置，验证设备状态是否正常，包括设备的硬件和软件。3.设备升级：协调准备设备安装条件及环境，确保设备已升级到目前最新版本。4.规范安装：依据工程设计方案进行设备安装，无论是独立安装还是室内分布式系统，都要严格按照规范要求进行。5.线路连接：按照设计的网络拓扑进行线路连接，确保线路质量和走线方式符合要求。6.无线接入配置：配置无线基本接入功能，测试客户端是否可以正常接入网络。7.信号测试：针对已经部署的接入点覆盖区域进行信号测试，确保信号强度和覆盖范围满足业务需求。8.完整性配置：根据设计的网络建设方案进行完整性配置，并进行功能项实现测试，确保所有功能正常运行。9.维护注意事项：-接地：保证设备按照要求进行可靠接地。-防静电：维护人员在操作过程中做好防静电措施。-减少干扰：尽量减少无线网络运行周围的无线干扰源。-有线网络：保证有线网络健康，以免影响无线网络的稳定性。-室外环境：在室外特殊环境下，注意工程规范性和安全性要求。通过以上步骤，可以确保H3CFatAP产品在使用和维护过程中达到最佳性能和稳定性。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/88085",
+        "备注": ""
+    },
+    {
+        "序号": 663,
+        "问题现象": "某局点中，3台同型号同版本的AC（接入控制器）中有一台AC上的970多个AP无法通过SNMP服务器读取接口流量信息，而其他两台AC上的AP流量信息读取正常。",
+        "问题描述": "1.设备配置：三台AC均注册了大约2000台AP，且SNMP配置相同。2.故障现象：在一台AC上，从某个特定AP的MAC地址开始，后续所有AP的流量信息都无法通过SNMP服务器读取。3.初步排查：检查AC上的SNMP配置未发现异常，重启SNMP进程后问题依旧。4.进一步分析：通过多次读取SNMP数据发现，读取失败的起点始终是同一台AP的MAC地址。登录这台AP后，发现其工作模式为Cloud模式，尽管在AC上显示的AP基本信息与普通FitAP无异。",
+        "结论": "问题的原因是该AC上存在一个工作模式为Cloud模式的AP，尽管它能在AC上正常注册并显示基本信息，但Cloud模式的AP会导致SNMP服务器在读取其后的AP流量数据时出现异常。",
+        "解决办法": "1.切换AP模式：将工作模式为Cloud模式的AP切换为Fit模式。2.验证效果：切换后，SNMP服务器能够正常读取所有AP的接口流量信息。3.后续优化：优化AC上的AP工作模式查看方法，使其能够更直观地显示AP的工作模式，避免类似问题的再次发生。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/211629",
+        "备注": ""
+    },
+    {
+        "序号": 664,
+        "问题现象": "某局点使用WX3510H无线控制器实现微信连WiFi的业务需求时，客户端（手机）连上网络后显示配置有误。查看绿洲平台，发现显示无效的appid及appsecret，具体信息显示appid有误。",
+        "问题描述": "1.微信公众号认证：确认微信公众号是否为经过腾讯认证的公众号，个人申请的订阅号同样可以使用。2.门店审核：检查所申请的门店是否经过腾讯审核。3.公众号配置：检查公众号名称、APPID与微信端的配置是否一致。4.IP白名单：确认是否已将绿洲平台的IP地址添加到微信公众号的IP白名单中。5.门店、认证模板、页面模板、无线服务模板：确认微信平台上的门店、认证模板、页面模板、无线服务模板配置均无误。6.设备连接情况：查看微信端，发现已有客户端连接WiFi，但显示设备数为0。",
+        "结论": "经过排查，发现现场选择错了账号配置，导致客户端显示配置有误。此外，绿洲平台的更新不及时，导致旧的认证模板无法显示，需要重新登录账户以更新配置。",
+        "解决办法": "1.重新配置账号：-引导用户重新配置微信连WiFi，选择正确的微信账号。-确保微信连WiFi插件已开启，并且申请的门店已通过腾讯审核。2.更新绿洲平台：-退出绿洲平台账户，重新登录，以确保平台配置更新及时。-在重新配置过程中，如果需要删除旧的认证模板，确保平台已更新，旧的认证模板会显示出来。3.区分微信连WiFi和微信认证：-微信连WiFi认证：需要租户拥有微信公众号，个人申请的订阅号或服务号都可以使用。需开启微信连WiFi插件，并申请通过腾讯审核的门店。-微信公众号认证：需要租户拥有经过腾讯认证的服务号，且网页授权接口没有被占用。通过以上步骤，问题得以解决，客户端能够正常显示并使用微信连WiFi功能。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/22567",
+        "备注": ""
+    },
+    {
+        "序号": 665,
+        "问题现象": "在V7设备上，部分license丢失，导致无法找回授权码信息。",
+        "问题描述": "当V7设备的部分授权码（license）丢失时，需要重新导入激活文件。然而，此时授权码信息已经无法通过常规方式找回，给设备的正常使用带来了困扰。",
+        "结论": "为了找回或解绑已丢失的授权码，客户需要通过特定的申请流程，向H3C公司提交相关资料，以获得必要的支持和处理。",
+        "解决办法": "1.填写申请表：客户需要完整填写《license特殊申请表》，并由最终用户签字盖章，确保提供申请人的联系方式和姓名等必要信息。2.提交申请表：将填写完整的申请表扫描成电子件或拍照，然后发送至邮箱`service@h3c.com`。3.等待处理：相关工作人员将在三个工作日内协助客户找回或解绑授权码。4.获取申请表：如果客户没有《license特殊申请表》，可以通过拨打400客服热线，联系license中心客服获取。附加信息发表日期：2021-01-13反馈方式：客户可以对上述案例进行评价和建议反馈。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/136604",
+        "备注": ""
+    },
+    {
+        "序号": 666,
+        "问题现象": "某局点配置了最大接入用户数（例如max-count1）后，如果首先接入的是一个普通用户，其他用户（包括VIP用户）将无法再接入AP。",
+        "问题描述": "在某局点的网络环境中，AC（无线控制器）和AP（接入点）通过三层交换机（Switch）连接，三层交换机作为DHCP服务器为AP和无线客户端分配IP地址，无线网络采用集中式转发模式。当配置了最大接入用户数后，AP仅允许一个无线客户端接入。如果此时首先接入的是普通用户，其他用户（包括VIP用户）将无法再接入AP。",
+        "结论": "1.服务模板上配置最大接入用户数：如果在服务模板上配置了允许关联的最大客户端数目为1（`clientmax-count1`），则限制用户数的优先级更高，无论是普通用户还是VIP用户，都无法在已有普通用户接入的情况下再接入AP。2.射频上配置最大接入用户数：如果在射频上配置了允许关联的最大客户端数目为1（`clientmax-count1`），VIP用户的优先级比普通用户更高。当普通用户已接入AP后，VIP用户可以挤掉普通用户并成功接入AP，而普通用户则无法接入。",
+        "解决办法": "1.服务模板配置：-如果在服务模板上配置了最大接入用户数（`clientmax-count1`），则需要调整该配置以允许更多的用户接入，或者在特定情况下为VIP用户单独配置更高的优先级。-例如，可以将服务模板的最大接入用户数设置为2或更高，以确保VIP用户可以接入。2.射频配置：-如果在射频上配置了最大接入用户数（`clientmax-count1`），则可以保持该配置不变，因为VIP用户的优先级已经高于普通用户。-确保VIP用户的MAC地址已正确添加到VIP用户组中，以便在普通用户接入时，VIP用户可以优先接入并挤掉普通用户。3.调试和验证：-使用debug命令来监控普通用户和VIP用户的连接尝试，以便确认配置是否生效。-对于VIP用户，多次触发“客户端数超过限制”（`Thenumberofclientsexceededthelimit`）导致认证状态超时（`Authstatetimerexpired`）。-对于普通用户，收到“去认证或去关联请求”（`Receiveddeauthenticationordisassociationrequest`）后接入失败。通过以上方法，可以确保在限制最大接入用户数的情况下，VIP用户能够优先接入并正常使用无线网络。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/130633",
+        "备注": ""
+    },
+    {
+        "序号": 667,
+        "问题现象": "在某局点使用WX3520H设备配置了基于SSID的包过滤，但配置后依然能够访问未被允许的网段。",
+        "问题描述": "用户在同一个VLAN（VLANID:1007）上配置了多个SSID，并希望针对不同的SSID应用不同的ACL（访问控制列表）来控制访问内网的权限。具体配置了一个名为`service-template1`的服务模板，并绑定了SSID`lab`，在服务模板中调用了ACL`3000`，用于控制出站和入站流量。ACL`3000`的规则如下：`rule10permitipsource172.22.0.00.0.255.255destination172.x.x.1280.0.0.127``rule20permitipsource172.22.0.00.0.255.255destination172.x.x.10``rule1000denyip`然而，配置完成后，测试发现源地址为`172.x.x.4`的设备仍能够访问目的地址为`172.x.x.2`的网段，包过滤未生效。",
+        "结论": "问题的原因在于ACL配置仅在服务模板中进行了调用，而未在AP（接入点）上应用。由于所有用户都在同一个VLAN上，单纯在服务模板中调用ACL无法实现有效的包过滤。",
+        "解决办法": "1.在AP上应用ACL：需要将ACL的配置下发到AP上，可以通过MAP（管理接入点）文件来实现。2.增加必要的规则：如果ACL的最后一条规则为`denyip`，则需要额外增加两条规则，以确保终端设备能够正常上线并获取IP地址：-`rule500permitudpdestination-porteqbootps`-`rule501permitudpdestination-porteqbootpc`最终的ACL`3000`配置示例如下：```plaintextaclnumber3000rule10permitipsource172.22.0.00.0.255.255destination172.x.x.1280.0.0.127rule20permitipsource172.22.0.00.0.255.255destination172.x.x.10rule500permitudpdestination-porteqbootpsrule501permitudpdestination-porteqbootpcrule1000denyip```通过以上配置，确保ACL在AP上生效，并且终端设备能够正常获取IP地址。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/168639",
+        "备注": ""
+    },
+    {
+        "序号": 668,
+        "问题现象": "现场PC会不定时断网，尤其是在半夜到凌晨，手动重连后可恢复。客户端无法自动连接，且AC上有客户端上下线的日志记录。",
+        "问题描述": "Portal认证的服务器IMC显示客户端下线的原因是adminreset。通过在服务器侧抓包分析，发现设备在计费停止报文前发送了一个NTF_LOGOUT报文，原因是DHCPrelaysecuritydel，这表明AC上的DHCP表项老化导致终端被踢下线。所有掉线事件均发生在半夜，估计是因为电脑进入休眠状态，未能及时续约DHCP租约。",
+        "结论": "问题的原因是现场DHCP租约设置过短，导致电脑在夜间休眠时未能及时续约，从而被AC的DHCP表项老化机制踢下线。",
+        "解决办法": "将现场的DHCP租约时间从原来的较短时间修改为24小时，问题得到解决。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/133324",
+        "备注": ""
+    },
+    {
+        "序号": 669,
+        "问题现象": "某局点的胖AP（WAP722S）作为ClientAP连接瘦AP放出的无线信号时，客户反馈胖AP无法连接到瘦AP的无线信号。而用手机和电脑测试时，都能成功连接到该无线信号。",
+        "问题描述": "组网情况：胖AP（WAP722S）配置为ClientAP模式，尝试连接瘦AP放出的无线信号。配置检查：胖AP的配置如下：-`wlanservice-template1`-`clearssidH3C`-`service-templateenable`-`interfaceWLAN-Radio1/0/1`-`client-modeinterfaceWLAN-BSS32`-`authentication-methodwpa2-psk`-`cipher-suiteccmp`-`keycipher$c$3$rhoz0Nia1rHx83pIbJ1Oh/8OLGSlOfR6w8oNbFAV3V+EEA0J`-`client-modessidhuge`-`interfaceWLAN-Radio1/0/2`连接状态：胖AP的连接状态显示为`Disconnected`。-`displaywlanclient-moderadioStatus:Disconnected`调试信息：在无线控制器上开启调试后，未发现胖AP请求连接的报文。",
+        "结论": "胖AP（WAP722S）的ClientAP模式只能搜索到2.4G频段的信号，无法搜索到5G频段的信号。由于瘦AP仅开启了2.4G频段的无线信号，胖AP在5G射频下无法连接到瘦AP的无线信号。当将胖AP的ClientAP配置从5G射频（`WLAN-Radio1/0/1`）切换到2.4G射频（`WLAN-Radio1/0/2`）后，胖AP成功连接到瘦AP的无线信号。",
+        "解决办法": "1.检查射频频段：确认胖AP的ClientAP模式配置在哪个射频下，可以通过命令`channel?`查看当前射频支持的频段。2.开启瘦AP的5G信号：建议将瘦AP的2.4G和5G信号都开启，以便胖AP可以选择支持的频段进行连接。3.配置ClientAP功能：在配置胖AP的ClientAP功能时，先将`client-modeinterfaceWLAN-BSS32`配置上，然后通过命令`displaywlanclient-modessid`查看该射频能搜索到哪些信号。4.漫游配置：如果有漫游需求，建议配置漫游功能，默认情况下胖AP的漫游功能是不开启的。可以使用以下命令：-`interfaceWLAN-Radio1/0/2`-`client-moderoamslow`-`client-moderoamrssi-threshold45`-`gap15`通过上述步骤，可以有效解决胖AP作为ClientAP无法连接瘦AP无线信号的问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/34298",
+        "备注": ""
+    },
+    {
+        "序号": 670,
+        "问题现象": "使用苹果手机无法通过无线网络将屏幕投射到电视盒子，而使用安卓手机则可以正常投屏。",
+        "问题描述": "1.环境配置：-AP型号：WA6330-SSID：meetingssid1008-VLAN：464-客户端转发模式：本地转发-开启Portal认证2.测试过程：-手机和电视均连接同一SSID。-苹果手机可以ping通电视，但无法接收到电视的投屏服务。-安卓手机可以正常投屏。3.配置检查：-检查服务模板配置，确认没有使用加密，Portal认证正常。-检查下发的map文件，确认业务VLAN已放通。-发现AP配置中包含`rropanti-bmcdefault-actiondeny`和`rropanti-bmcnetworkipv4-and-ipv6-simpleenable`命令。",
+        "结论": "苹果手机投屏功能依赖于网络中的广播和组播报文，而AP配置中的`rropanti-bmcdefault-actiondeny`命令导致AP拒绝转发这些报文，从而影响了苹果手机的投屏功能。安卓手机可能使用了不同的投屏机制，不受此配置的影响。",
+        "解决办法": "1.修改AP配置：-取消`rropanti-bmcdefault-actiondeny`命令，允许AP转发网络中的广播和组播报文。-确保`rropanti-bmcnetworkipv4-and-ipv6-simpleenable`命令正确配置，以控制广播和组播报文的处理方式。2.命令示例：```plaintextwlanap-groupgroupdescriptionAPwlantunnel-preemptenablebackup-acipxxxxvlan1AP01AP02rropanti-bmcnetworkipv4-and-ipv6-simpleenablenorropanti-bmcdefault-actiondenyap-modelWA6630map-configurationflash:/map.txtradio1radioenablechannelband-width40service-template1vlan-group1radio2ratemandatory11ratesupported121824364854ratedisabled125.569radioenableservice-template1vlan-group1radio3service-template1gigabitethernet1smartrate-ethernet1```3.注意事项：-开启广播和组播报文控制功能后，AP会对特定报文进行特殊处理，如ARP广播转单播、DHCP广播请求丢弃等。-如果同时配置了`rropanti-bmcdefault-actiondeny`命令，其他基本广播和组播报文会被丢弃。-本功能仅支持软件转发，不支持硬件转发。通过以上配置修改，苹果手机可以正常投屏到电视盒子。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/218218",
+        "备注": ""
+    },
+    {
+        "序号": 671,
+        "问题现象": "用户无法打开Portal认证页面。",
+        "问题描述": "用户可以成功获取IP地址，但在尝试使用IE浏览器打开Portal认证页面时遇到问题。",
+        "结论": "根据初步预判和局方判断，可能的原因包括：1.用户无线网卡手工设置了IP地址，而不是自动获取。2.用户IE浏览器设置了代理服务器。3.用户IE浏览器设置了“受限站点”（这种可能性较小）。4.用户浏览器故障或其它设置问题。5.Portal认证服务器故障。",
+        "解决办法": "1.确保无线网卡设置为自动获取IP地址：-检查并确保无线网卡的IP地址设置为自动获取。2.检查并清除IE浏览器的代理服务器设置：-打开IE浏览器，进入“Internet选项”->“连接”->“局域网设置”，取消“使用代理服务器”选项。3.检查IE浏览器的“受限站点”设置：-打开IE浏览器，进入“Internet选项”->“安全”->“受限站点”，确保Portal认证页面的URL未被列入受限站点。4.恢复浏览器默认设置或重启PC：-尝试恢复IE浏览器的默认设置，或者重启计算机以解决可能的浏览器故障。5.尝试使用PPPoE拨号方式认证：-如果认证服务器允许，可以尝试使用PPPoE拨号方式认证。6.检查Portal认证服务器状态：-通过ping命令（例如：`ping61.180.1.4`）检查Portal认证服务器的状态，确保服务器正常运行。通过以上步骤，可以逐步排查并解决用户无法打开Portal认证页面的问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/88045",
+        "备注": ""
+    },
+    {
+        "序号": 672,
+        "问题现象": "：在某局点使用WX2580X设备（版本R5616）进行802.1x无线终端认证时，终端点击登录后长时间无反应，最终提示登录失败。",
+        "问题描述": "：1.设备：WX2580X2.版本：R56163.认证方式：802.1x4.服务器：第三方服务器5.终端：采用1x客户端登录6.问题表现：点击登录后，长时间无反应，最终提示登录失败。过程分析：1.检查AC配置，未发现任何问题。2.抓取AC与服务器之间的RADIUS报文，发现AC发送了request报文，服务器回复了challenge报文，但AC没有再发起请求。3.在AC上启用debugradius，发现存在错误提示：“TheresponsepackethasaninvalidResponseAuthenticatorvalue。”怀疑设备与服务器的RADIUS密钥不一致。4.多次确认后，发现密钥一致。5.通过第三方服务器排查组件，最终确认问题出在服务器侧。",
+        "结论": "：问题的根本原因是第三方服务器的RADIUS组件故障，导致AC接收到的RADIUS响应报文的ResponseAuthenticator值无效，从而无法完成802.1x认证过程。解决方法：在服务器侧进行修改，修复RADIUS组件故障。具体操作由第三方服务器管理员完成。问题在2023年12月4日得到解决。建议反馈：1.增加对第三方服务器RADIUS组件的健康检查，确保其正常运行。2.在AC上增加更详细的RADIUS报文日志，以便于快速定位问题。3.建议与第三方服务器提供商建立更紧密的沟通机制，以便在类似问题出现时能够快速响应和解决。希望以上总结对您有帮助。如果您有其他问题或需要进一步的信息，请随时告知。",
+        "解决办法": "",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/222721",
+        "备注": ""
+    },
+    {
+        "序号": 673,
+        "问题现象": "H3CWA1208E在采用PoE（通过网线供电）时，可能出现供电不稳定或无法正常工作的情况。",
+        "问题描述": "H3CWA1208E支持PoE供电方式，即通过网线实现设备的供电和数据传输。这种供电方式可以通过PoE交换机或PoE模块来实现。然而，在实际使用中，如果PoE供电端到AP受电端的距离过长、网线质量不佳或水晶头氧化，可能会导致供电不足或连接不稳定，从而影响设备的正常运行。",
+        "结论": "为了确保H3CWA1208E通过PoE供电时的稳定性和可靠性，建议遵循以下要求和限制：1.PoE供电端到AP受电端的距离不要超过90米。2.使用超五类（Cat5e）或更高标准的网线。3.确保水晶头的质量，避免氧化。",
+        "解决办法": "1.缩短距离：如果供电端到AP受电端的距离超过90米，建议使用更短的网线或将PoE供电设备靠近AP部署。2.使用高质量网线：确保使用超五类（Cat5e）或更高标准的网线，以提供足够的电力和数据传输能力。3.检查水晶头：定期检查网线水晶头的质量，确保没有氧化或损坏，必要时更换新的水晶头。以上措施可以有效提升H3CWA1208E通过PoE供电时的性能和稳定性。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/88065",
+        "备注": ""
+    },
+    {
+        "序号": 674,
+        "问题现象": "在某局点尝试为型号为WX2520X-LI的AC（无线控制器）安装AP（无线接入点）授权时，设备上出现错误提示：“Theactivationfilecannotbeparsednow”。",
+        "问题描述": "1.超规格安装：设备已安装的AP正式授权数量达到其最大支持的AP数量（例如64个），此时再尝试安装新的授权会导致报错，并伴有提示：“TheInstallingLicenseOverProduct'sMaxPermit!”。2.文件传输格式错误：通过FTP上传AK文件时未指定二进制传输模式，导致文件格式错误，从而引发解析失败的报错。",
+        "结论": "错误“Theactivationfilecannotbeparsednow”可能由以下两种情况引起：1.安装的AP授权数量超过设备的最大支持数量。2.AK文件在传输过程中格式错误，未使用二进制模式传输。",
+        "解决办法": "1.检查AP授权数量：-确认当前已安装的AP授权数量是否已达到设备的最大支持数量。-如果确实已达到最大值，无需再安装新的授权。2.检查文件传输格式：-如果通过FTP上传AK文件，确保在传输时选择了二进制模式（binarymode）。-也可以尝试使用TFTP工具上传AK文件，以避免格式问题。通过上述方法，可以有效解决“Theactivationfilecannotbeparsednow”这一错误。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/205198",
+        "备注": ""
+    },
+    {
+        "序号": 675,
+        "问题现象": "配置了无线服务模板下的包过滤策略后，终端设备连接无线网络后仍能够ping通不在规则中放通的IP地址。",
+        "问题描述": "在AC（无线控制器）上配置了无线服务模板，其中包含SSID\"lab\"和VLAN1007，并设置了ACL（访问控制列表）3000，用于控制数据包的进出方向。ACL3000的具体规则为：rule10：允许源IP地址为172.22.0.0/16，目的IP地址为172.20.40.128/25的数据包通过。rule1000：拒绝所有其他IP数据包。然而，配置完成后，终端设备仍然能够ping通不在rule10放通规则中的IP地址。",
+        "结论": "基于无线服务模板的包过滤策略需要将ACL策略配置在AP（接入点）上才能生效。即使在AC上配置了ACL规则，如果这些规则没有正确地应用到AP上，包过滤策略将不会生效。",
+        "解决办法": "1.配置ACL规则到AP上：不论使用的是集中转发模式还是本地转发模式，都需要通过MAP（管理接入点）文件将ACL规则下发到AP上。2.增加DHCP相关规则：如果ACL规则的最后一条为拒绝所有（rule1000denyip），则需要额外增加两条规则：-rule500：允许UDP目的端口为67（Bootps）的数据包通过。-rule501：允许UDP目的端口为68（Bootpc）的数据包通过。这是因为终端设备上线时需要通过DHCP协议获取IP地址，而DHCP协议使用的是UDP67和68端口。如果不放通这些端口，终端设备将无法获取IP地址，导致无法正常上网。通过上述配置，可以确保无线服务模板下的包过滤策略在AP上生效，并且终端设备能够正常获取IP地址。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/169170",
+        "备注": ""
+    },
+    {
+        "序号": 676,
+        "问题现象": "终端连接WiFi后弹出的认证页面正常显示，但用户在认证页面上输入用户名和密码后认证失败，终端上认证页面报错。",
+        "问题描述": "1.组网及说明：-AC旁挂核心，本地转发。-认证服务器为主备模式，地址分别为10.1.6.72和10.1.6.73。-为了方便配置，设计为虚拟化后采用统一的地址10.1.6.74与外界通信。-AC上配置的radiusscheme、portalweb-server和portalserver都使用10.1.6.74地址进行对接。2.初步分析：-通过AC和服务器之间抓包发现，服务器使用10.1.6.72地址向AC发送了reqauth报文，但AC未收到accessrequest（RADIUS）报文，也未收到AC发送给服务器的ackauth报文。-AC上debug信息显示，由于AC配置的是10.1.6.74地址，将源地址为10.1.6.72的报文识别为无效报文并直接丢弃。3.进一步分析：-将AC上的portalserver和portalweb-server、radiusscheme下的地址改为10.1.6.72。-再次抓包发现，AC收到10.1.6.72发来的req_auth报文后，向服务器发起了accessrequest（RADIUS）认证请求，但未收到服务器的RADIUS应答报文。-服务器侧日志显示，服务器的RADIUS模块按照10.1.6.74地址与外界交互认证报文，导致AC的请求未被正确识别和响应。",
+        "结论": "问题的根本原因是虚拟化服务器在实际运行中并未完全按照设计的统一地址10.1.6.74与AC进行通信，而是使用了主备地址10.1.6.72和10.1.6.73。AC配置的统一地址10.1.6.74无法正确识别和处理来自10.1.6.72的认证报文，导致认证失败。",
+        "解决办法": "1.重新部署虚拟化服务器：-现场决定将虚拟化的服务器重新使用主备模式部署，并分别使用10.1.6.72和10.1.6.73的主备地址与AC及其他接入设备进行portal认证对接。2.AC配置调整：-RADIUS方案配置：```plaintext#radiusschemeportalprimaryauthentication10.1.6.72primaryaccounting10.1.6.72secondaryauthentication10.1.6.73secondaryaccounting10.1.6.73keyauthenticationcipher$c$3$IFFvw9uzrY2iITN2kc4MkGbVUKggZO5Bjg==keyaccountingcipher$c$3$dAwxH6y9twc3OLYCQU1LhhV11DtUfCKd7g==user-name-formatwithout-domainnas-ipX.X.X.X```-动态授权服务器配置：```plaintext#radiusdynamic-authorserverclientip10.1.6.72keycipher$c$3$FSEMTIq5J/hpeilD+glsezD63pzzecqM4Q==clientip10.1.6.73keycipher$c$3$wVL+0kiodpYq9MjLhBx+dfuheB0nmrptDA==```-域配置：```plaintext#domainportalauthorization-attributeidle-cut1010240authenticationportalradius-schemeportalauthorizationportalradius-schemeportalaccountingportalradius-schemeportal```-PortalWeb服务器配置：```plaintext#portalweb-serverportalurlhttp://10.1.6.72:80/portalserver-detectinterval20log-trapserver-detecturlhttp://10.1.6.72:80/portalurl-parameternasipvalueX.X.X.Xurl-parameterwlanacnamevalueACurl-parameterwlanuseripsource-address```-PortalWeb备份服务器配置：```plaintext#portalweb-serverportal_backupurlhttp://10.1.6.73:80/portalserver-detectinterval20log-trapserver-detecturlhttp://10.1.6.73:80/portalurl-parameternasipvalueX.X.X.Xurl-parameterwlanacnamevalueACurl-parameterwlanuseripsource-address```-Portal服务器配置：```plaintext#portalserverportalip10.1.6.72keycipher$c$3$s1xfsy28vDTowpGtlNgmOdik0kKDjlhfhQ==server-detectlog```-Portal备份服务器配置：```plaintext#portalserverportal_backupip10.1.6.73keycipher$c$3$HNCyD85qNPMzTSQEzqZopxFaXzXpOvM1JA==server-detectlog```-PortalMAC触发服务器配置：```plaintext#portalmac-triggerserverportalip10.1.6.72```-PortalMAC触发备份服务器配置：```plaintext#portalmac-triggerserverportal_backupip10.1.6.73```-WLAN服务模板配置：```plaintext#wlanservice-templateportalssidtestclientforwarding-locationapportalenablemethoddirectportaldomainportalportalbas-ipX.X.X.Xportalapplyweb-serverportalportalapplyweb-serverportal_backupsecondaryservice-templateenable```通过以上配置调整，AC成功与主备认证服务器对接，认证问题得以解决。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/223719",
+        "备注": ""
+    },
+    {
+        "序号": 677,
+        "问题现象": "在某运营商局点的V5平台中，无线AC插卡负责终端在vlan282内的本地转发及802.1x认证。尽管终端实际能够正常上网，但在radius服务器上审计时发现终端的IP地址显示异常，与终端实际IP地址不一致。",
+        "问题描述": "终端配置：终端在vlan282内进行本地转发，并通过802.1x认证上网。认证配置：AC设备上开启了802.1x认证的计费延迟功能，使得AC在发送给radius的计费更新报文中携带终端的IP地址，以便于radius服务器进行审计。实际IP地址：终端的实际IP地址为10.229.75.59。radius审计IP地址：radius服务器上审计到的终端IP地址也为10.229.75.59，但这个IP地址实际上是vlan3302内的地址。AC日志分析：从AC的debug日志中可以看到，计费更新报文中携带的IP地址与radius日志显示的一致，均为10.229.75.59。AC客户端信息：AC上通过`displaywlanclient`命令显示的终端信息也显示了不一致的IP地址10.229.75.59，且这个IP地址与vlan3302内的IP地址相同。背景信息：终端在vlan3302内先进行了Portal认证测试，vlan3302是集中转发模式，设备上开启了arp-snooping功能，因此AC设备上学到的终端IP地址是通过arp-snooping学习到的。",
+        "结论": "IP地址学习机制：AC设备上学习终端IP地址的机制存在优先级问题，arp-snooping学习到的表项优先级高于wlanclientlearn-ipaddrenable学习到的表项。IP地址不一致原因：终端在vlan3302内进行Portal认证测试时，AC设备通过arp-snooping功能学习到了终端的IP地址。当终端切换到vlan282内进行802.1x认证时，虽然wlanclientlearn-ipaddrenable功能也学习到了终端的真实IP地址，但由于arp-snooping表项的优先级更高，AC设备仍然使用了先前学习到的IP地址。影响：虽然终端可以正常上网，但radius服务器上的审计信息显示了错误的IP地址，影响了审计的准确性。",
+        "解决办法": "1.关闭arp-snooping功能：考虑到现场同时使用本地转发和集中转发，建议关闭arp-snooping功能，仅通过wlanclientlearn-ipaddrenable功能学习终端的IP地址。2.清除ARP表项：在终端进行不同认证方式的测试前，建议先清除AC设备上的ARP表项，防止之前学习到的IP地址影响当前的认证和审计。3.配置优化：确保802.1x认证的计费延迟功能正确开启，使得AC设备在发送计费更新报文时能够携带终端的真实IP地址。通过上述措施，可以确保AC设备在不同认证方式下学习到的终端IP地址是准确的，从而提高radius服务器审计的准确性。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/15601",
+        "备注": ""
+    },
+    {
+        "序号": 678,
+        "问题现象": "某局点购买了一台WX3024H-L无线控制器和WA6330-LI无线接入点，配置了本地转发功能后，发现AP下的无线终端无法正常从AC上获取IP地址。",
+        "问题描述": "1.配置检查：现场无线服务模板配置正常，且AC已放通业务VLAN200。2.手动配置测试：将无线终端手动配置同网段的IP地址，测试发现无法与DHCP网关通信。3.链路测试：AP与终端之间的通信正常，但AP与AC之间的通信不通。4.接口状态检查：发现AP的G1/0/1接口状态为DOWN，而SGE1/0/1接口状态为UP。",
+        "结论": "通过检查发现，AP的上行接口配置有误。AP的上行口应该是SGE1/0/1（对应AC配置中的smartrate-ethernet1接口），而现场下发的MAP文件中误将上行口配置为GE1/0/1，导致AP与AC之间的通信不通，进而影响了无线终端获取IP地址。",
+        "解决办法": "1.修改MAP文件：将下发给AP的MAP文件中的上行口配置从GE1/0/1修改为SGE1/0/1。2.配置示例：```plaintextsystem-viewvlan200quitinterfaceSmartrate-Ethernet1/0/1portlink-typetrunkporttrunkpermitvlan200```3.重新下发配置：保存并重新下发修改后的MAP文件至AP。4.验证：验证AP与AC之间的通信是否恢复正常，无线终端是否可以成功获取IP地址。通过上述步骤，问题得以解决，无线终端能够正常获取IP地址并访问网络。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/149263",
+        "备注": ""
+    },
+    {
+        "序号": 679,
+        "问题现象": "在某局点智慧园区的LORA方案中，烟感、电表等终端设备偶尔会出现离线的情况。",
+        "问题描述": "绿洲平台上的LORA网关保持正常在线状态，终端设备也能够正常上电，大多数时间终端设备是在线的，但偶尔会出现离线现象。通过初步排查，基本排除了链路问题或设备故障的可能性。",
+        "结论": "问题的原因在于绿洲平台的物联网配置中终端的链路保活周期被错误填写。此外，根据H3C智慧园区（LORA）解决方案的官方配置指导，终端设备仅需在应用侧添加，无需在场所侧重复添加。这种错误的配置导致了终端设备偶尔离线的问题。",
+        "解决办法": "依据H3C智慧园区（LORA）解决方案的配置指导进行了调整，具体包括：1.修正绿洲平台中终端的链路保活周期参数。2.在绿洲平台的应用侧添加终端设备，而非在场所侧。3.通过应用侧添加终端设备后，应用平台能更好地感知到设备状态，设备也会同步出现在场所的终端管理中，从而解决了偶尔离线的问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/102744",
+        "备注": ""
+    }
+]

@@ -1,0 +1,182 @@
+[
+    {
+        "序号": 1460,
+        "问题现象": "在使用Wireshark查看802.11报文时，需要快速过滤出特定类型的帧，以便更高效地进行网络分析。",
+        "问题描述": "Wireshark提供了多种过滤器语法，用于过滤不同类型的802.11帧。了解这些过滤器语法可以帮助用户更快捷地找到所需的报文，提高分析效率。但是，用户可能对这些过滤器语法不熟悉，导致在实际操作中难以快速应用。",
+        "结论": "通过掌握Wireshark中802.11帧的常见过滤器语法，用户可以更高效地过滤和查看特定类型的报文，从而更好地进行网络分析和故障排除。",
+        "解决办法": "以下是一些常用的Wireshark过滤器语法，用于过滤802.11帧的不同类型和子类型：管理帧(Managementframes):`wlan.fc.type==0`-关联请求(Associationrequest):`wlan.fc.type_subtype==0x00`-关联响应(Associationresponse):`wlan.fc.type_subtype==0x01`-重新关联请求(Reassociationrequest):`wlan.fc.type_subtype==0x02`-重新关联响应(Reassociationresponse):`wlan.fc.type_subtype==0x03`-探测请求(Proberequest):`wlan.fc.type_subtype==0x04`-探测响应(Proberesponse):`wlan.fc.type_subtype==0x05`-信标帧(Beacon):`wlan.fc.type_subtype==0x08`-断开关联(Disassociate):`wlan.fc.type_subtype==0x0A`-认证(Authentication):`wlan.fc.type_subtype==0x0B`-去认证(Deauthentication):`wlan.fc.type_subtype==0x0C`-动作帧(Actionframe):`wlan.fc.type_subtype==0x0D`控制帧(Controlframes):`wlan.fc.type==1`-块确认请求(BlockACKrequest):`wlan.fc.type_subtype==0x18`-块确认(BlockACK):`wlan.fc.type_subtype==0x19`-节能轮询(Powersavepoll):`wlan.fc.type_subtype==0x1A`-发送请求(Requesttosend):`wlan.fc.type_subtype==0x1B`-发送清除(Cleartosend):`wlan.fc.type_subtype==0x1C`-确认(ACK):`wlan.fc.type_subtype==0x1D`-无竞争期结束(Contentionfreeperiodend):`wlan.fc.type_subtype==0x1E`数据帧(Dataframes):`wlan.fc.type==2`-空数据帧(NULLdata):`wlan.fc.type_subtype==0x24`-QoS数据帧(QoSdata):`wlan.fc.type_subtype==0x28`-空QoS数据帧(NullQoSdata):`wlan.fc.type_subtype==0x2C`通过使用上述过滤器语法，用户可以更方便地在Wireshark中过滤出特定类型的802.11帧，从而提高网络分析的效率。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/102969",
+        "备注": ""
+    },
+    {
+        "序号": 1461,
+        "问题现象": "局点客户反馈无线体验较差，局点部分区域无线网络问题严重，影响了正常业务的运行。具体表现为PAD使用时严重卡顿，普通用户上网速度慢。",
+        "问题描述": "初步诊断结果显示2.4Ghz频段的空口利用率约为90%，而5Ghz频段的空口利用率仅为20%左右。进一步通过远程登录多台AP，进入2.4Ghz射频口下的隐藏模式查看空口利用率，发现多数AP的空口利用率在控忙（CtrlBusy）值上达到了80%以上，个别AP甚至超过了90%。这表明2.4Ghz频段的信道几乎始终处于繁忙状态，导致正常的数据交互报文因大量排队而出现重传或丢包现象。进一步分析发现，2.4Ghz频段的控制忙（CtlBusy）比例远大于发送忙（TxBusy）和接收忙（RxBusy）的比例之和，5Ghz频段的空口利用率则在正常范围内，属于典型的非WLAN无线干扰问题。",
+        "结论": "影响现场无线使用体验度的主要原因是现场无线环境恶劣，存在大量的非WLAN干扰源，特别是运营商的4G信号源。这些干扰源导致2.4Ghz频段的无线空口利用率过高，严重影响了无线业务的正常运行。通过频谱分析仪扫描环境无线电磁波强度，确认了4G频段对2.4Ghz频段的干扰，并通过加装滤波器和关闭临近运营商信号的实际测试，进一步验证了非WLAN干扰是问题的根本原因。",
+        "解决办法": "1.协调迁移运营商天线的位置，减少运营商信号对无线AP的干扰。2.在现有AP上加装滤波器，以过滤非WLAN频段的干扰。3.推荐使用工作频段在5Ghz的无线终端，因为5Ghz频段受干扰的可能性较低。4.考虑更换为抗干扰能力更强的新款AP，如硬件和软件技术更新后的产品，可以有效降低干扰的影响。本案例中使用的AP型号为WA2620-AGN，后续研发的AP在抗干扰性能上有所提升。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/4605",
+        "备注": ""
+    },
+    {
+        "序号": 1462,
+        "问题现象": "某局点的无线接入点（AP）在无线控制器（AC）从V5版本升级到V7版本后，无法正常注册并上线。",
+        "问题描述": "1.初步排查：通过console线登录AP，发现AP的版本仍然是旧的V5版本，且vlan-interface1获取到了IP地址，但该IP地址并非DHCP分配的AP管理网段地址。2.具体配置：AP的vlan-interface1配置了固定IP地址172.168.1.100/24。3.客户确认：在V5环境中，AP使用固定IP地址注册。AC升级到V7后，管理地址网段发生了变化，导致AP无法发现新的AC，从而无法上线。",
+        "结论": "AC从V5升级到V7后，管理地址网段的变更导致AP无法通过其固定IP地址找到新的AC，从而无法注册上线。",
+        "解决办法": "1.删除AP的手工配置地址：建议客户将现场AP的手工配置的固定IP地址删除，使AP通过DHCP自动获取新的管理网段地址。2.修改AP的管理网段：或者将AP的管理网段修改为与原来的地址段一致，以确保AP能够继续使用固定IP地址注册上线。3.注意事项：在V5到V7的升级过程中，如果使用`save`命令保存了配置，AP的配置不会丢失。格式化AP的操作只是为了确保AP有足够的存储空间下载新的版本，但并非必要步骤。作者修订该案例在2019-06-12进行了修订，以提供更详细的分析和解决建议。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/61528",
+        "备注": ""
+    },
+    {
+        "序号": 1463,
+        "问题现象": "某大学办公楼内的无线信号较弱，几乎无法使用。",
+        "问题描述": "1.建筑结构复杂：办公楼内部结构呈“回”字型，中间是一个大天井，四周是房间，这种结构导致无线信号的传播路径复杂。2.AP安装位置不合理：AP安装位置靠近承重柱或承重墙，导致室内存在信号覆盖的盲区或弱区域。3.信号泄露和干扰：AP安装在走廊上，无线信号泄露到天井内，造成本楼层和上下楼层的AP之间相互干扰。",
+        "结论": "由于办公楼结构复杂和AP安装位置不合理，导致无线信号覆盖不均匀，信号强度弱，且存在严重的AP干扰问题。",
+        "解决办法": "1.天线入室：采用“天线入室”的方式进行覆盖，使用AP+功分器的部署方式，将天线部署在房间内。2.增强信号：将AP发射的无线信号引入到办公室内，增强终端与AP之间的信号交互，提高信号覆盖强度。3.减少干扰：利用房间之间的墙壁有效隔离无线信号，减少AP之间的信号可见度，降低AP之间的相互干扰。通过上述方法，可以在不改变AP位置的前提下，显著改善办公楼内的无线信号覆盖和减少干扰，提升无线网络的使用体验。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/1065",
+        "备注": ""
+    },
+    {
+        "序号": 1464,
+        "问题现象": "某局点无线用户无法成功建立远端802.1X认证连接。",
+        "问题描述": "现场按照官网提供的无线典型配置案例配置802.1X认证，但认证建立失败。通过收集debug信息，发现失败原因为“身份验证方法错误”。具体debug信息如下：```%Jan917:26:20:6492023AC1DOT1X/5/DOT1XWLANLOGINFAILURE:Username=guest,UserMAC=XXXX-XXXX-XXXX,BSSID=XXXX-XXXX-XXXX,SSID=JDH3CTest_Guest,APName=1,RadioID=1,VLANID=34;Auserfailed802.1Xauthentication.Reason:Authenticationmethoderror.```",
+        "结论": "现场配置中缺失了`[AC]dot1xauthentication-methodeap`命令，导致802.1X认证方式与官网典型配置不一致。在缺省配置下，设备启用EAP终结方式，并采用CHAP认证方法，而官网典型配置使用的是EAP-PEAP方式（即EAP中继方式）。",
+        "解决办法": "在设备上添加`[AC]dot1xauthentication-methodeap`命令，将802.1X认证方式更改为EAP中继方式。具体步骤如下：1.进入系统视图：`system-view`2.配置802.1X系统的认证方法：`dot1xauthentication-methodeap`添加上述命令后，远端802.1X认证成功建立。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/216707",
+        "备注": ""
+    },
+    {
+        "序号": 1465,
+        "问题现象": "部分网络管理员在升级接入点（AP）版本时遇到耗时较长的问题，尤其是在AP数量较多的网络中，因为每个AP在上线后都需要下载升级版本。",
+        "问题描述": "从ACR5444P03版本开始，支持AP使用版本预下载功能。此功能允许AP在在线状态下预先下载新版本，而不会影响无线网络的正常使用。通过预先下载版本，可以在后续的升级过程中节省AP上线后下载版本的时间，从而提高整个网络的升级效率。",
+        "结论": "使用版本预下载功能可以显著减少AP版本升级过程中的耗时，特别是在网络中AP数量较多的情况下。此功能在AP在线状态下自动完成版本下载，无需中断网络服务，确保了升级过程的平滑进行。",
+        "解决办法": "1.上传新版本：在AC上使用`boot-loader`命令上传新版本，确保`apimage`目录下更新为新版本，但不要重启AC。2.启动预下载：进入系统视图，执行`wlanap-image-deploy`命令，使所有在线的AP开始预下载新版本。3.检查下载状态：使用`displaywlanapstatisticsimage-download`命令查看AP的版本下载状态，确保所有AP都已成功下载新版本。4.选择割接窗口：等待所有AP完成预下载后，选择一个合适的割接窗口时间重启AC。即使有少量AP未完成下载，也可以直接重启AC。通过上述步骤，可以在AC重启前确保AP已经预下载了新版本，从而缩短实际升级过程的时间。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/168350",
+        "备注": ""
+    },
+    {
+        "序号": 1466,
+        "问题现象": "在某局点LSQM1WCMX20设备上，结合IMC进行Portal认证时，客户希望对某个终端进行限速，通过IMC下发user-profile实现限速，但配置完成后发现限速不生效。",
+        "问题描述": "客户配置了user-profile，限制每个用户的流量为2M。无论使用qospolicy方式还是qoscar方式，限速均未生效。通过命令`disportaluserall`查看，发现user-profile状态为active，但InboundCAR和OutboundCAR均未显示任何限速信息。",
+        "结论": "问题出在Portal认证的启用规格上。在V7AC设备上，如果需要通过Portal认证下发限速策略（即user-profile限速），基于单用户的限速策略需要在服务模板下调用才能生效，而在VLAN虚接口下配置则不会生效。",
+        "解决办法": "1.将Portal认证的配置从VLAN虚接口下移至服务模板下。2.在服务模板中调用user-profile，以便限速策略能够正确生效。3.配置完成后，再次验证限速是否生效。最终，通过上述方法，限速策略正常生效。建议在V7AC设备上配置Portal认证时，优先在服务模板下进行配置，除非是一些融合AC设备不支持在服务模板下调用Portal认证。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/27772",
+        "备注": ""
+    },
+    {
+        "序号": 1467,
+        "问题现象": "在无线网络中，终端设备与接入点（AP）之间的报文交互过程中，可能会出现接入问题、延时或丢包等情况，这些问题在日常网络管理和维护中较为常见，但传统的无线空口抓包或有线侧镜像抓包方法在执行难度和所需操作权限方面较高，难以快速定位和解决问题。",
+        "问题描述": "通过收集和解析AP空口驱动debug报文，可以了解终端设备与AP之间的详细报文交互过程，包括终端接入和认证过程、无线及有线侧ping包延时及丢包情况、具体报文内容等。与传统的无线空口抓包和有线镜像抓包相比，此方法具有执行难度低和所需操作权限少的优势，但报文解析难度较高，需要深入了解报文结构和解析原理。",
+        "结论": "AP空口驱动debug报文的收集和解析方法能够有效帮助网络管理员快速分析和初步定位无线终端接入、延时、丢包等问题。该方法通过在AP内部软件侧和底层硬件驱动之间捕获报文，结合报文头部、中间部分和FrameContent中的Hex字符串进行解析，可以获取详细的报文交互信息。虽然解析过程较为复杂，但通过自动化脚本可以简化这一过程，提高问题定位的效率。",
+        "解决办法": "1.确定接入终端的MAC地址：首先确认终端接入的AP名称。2.开启Telnet权限：使用Telnet模式登录到AC设备上，在AC的Probe视图下通过`wlanap-ename[ap-name]ee`命令开启到对应AP的Telnet权限。3.登录AP并开启debug：Telnet到AP上，进入AP的Probe视图，通过以下命令开启Radio口的debug：```shell[AP-Probe]debuggingar5drv1packetinputsrc-mac90f0-5298-205cverbose[AP-Probe]debuggingar5drv1packetoutputdest-mac90f0-5298-205cverbose[AP-Probe]debuggingar5drv2packetinputsrc-mac90f0-5298-205cverbose[AP-Probe]debuggingar5drv2packetoutputdest-mac90f0-5298-205cverbose[AP-Probe]debuggingar5drv3packetinputsrc-mac90f0-5298-205cverbose[AP-Probe]debuggingar5drv3packetoutputdest-mac90f0-5298-205cverbose```如果AP有更多或更少的Radio口，相应调整命令。4.开启系统和终端debug：```shell[AP]info-centerenable[AP]terminaldebugging[AP]terminalmonitor```5.执行测试操作：进行终端接入服务模板或ping包测试等操作，此时会自动打印debug信息。6.关闭debug：测试完成后，在用户视图执行`utm`和`utd`命令关闭debug打印，然后在AP的Probe视图通过以下命令关闭AP空口驱动debug：```shell[AP-Probe]undodebuggingar5drv1all[AP-Probe]undodebuggingar5drv2all[AP-Probe]undodebuggingar5drv3all```7.保存debug信息：将收集的debug信息保存，以便后续分析。8.解析debug报文：-报文头部：记录报文产生时间。-中间部分：记录报文传递方向、报文类型（ProtoType）、目的和源MAC、BSSID、信道、速率、RSSI、NF等信息。-FrameContent：解析Hex字符串，提取更多详细信息。-报文类型解析：-802.11帧：通过type和subtype字段确定报文类型，如管理帧（MGT）和数据帧（DATA）。-802.1x报文：通过特定字段确定报文子类型，观察EAP报文交互和四次密钥握手过程。-ARP报文：解析源和目的IP地址。-DHCP报文：通过UDP端口67和68及其顺序确定报文类型。-ICMP报文：解析报文的具体内容。-DNS报文：通过53端口及其前后顺序确定报文类型，解析域名及解析结果。通过以上步骤，可以有效地收集和解析AP空口驱动debug报文，为无线网络问题的分析和解决提供有力支持。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/202461",
+        "备注": ""
+    },
+    {
+        "序号": 1468,
+        "问题现象": "在同一片区域内，一个AP的同一个radio下绑定了两个服务模板，且这两个服务模板的SSID相同。不同终端在WiFi列表中的显示情况存在差异。",
+        "问题描述": "1.完全相同的服务模板：-安卓终端：在WiFi列表中只显示一个信号。-苹果终端：在WiFi列表中也只显示一个信号。-使用工具检测：通过cloudnet等工具可以检测到两个不同的BSSID，但用户在WiFi列表中只能看到一个信号，终端接入时会随机选择一个BSSID。2.SSID相同但加密方式不同：-苹果终端：在WiFi列表中只显示一个信号。-安卓终端：在WiFi列表中显示一个加密的信号和一个开放的信号。-WindowsPC：在WiFi列表中也显示一个加密的信号和一个开放的信号。",
+        "结论": "在同一片区域内，AP的同一个radio下释放出两个相同SSID的信号时，终端的WiFi列表显示情况与终端的操作系统和无线网络管理机制有关：完全相同的服务模板：所有终端（包括安卓、苹果、WindowsPC）在WiFi列表中都只显示一个信号。SSID相同但加密方式不同：苹果终端显示一个信号，而安卓终端和WindowsPC显示两个信号，一个加密，一个开放。",
+        "解决办法": "为了避免终端无法区分不同的无线服务，导致漫游异常等问题，建议在AC上为不同的服务模板配置不同的SSID。这样可以确保终端在WiFi列表中能够清晰地识别和选择合适的服务。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/212313",
+        "备注": ""
+    },
+    {
+        "序号": 1469,
+        "问题现象": "某局点的MacBook终端在连接特定SSID时频繁上下线，故障现象偶发，但复现情况明确。终端在同一个AP下反复掉线重连，持续时间较短，如下所示：BSSID:88df-9e8d-d1e3创建时间:2021-02-0114:53:31在线时间:00h04m13sACIP地址:127.0.0.1RID:2l3-5-11-s后续的连接记录显示终端在短时间内多次掉线重连。",
+        "问题描述": "初步检查：检查AP的空口配置，发现配置正常，但在radio口下配置了`max-count30`，怀疑客户端数量限制可能导致问题。进一步分析：删除客户端数量限制后，故障依然复现。空口抓包：抓取空口报文，发现大量deauthentication帧，且这些帧的序列号（SN）是连续的。进一步分析发现这些deauthentication帧为CountermeasureFrame。反制记录：查看WIPS（WirelessIntrusionPreventionSystem）反制记录，发现确实有大量反制记录。",
+        "结论": "该局点开启了WIPS反制功能，但由于新加入了一批AP，这些AP的OUI（OrganizationallyUniqueIdentifier）未在WIPS的AP分配策略中添加为可信OUI（trustoui）。因此，WIPS将这些新AP误判为非法设备，并对其进行了反制，导致MacBook终端频繁掉线重连。",
+        "解决办法": "在WIPS的AP分配策略中添加新AP的trustoui。具体操作如下：1.登录WIPS管理界面。2.进入AP分配策略配置。3.添加新AP的OUI到信任列表中。4.保存配置并重启相关AP或WIPS服务。完成上述操作后，业务恢复正常，MacBook终端不再频繁掉线重连。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/142236",
+        "备注": ""
+    },
+    {
+        "序号": 1470,
+        "问题现象": "某局点反馈无线网络在Ping网关时会间歇性地丢失几个包，但能快速恢复。此现象导致云桌面频繁断开连接。",
+        "问题描述": "通过实际测试发现，一旦丢包连续超过5个包，客户的云桌面就会显示断开状态。该局点的无线网络架构为：核心交换机（网关）汇聚交换机接入交换机AP无线终端。现场接入控制器（AC）下接入了1万+用户，采用本地转发模式。尽管AC上的无线配置已经进行了优化，但无线丢包问题仍然明显。",
+        "结论": "经过分析，问题的原因并不在于无线空口侧，而是由于网关设备S6800的ARP报文处理能力有限。具体来说，S6800的ARP默认软限制为1000pps（每秒1000个ARP报文），而实际发送到S6800的ARP报文速率为1300pps，超过部分的ARP报文被设备直接丢弃，导致部分终端的ARP报文无法正常处理，影响了通信的稳定性。",
+        "解决办法": "调整S6800的ARP限速值，由1000pps提高到1500pps，以确保设备能够处理更多的ARP报文，减少丢包现象，从而提高云桌面的稳定性。调整后，无线丢包问题显著改善，云桌面连接恢复正常。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/123942",
+        "备注": ""
+    },
+    {
+        "序号": 1471,
+        "问题现象": ":深圳某局点智慧城市40G无线插卡出现周期性的CPU利用率告警，CPU使用率会达到100%，其中AGNT进程的CPU使用率偏高，可达70%。",
+        "问题描述": ":1.CPU利用率告警:-周期性地出现CPU利用率告警，告警时间为60秒的周期。-在告警期间，CPU使用率统计显示CPU利用率达到了100%。2.AGNT进程高CPU使用率:-AGNT进程在告警期间的CPU使用率高达70%。-通过`fpl-diagshowcplog`命令查看，发现SNMP报文量与CPU利用率的峰值紧密相关。3.网管系统行为:-网管系统（IMC）每5到10分钟会向AC读取信息，导致SNMP报文量增加。-初始优化措施包括取消无线性能监控指标、设置设备轮询时间为最大、取消AC上的trap信息上传、设置无线终端轮询周期为30分钟等，但这些措施均未能解决问题。4.进一步分析:-在WSM服务器上抓包，收集了包含CPU利用率高的过程的报文。-分析IMC服务器上的日志文件（`imcwlandm`、`imcwipsdm`、`imcwlanperfdm`）。-发现浙江移动定制的多个监视指标（15分钟采集一次）在个别节点处理时会一次性获取较多数据，导致CPU高。",
+        "结论": ":周期性CPU利用率高的主要原因是浙江移动定制的多个监视指标在网管系统（IMC）上一次性获取数据过多，导致AGNT进程CPU使用率激增。这个问题已经在最新的WSM版本中进行了优化，并且这些指标默认是关闭的。",
+        "解决办法": ":1.关闭浙江移动定制的采集指标:-在IMC服务器的安装目录下找到`imc/server/conf/qvdm_wlan.conf`文件。-备份`qvdm_wlan.conf`文件。-查看并关闭原文件中的“StaPollIntv”字段。-关闭浙江移动定制的多个监视指标。2.升级WSM组件:-升级到最新的WSM组件版本，该版本已经对这个问题进行了优化，并且默认关闭了这些定制的监视指标。3.观察效果:-关闭相关指标后，运行脚本观察CPU使用率是否恢复正常。-如果问题解决，继续保持这些设置；如果问题仍然存在，进一步分析其他可能的原因。通过以上措施，CPU利用率高的问题得到了有效解决。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/4783",
+        "备注": ""
+    },
+    {
+        "序号": 1472,
+        "问题现象": "在AC（无线控制器）下有1000多台AP（接入点）能够正常上线，但有3台AP无法上线。尽管AP能够正常获取IP地址，且可以ping通AC，替换POE端口后问题仍然存在。",
+        "问题描述": "1.网络配置：AC旁挂核心，AP采用三层注册方式，手动注册，AC未开启自动注册和固化功能。2.前期排查：确认DHCP服务器地址池充足且正确配置了Option43，有线链路状态正常。3.调试信息：-在AP和AC上分别开启了CAPWAP调试日志。-AP向AC发送了discoveryrequest请求，并收到了AC的discoveryresponse。-AP向AC发送了joinrequest请求，并收到了AC的joinresponse，但joinresponse中的hex字符串内容明显较少，导致AP无法成功处理该响应。-AP状态从join回到了idle，并重新发起上线请求。",
+        "结论": "1.问题原因：在AC上对同一个AP配置了两个手动模板，分别使用了SN（序列号）和MAC地址进行配置。这导致AP发送的请求在AC上同时匹配了两个模板，从而产生了处理错误，导致AP无法正常上线。2.调试发现：通过开启CAPWAP调试日志，观察到AP处理AC回复的joinresponse报文时发现异常，状态从join回到idle，然后重新发起上线请求。",
+        "解决办法": "1.删除重复模板：在AC上删除其中一个手动模板（使用SN或MAC地址配置的模板），确保每个AP只有一个手动模板。2.配置建议：在AC上配置AP的手动模板时，尽量使用同一种方法（SN或MAC地址），以避免针对同一个AP配置两个手动模板。3.后续排查：-在AC侧使用命令`displaywlanapstatisticsassociation-failure-record`查看AP上线不成功的原因记录。-在AC和AP中间的交换机上抓包，检查CAPWAP管理报文（UDP类型，AC端口为5246，AP端口为随机端口）。-使用命令`displaysysteminternalwlanapallcapwappacket-statistics|beginH-H-H`（AP的MAC地址）持续收集CAPWAP管理报文统计信息，检查各种CAPWAP管理报文是否有增长。扩展说明1.调试日志开启：在AC上建议开启`debugwlancapwapallmac-addressH-H-H`（AP的MAC地址）以及`debugwlancapwaperrorall`，但不建议在`error`后面跟AP的MAC地址，以免漏打日志。2.抓包注意事项：在AC和AP中间链路的交换机上抓包，而不是在AC上开启镜像抓包，以避免影响AC的正常运行。3.其他排查手段：除了CAPWAP调试日志，还可以通过交换机抓包和AC上的CAPWAP报文统计信息进行进一步排查。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/216422",
+        "备注": ""
+    },
+    {
+        "序号": 1473,
+        "问题现象": "在某局点使用V7版本的无线控制器进行IRF组网主备切换测试时，主AC重启并成功恢复IRF状态后，设备上看不到主AC的业务接口，但可以看到IRF接口。具体表现为，1/3口为IRF接口，2/4口为业务口，业务口在主AC恢复后短时间内（大约10分钟）无法显示。",
+        "问题描述": "主AC重启后，虽然IRF状态已经恢复，但设备上的命令行显示看不到主AC的业务接口。例如，使用`disintbrief`命令时，只有IRF接口（1/3口）显示正常，业务接口（2/4口）则无法看到。经过10分钟后，业务接口自动恢复显示。",
+        "结论": "经过确认，这是IRF组网下的正常现象，属于设备的保护机制。主AC重启切换到备AC后，原主AC启动恢复过程中，短时间（大约10分钟）内业务接口可能无法显示，但IRF状态已经恢复。由于业务已经切换到备AC上，因此不会影响实际业务运行。新备AC加入堆叠后会等待10分钟，这段时间是为了确保AP和STA尽快在新主AC上重新上线。",
+        "解决办法": "此问题不属于故障，而是设备的正常保护机制。因此，无需特殊处理。如果遇到类似情况，可以等待10分钟左右，业务接口会自动恢复显示。如果10分钟后业务接口仍未恢复，建议进一步检查设备配置和状态，以排除其他潜在问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/227727",
+        "备注": ""
+    },
+    {
+        "序号": 1474,
+        "问题现象": "部分MacBook在使用过程中偶尔会出现无线网络不通、无法上网的情况。出现问题时，无线网络仍然保持连接状态，WiFi图标显示连接正常。客户端尝试Ping网关不通，但断开无线后重新连接，业务可以恢复正常。此问题仅影响部分MacBook，其他终端（包括Win7系统PC、Win10系统PC、安卓手机、苹果手机）均未出现类似问题。",
+        "问题描述": "环境配置：某局点使用无线控制器WX5510E配置两款11AC款型AP（WA4320-ACN、WA4620i-ACN）进行无线覆盖。用户场景：办公场景无线接入，集中转发，无线接入采用PSK加密配合Portal无感知认证方式，无线加密方式为WPA2+CCMP模式，Portal认证在AC上进行。AC版本：R2609P57（V200R006B09D050）。终端情况：问题仅出现在macOS10.12及以上版本的MacBook上，且仅涉及5G射频，2.4G射频正常。调试信息：AC上通过`displaywlanclientmac-addressH-H-H`查看终端信息，发现终端关联状态正常，但业务不通。复现问题时发现漫游计数（roam-count）增加，怀疑与终端漫游行为相关。",
+        "结论": "问题原因：问题终端在第三次EAPOL-Key交互时未回复ACK，导致4次握手无法完成，从而业务不通。这属于终端行为问题，但具体原因尚不清楚，需要终端厂家配合解答。对比测试：在友商无线环境下，问题终端同样在第三次EAPOL-Key交互时不响应，但友商设备会重传多次（最多8次），而WX5510E设备默认仅重传三次，因此在WX5510E设备上问题更为明显。受影响版本：目前B109D051及之前的AC版本，11AC款型的AP5G射频均涉及该问题。",
+        "解决办法": "临时解决方案：现场升级AP调试版本，增加无线EAPOL-Key报文的重传次数，从而解决该问题。后续计划：B109D051以后的AC版本将新增功能，允许对EAPOL-Key报文的重传次数进行配置，从根本上解决该问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/30775",
+        "备注": ""
+    },
+    {
+        "序号": 1475,
+        "问题现象": "在某据点使用的WiFi6AP中，一款用于内部通信的思科WiFi语音电话（具体型号未提供）在连接WiFi后能够正常ping通和访问话务服务器，且能够拨打和接通第一通WiFi语音电话。但在挂断第一通电话后，该终端就无法被ping通，也无法接听或拨打新的电话。终端只有在主动断开并重新连接WiFi后才能恢复正常通信，这一故障现象稳定复现。",
+        "问题描述": "该思科WiFi语音电话在连接WiFi6AP后，虽然能够正常通信，但挂断电话后进入休眠状态。终端持续发送QosNullFunction（Flags=P）休眠帧，而未发送解除休眠帧，导致AP认为终端一直处于休眠状态，不再向其发送数据报文，从而导致通信中断。相比之下，终端连接老的CiscoAP时不会出现类似问题。",
+        "结论": "经过分析，发现AP的服务模板下默认开启了u-apsd的WMM节能省电功能，而该思科WiFi语音电话可能由于较老的原因，不能很好地支持这一标准协议功能。因此，AP在接收到终端的休眠帧后，认为终端一直在休眠状态，导致数据报文无法正常传输。",
+        "解决办法": "在服务模板下配置`undou-apsdenable`，关闭默认开启的WMM节能省电功能。测试后，终端的故障现象消失，能够正常进行WiFi语音通信。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/224502",
+        "备注": ""
+    },
+    {
+        "序号": 1476,
+        "问题现象": "终端在输入用户名和密码后，提示“radius认证超时”。",
+        "问题描述": "1.终端侧故障现场：输入用户名和密码后，提示“radius认证超时”。2.集中转发：组网方式为集中转发。3.AC配置：AC上已配置了`portalhost-checkenable`。4.设备侧配置：-服务模板配置：启用了Portal认证，认证方法为直接，认证域为dm1，配置了正确的BASIP和NASIP。-RADIUS方案配置：配置了主认证服务器和主计费服务器的IP地址及密钥，配置了用户名格式为不带域名，NASIP地址正确。-域名dm1的认证、授权和计费均配置为PortalRADIUS方案rs1。-Portal免费规则配置：允许特定IP地址的流量和DNS流量（TCP/53和UDP/53）。-PortalWeb服务器配置：配置了重定向URL及参数。-Portal服务器配置：IP地址、密钥、端口和服务器类型为CMCC。5.调试信息：收集了`debuggingportalevent`、`debuggingportalpacket`和`debuggingradiuspacket`，发现设备已收到REQAUTH报文，但在REQAUTH报文后没有后续的RADIUS报文交互。",
+        "结论": "问题的原因是设备侧配置的Portal协议类型（CMCC，属于Portal1.0）与第三方服务器侧使用的Portal协议类型（Portal2.0）不一致，导致认证失败。",
+        "解决办法": "将设备侧的Portal协议类型从CMCC改为IMC（Portal2.0），重新测试后认证成功。具体配置如下：```plaintextportalservernewptipx.x.x.xkeycipher$c$3$wTvKuyMyXot438JnzqVBF6s/Z9aX1hVooU1rzg==port2000server-typeimc```",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/207528",
+        "备注": ""
+    },
+    {
+        "序号": 1477,
+        "问题现象": "AC托管告警：网管不定期检测到AC不可达，触发AC托管告警。AP信号不稳定：学校用户投诉AP信号不稳定，有时候找不到无线信号。",
+        "问题描述": "组网情况：某运营商在学校部署了无线网络，使用WX6108E插卡作为主备AC，OLT上行连接93交换机，中间链路使用QINQ技术。外层标签在ONU和93上添加和拆除。接入用户分为运营商网络用户和学校内网用户，运营商网络用户的网关在AC上，内网用户的网关在汇聚交换机上。环路故障：此前网络中出现环路故障，93因环路报文导致宕机。故障后，93上启用了基于MAC地址的环路检测功能，检测到MAC地址从第二个端口学习到时，将环路VLAN从一个端口移除，持续10分钟后配置恢复正常。VRRP状态切换：主备AC的VRRP状态均发生过切换，主AC切换记录显示“BecomeMaster:12”，备AC切换记录显示“BecomeMaster:12”。VRRP报文存在丢包现象。MAC地址漂移：93日志记录显示，无线用户终端的MAC地址在93连接主备AC的端口之间发生漂移，93误认为环路而将QINQ外层标签从接口移除。",
+        "结论": "故障原因：内网用户在主备AC之间漫游时，93交换机检测到用户MAC地址从主AC端口漂移到备AC端口，误认为环路并移除了QINQ外层标签，导致AP与AC心跳超时，AP下线。10分钟后，93重新添加QINQ外层标签，大量AP重新上线，导致ACCPU处理丢包，VRRP状态切换，最终触发AC托管。验证措施：将备份AC连接93的接口不允许内网用户VLAN通过，观察4天后故障未复现，确认故障原因是内网用户在主备AC之间漫游导致。",
+        "解决办法": "整改内网用户数据模型：将内网用户数据改为本地转发模式，避免用户数据通过主备AC之间的隧道传输，从而减少MAC地址漂移和环路检测误判，提高数据传输效率。实施效果：整改后，AP随机下线问题和AC托管问题得到有效解决，网络稳定性显著提升。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/3284",
+        "备注": ""
+    },
+    {
+        "序号": 1478,
+        "问题现象": "在某局点使用无线控制器WX3520H（版本：7.1.064,Release5121P32）和AP（型号：WA4320-ACN-SI）进行Portal认证时，发现HTTP页面可以正常重定向并认证成功，但输入HTTPS页面时无法重定向。",
+        "问题描述": "1.配置检查：检查了Portal相关的配置，包括PortalWeb服务器、Portal认证服务器、服务模板及AP配置，未发现明显问题。2.调试信息：启用`debugportalall`进行调试，但未获得有用的提示信息。3.转发模式：该局点使用的是本地转发模式。",
+        "结论": "V7版本特性：V7版本在启用无线Portal认证时，如果使用集中转发模式，可以支持HTTPS重定向。但如果使用本地转发模式，HTTPS重定向的支持与AP内存大小有关，只有AP内存达到256M时才支持。当前设备限制：该局点使用的AP（WA4320-ACN-SI）内存大小为128M，不满足HTTPS重定向的内存要求。",
+        "解决办法": "1.修改转发模式：将本地转发模式修改为AC集中转发模式，以支持HTTPS重定向。2.配置SSL策略：如果客户对安全证书告警提示有反感，可以配置固定名称的SSL策略并导入客户提供的证书。具体配置如下：```plaintextsslserver-policyhttps_redirect```该策略名称为固定名称，Portal模块会自动引用`https_redirect`策略。3.后续建议：如果局点需要继续使用本地转发模式，建议更换内存达到256M的AP设备以支持HTTPS重定向。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/30714",
+        "备注": ""
+    },
+    {
+        "序号": 1479,
+        "问题现象": "在进行H3CAC设备的Portal认证后，发现一个内网网页无法打开。只有在取消Portal认证后，该网页才能正常访问。",
+        "问题描述": "1.现场测试：终端设备在Portal认证成功后，除了特定的一个内网网页外，其他所有网页都能正常上网。2.日志分析：通过查看日志，发现访问该特定网页时，解析出的IP地址的流量被重定向了，而其他地址的流量在认证后都能正常放通。3.日志示例：-Aug1117:25:56:5552020H3C_AC_2F_WX3520H_IRFPORTAL/7/RULE:[Inbound]executefullrulematch,{MatchRes=[Rule2-Permit]}IfName=WLAN-BSS1/0/4267,PortName=WLAN-BSS1/0/4267,Vlan=162,SrcMAC=xxxx,SrcIP=xxxx2,DstIP=xxxx,L4Protocol=6,SrcPort=57609,DstPort=2000,VrfIndex=0-Aug1117:25:56:7452020H3C_AC_2F_WX3520H_IRFPORTAL/7/RULE:[Inbound]executefullrulematch,{MatchRes=[Rule3-Redirect]}IfName=WLAN-BSS1/0/4267,PortName=WLAN-BSS1/0/4267,Vlan=162,SrcMAC=xxxx,SrcIP=xxxx,DstIP=10.1.0.6,L4Protocol=6,SrcPort=57610,DstPort=80,VrfIndex=0",
+        "结论": "该特定地址（10.1.0.6）是微信连WiFi认证的一个特殊地址。无论Portal认证是否通过，无论是否配置了free-rule，该地址的流量总是被强制重定向处理，导致内网网页无法正常访问。",
+        "解决办法": "1.确认问题：确认该地址确实为微信连WiFi认证的特殊地址。2.软件更新：后续版本（R5435P02）增加了相关命令，可以删除对该地址的强制重定向处理。3.命令配置：在AC设备上执行命令`undoportalredirect-ruledestinationhost10.1.0.6`以删除对10.1.0.6的强制重定向规则。4.验证效果：执行上述命令后，重新进行Portal认证，验证该内网网页是否可以正常访问。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/131075",
+        "备注": ""
+    }
+]

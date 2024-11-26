@@ -1,0 +1,182 @@
+[
+    {
+        "序号": 580,
+        "问题现象": "某局点使用WX3540X设备结合云简平台进行账号登录认证时，终端设备无法成功登录，具体表现为点击登录按钮后无任何反应。",
+        "问题描述": "1.连通性检查：现场终端能够ping通云简平台地址。2.转发方式检查：现场采用本地转发方式，存在以下潜在问题：-Portal客户端的ARP表项缺失：AC上没有Portal客户端的ARP表项，需要开启无线Portal客户端合法性检查功能。-客户端访问AC接口配置不正确：配置的`portalclient-gatewayinterface`需要是能够与终端互通的接口。3.登录无反应：更换不同浏览器和终端测试后，问题依旧存在。-AP上二层隔离配置：AP上开启了二层隔离，但AP的map文件中没有放通AC的MAC地址。",
+        "结论": "在本地转发结合云简平台做Portal第三方认证时，终端和AC之间需要进行业务报文交互。具体问题在于：1.无线Portal客户端合法性检查功能未开启。2.Portal客户端访问AC的接口配置不正确。3.AP上的二层隔离配置未放通AC的MAC地址。",
+        "解决办法": "1.开启无线Portal客户端合法性检查功能：```shellportalhost-checkenable```2.配置Portal客户端访问AC的接口：```shellportalclient-gatewayinterface<interface-name>```确认配置的接口是能够与终端互通的业务vlan。3.在AP的map文件中放通AC的MAC地址：```shellap-map<map-name>mac-address<ac-mac-address>permit```以上配置修改后，问题得到解决，终端能够成功弹出认证界面并完成登录。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/218147",
+        "备注": ""
+    },
+    {
+        "序号": 581,
+        "问题现象": "客户在AC（无线控制器）的AP模板上配置了新的业务VLAN，并通过远程配置同步方式（非MAP文件）尝试将配置下发到AP，但远程登录到AP后发现VLAN相关的配置并未生效。",
+        "问题描述": "1.组网及说明：典型AC-FITAP场景。2.客户配置：-在AC的AP模板上新建了业务VLAN（VLAN1-4）。-在有线口（GigabitEthernet1和GigabitEthernet2）下放通所有VLAN。-配置了远程配置同步功能：```plaintextwlanapap2modelWA5530remote-configurationenablevlan1vlan2to4radio1service-template1vlan-group1radio2radio3gigabitethernet1gigabitethernet2portlink-typetrunkporttrunkpermitvlanall```3.问题表现：尽管配置了远程配置同步功能，但VLAN相关的配置并未同步到AP上。",
+        "结论": "1.分析：-`remote-configurationenable`命令单独配置时，如果AP已经上线，则VLAN相关的配置不会自动下发。-需要同时配置`remote-configurationsynchronize`命令，以确保VLAN配置同步生效。-如果AP没有上线，配置会在AP上线后自动生效。",
+        "解决办法": "1.方法一：将AP下线后重新上线，配置会自动生效。2.方法二：在AC上添加`remote-configurationsynchronize`命令，确保配置立即同步到AP。希望上述总结对您有所帮助。如有任何建议或需要进一步的信息，请随时反馈。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/104754",
+        "备注": ""
+    },
+    {
+        "序号": 582,
+        "问题现象": "在某局点的V7无线控制器上，当SSID同时配置了MAC地址认证和802.1x认证后，部分终端在通过MAC地址认证时，不会触发802.1x认证，导致802.1x认证不生效。",
+        "问题描述": "1.组网及配置：-无线控制器型号：WX5540H-SSID配置：同时开启MAC地址认证和802.1x认证-主要配置命令：```plaintextdot1xdot1xauthentication-methodeapwlanservice-templateXXssidXXXXvlanXXclient-forwarding-locationapvlanXXclient-securityauthentication-modemac-then-dot1xdot1xdomaindot1xmac-authenticationdomainmac```2.单独测试：-单独配置802.1x认证时，设备可以成功认证，说明3A相关配置没有问题。-单独配置命令：```plaintextwlanservice-templateXXssidXXXXvlanXXclient-forwarding-locationapvlanXXclient-securityauthentication-modedot1xdot1xdomaindot1xakm-modedot1x```3.双认证测试：-使用一个仅支持802.1x认证但不支持MAC地址认证的终端进行测试。-开启调试命令`debuggingdot1xall`后，发现终端提示MAC地址认证失败，但没有触发802.1x认证。-检查连接状态：```plaintext%WX5540HSTAMGR/5/STAMGRMACALOGIN_FAILURE:-Username=XXXX-UserMAC=XXXX-BSSID=XXXX-SSID=XXXX-VLANID=XX-UsernameFormat=MACaddress;AuserfailedMACauthentication.```-802.1x认证连接总数为0：```plaintext[WX5540H-wlan]displaymac-authenticationconnectionTotalconnections:0[WX5540H-wlan]displaydot1xconnectionTotalconnections:0```",
+        "结论": "在SSID下同时开启MAC地址认证和802.1x认证后，无线控制器仅支持通过MAC地址认证或802.1x认证其中的一种。根据配置命令`client-securityauthentication-modemac-then-dot1x`，只有当MAC地址认证失败后，才会触发802.1x认证。因此，部分终端在通过MAC地址认证时，不会继续进行802.1x认证，导致802.1x认证不生效。",
+        "解决办法": "1.修改认证方式：-确认802.1x认证方式不支持EAP，只支持CHAP和PAP。-修改认证方式命令：```plaintextdot1xauthentication-methodchapdot1xauthentication-methodpap```2.调整认证顺序：-根据实际需求调整认证顺序，确保首先进行802.1x认证，如果失败再进行MAC地址认证。-修改认证顺序命令：```plaintextclient-securityauthentication-modedot1x-then-mac```3.重新测试：-重新测试终端连接，确保在MAC地址认证失败后能够正确触发802.1x认证。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/69449",
+        "备注": ""
+    },
+    {
+        "序号": 583,
+        "问题现象": "：某物流局点使用摩托罗拉型号的扫码枪时，会出现不定时掉线的情况。扫码枪上显示WiFi图标，但网络不通。该现象不固定在特定的终端或特定的时间。",
+        "问题描述": "：扫码枪连接的AP在24天内没有发生过掉线。关联到该AP的终端只有这一台摩托罗拉扫码枪。在AP上可以正常ping通扫码枪。接入交换机上终端的MAC地址没有老化，但在路由器的ARP表中没有找到该终端的条目。故障发生时，网关ping不通终端。查看扫码枪的PHYSETTINGS，发现使用的是长前导码（LongPreamble），而AP侧默认配置为短前导码（ShortPreamble）。",
+        "结论": "：扫码枪与AP之间的无线连接不稳定，可能是由于扫码枪使用长前导码而AP使用短前导码导致的兼容性问题。此外，一些早期的摩托罗拉扫码枪可能对5.5Mbps速率支持不稳定，这也可能是问题的一个因素。",
+        "解决办法": "：1.配置长前导码：-在AP的Radio视图下，将前导码类型配置为长前导码（`preamblelong`），以更好地兼容扫码枪的网卡。-具体命令：在Radio视图下执行`preamblelong`，然后保存配置。2.禁用5.5Mbps速率：-禁用AP上的5.5Mbps速率，以避免早期摩托罗拉扫码枪对该速率支持不稳定的问题。-具体命令：在AP的Radio视图下执行`undorate5.5`，然后保存配置。通过上述配置调整，可以解决扫码枪不定时掉线的问题，提高无线连接的稳定性。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/102310",
+        "备注": ""
+    },
+    {
+        "序号": 584,
+        "问题现象": "：某局点配置微信公众认证时，安卓手机在认证过程中一直显示“正在认证，请稍后”的进度条界面，无法正常跳转到认证成功页面。但退出认证界面后，安卓手机可以正常上网。苹果手机则在认证过程中先出现一个提醒网页，点击“继续访问”后可以跳转到认证成功的界面。",
+        "问题描述": "：在某局点的微信公众号认证配置中，安卓手机和苹果手机的认证表现不同。安卓手机在认证界面一直停留在“正在认证，请稍后”的状态，而苹果手机则可以通过点击“继续访问”完成认证。经测试，安卓手机虽然在认证界面卡住，但退出后仍能正常上网，这表明认证过程可能存在某种限制或问题。",
+        "结论": "：经分析确认，该问题的原因是腾讯端对终端地址有严格限制，终端的地址必须是标准的私网地址。而现场使用的业务地址是172.200网段，不符合腾讯的要求，导致安卓手机无法正常完成认证。",
+        "解决办法": "：更改业务地址段，使其符合腾讯的私网地址要求。具体操作是将172.200网段的地址更换为标准的私网地址段（如192.168.0.0/16、172.16.0.0/12、10.0.0.0/8）。完成地址段更改后，重新进行微信公众认证测试，确保安卓手机和苹果手机都能正常跳转到认证成功页面。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/76559",
+        "备注": ""
+    },
+    {
+        "序号": 585,
+        "问题现象": "某局点无线Portal主备服务器切换后，终端无法正常弹出Portal页面，且在浏览器中看到的重定向页面URL仍为主Portal服务器的IP地址。此外，部分终端在切换到备机后需要尝试三次认证才能成功，前两次认证时页面提示“向设备发送请求超时”。",
+        "问题描述": "1.网络配置：现场AC控制器采用IRF部署，旁挂在核心设备上，集中转发模式，并与IMC对接进行Portal认证。IMC为冷备部署，要求主认证服务器故障后能自动切换到备机进行Portal认证。2.故障现象：主服务器认证正常，但切换到备机后Portal页面无法弹出，重定向页面URL仍为主Portal服务器的IP地址。部分终端在备机上认证时前两次失败，第三次成功。3.初步分析：检查AC配置发现，未配置PortalWeb服务器的探测功能，导致AC未感知到主PortalWeb服务器已切换。调试发现，大部分“向设备发送请求超时”错误发生在Portal阶段。4.进一步分析：通过抓包发现，Radius认证阶段前两次认证失败时，AC一直在发送Radius1号报文，但IMC侧未收到AC的ACK_AUTH报文，导致认证超时。分析发现AC的Radius探测时间（3次，每次3秒，共9秒）远大于IMC的Portal超时时间（4秒）。",
+        "结论": "问题的根本原因在于AC配置中未启用PortalWeb服务器的探测功能，导致AC未及时感知到主PortalWeb服务器的切换。此外，AC的Radius探测时间设置过长，超过了IMC的Portal超时时间，导致在切换到备机后的前几次认证请求超时。",
+        "解决办法": "1.修改AC的Radius超时时间：将AC上的Radius超时时间配置为1秒，并将响应超时时间（timerresponse-timeout）也配置为1秒。这样三次探测失败后总共花费3秒，小于IMC的Portal超时时间（4秒），可以有效减少认证超时的情况。2.修改IMC的Portal超时时间：将IMC的Portal超时时间配置为大于9秒。但由于IMC为冷备部署，修改配置后需要从主机同步配置，通常在半夜进行，因此现场决定不采用此方法。3.配置Radius探测模板：在AC上直接配置Radius服务器的探测模板（radius-servertest-profile），设置探测间隔时间（interval）和用户名（Profileusername），使设备规律性地探测Radius服务器状态，而不是通过Radius认证报文来探测。这种方法可以更及时地发现服务器的不可达状态，减少认证失败的情况。评价此案例对您是否有帮助：有用若您有关于案例的建议，请反馈：无建议反馈",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/117059",
+        "备注": ""
+    },
+    {
+        "序号": 586,
+        "问题现象": "某局点胖AP远程登录失败，无论是通过Telnet还是SSH方式均无法成功登录，提示“PasswordAuthenticationFailed!Pleaseverifythattheusernameandpasswordarecorrect!”。",
+        "问题描述": "远程登录胖AP时，尽管已经确认配置的用户名和密码均无误，并且认证方式为本地的用户名密码认证，system域为默认配置，系统默认使用的AAA认证方案为Local，但依然无法成功登录。进一步检查发现，配置中指定了一个不存在的默认认证域“domaindefaultenablestem”，而“stem”认证域实际上并不存在。",
+        "结论": "问题的根本原因是配置文件在刷入设备时，将默认认证域错误地指定为了一个不存在的域“stem”，导致设备无法使用正确的认证域进行用户认证。这可能是由于配置文件在传输或编辑过程中发生了错误。",
+        "解决办法": "1.修改默认认证域：将默认认证域修改为“system”，确保使用系统默认的认证域。2.删除错误配置：删除“domaindefaultenablestem”这一配置，让设备使用默认的system域进行认证。3.建立新的认证域：如果需要使用“stem”域，可以手动创建一个“stem”认证域，然后重新启用。建议建议在刷入配置文件后，务必仔细检查设备的配置，特别是与认证相关的配置，以确保配置的正确性和一致性。缺省情况下，系统存在一个名称为“system”的ISP域，如果没有特定需求，无需通过命令指定其他认证域。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/8069",
+        "备注": ""
+    },
+    {
+        "序号": 587,
+        "问题现象": "某局点的WX5540X设备转发进程利用率超出了阈值，现场设备存在告警。",
+        "问题描述": "1.检查转发核利用率：-现场slot1有6个转发核，AC设备计算转发核利用率的方式为50除以转发核数量，即50/6=8.3。-现场各转发核的利用率确实偏高，具体数值如下：-CPU利用率为54.9%（5秒内）、54.3%（1分钟内）、54.5%（5分钟内）。-各转发核的利用率分别为213、214、215、216、217、218，均在7.0%左右。2.优化措施尝试：-修改成本地转发。-精简现场VLAN，沿途不需要的VLAN不要放通。-开启硬转：`wlanfast-forwardingmodehardware`。-所有业务VLAN做二层隔离。-以上优化措施实施后，故障依旧存在。3.检查接口速率：-发现IRF接口和ARPMAD检测口的接口带宽占用率较高。-具体接口带宽占用率如下：-`BAGG10`：22%-`GE1/2/8`和`GE2/2/8`：13%左右-`XGE1/1/16`和`XGE1/2/16`：0%左右-`XGE2/1/16`和`XGE2/2/16`：6200605%左右4.流量较大接口的相关配置：-IRF端口配置：-`irf-port1`：`Ten-GigabitEthernet1/1/16`和`Ten-GigabitEthernet1/2/16`-`irf-port2`：`Ten-GigabitEthernet2/1/16`和`Ten-GigabitEthernet2/2/16`-ARPMAD检测配置：-`Vlan-interface4094`：IP地址为1.1.1.1/24，启用ARPMAD-`GigabitEthernet2/2/8`和`GigabitEthernet1/2/8`：接入VLAN40945.生成树协议配置：-检查发现生成树协议在全局中处于关闭状态，尽管所有端口上的生成树协议均处于开启状态。-官网文档指出，使用以太网端口实现ARPMAD时，必须与生成树协议配合使用。",
+        "结论": "转发核利用率高是由于IRF接口和ARPMAD检测口的带宽占用率较高。进一步检查发现，生成树协议在全局中未开启，而ARPMAD配置需要生成树协议的支持，这是导致转发核利用率超阈值的主要原因之一。",
+        "解决办法": "1.进入系统视图：```shellsystem-view```2.全局开启生成树协议：```shellstpglobalenable```通过以上配置，确保全局和端口上的生成树协议均处于开启状态，从而解决ARPMAD检测和IRF接口带宽占用率较高的问题，最终降低转发核利用率。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/222007",
+        "备注": ""
+    },
+    {
+        "序号": 588,
+        "问题现象": "：WA1006+设备在运行过程中频繁出现无响应，导致用户PC机的STA（无线网卡）上没有信号，需现场手工复位设备才能恢复正常使用。",
+        "问题描述": "：WA1006+设备在使用过程中经常出现异常死机现象，表现为设备无响应，无线网卡STA上检测不到信号。尽管设备能够通过手工复位恢复正常，但问题会反复出现，间隔时间从几小时到几天不等。",
+        "结论": "：该问题是由设备软件版本较低导致的，通过升级设备软件可以有效解决异常死机的情况。",
+        "解决办法": "：1.升级设备软件至V100R002B01D005版本。2.对于已经安装的设备，需要进行现场升级。3.升级后，设备异常死机的问题可以得到解决，确保设备稳定运行。发表日期：2006-02-16修订日期：2006-09-12用户反馈：若您有关于案例的建议，请反馈：建议反馈评价：若您对案例的解决办法有帮助，请评价：有用/无用",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/78267",
+        "备注": ""
+    },
+    {
+        "序号": 589,
+        "问题现象": "终端在使用U-Center2.0定制开发的扫码认证页面（portal认证）时，认证失败，报“向设备发送请求超时”。",
+        "问题描述": "1.环境配置：AC（接入控制器）旁挂核心，对接U-Center2.0定制开发的扫码认证页面，AC和U-Center均处于内网环境。2.日志分析：-终端认证失败时，U-Center的portal日志记录了“向设备发送请求超时”的错误。-在交换机侧端口进行镜像抓包，并在AC上开启相关debug命令后，发现U-Center2.0给AC发送了4条reqinfo报文，但AC均未回复ackinfo报文。-报文的源目IP地址正确，说明U-Center将报文发给了正确的AC。3.AC日志分析：-AC上的portaldebug日志没有任何与portal相关的打印信息。-使用底层抓包命令确认AC确实收到了这4条报文。-portal报文统计中，Invalidpackets计数从0增加到4，表明AC将这4条报文识别为无效报文。4.报文对比：-对比无效报文与正常req_info报文，发现无效报文的userip属性值为0。-检查U-Center发送的报文，确认userip属性确实未填写。5.进一步测试：-通过在电脑上输入一个没有free-rule放通的IP地址来重定向得到二维码，手机扫码可以认证成功，且对应的认证web页面上显示了userip地址属性。-现场工程师使用固定的认证页面URL进行测试时，认证失败。",
+        "结论": "AC将U-Center发送的4条req_info报文识别为无效报文的原因是这些报文的userip属性值为0。这是由于U-Center定制页面在生成固定URL时未正确携带终端的IP地址信息。",
+        "解决办法": "1.U-Center页面优化：相关开发人员对U-Center定制页面进行了优化，确保生成的认证页面URL中包含终端的IP地址信息。2.测试验证：优化后，终端通过扫码认证页面成功完成认证，问题得到解决。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/223494",
+        "备注": ""
+    },
+    {
+        "序号": 590,
+        "问题现象": "：某运营商局点WX6108E加WA2620-AGN覆盖的校园网络中，客户尝试通过telnet方式使用本地用户名和密码登录AC（无线控制器）时，无论用户名和密码输入正确与否，均收到“%Loginfailed!”的错误提示，无法成功登录。",
+        "问题描述": "：客户设置了本地用户名为admin，密码也为admin，但通过telnet尝试登录时失败。经过反复检查，确认用户名、密码以及输入法均与配置一致，但问题依然存在。进一步测试发现，即使是创建了新的测试账号（如用户名123，密码123），登录依然失败。通过开启调试命令（如debuggingradiuspacket、debuggingscerror、debuggingtelnet）监测，发现telnet登录尝试被导向了一个名为domainZMCC的域，而非默认的域。查看设备配置发现，客户修改了默认的域配置，将默认域设置为了domainZMCC，而非system。",
+        "结论": "：问题是由于客户错误地修改了AC设备的默认认证域（domain）设置，导致即使是配置了本地用户名和密码，telnet登录请求也被错误地导向了一个不适用于本地登录的认证域，从而导致登录失败。",
+        "解决办法": "：1.修改AC设备的默认认证域（domain）设置，将其恢复为system。2.如果需要在特定的业务子接口下使用domainZMCC，应在相应的业务子接口配置中指定使用domainZMCC，而不是修改设备的全局默认域设置。这样，本地telnet登录请求可以正确地被处理，同时也不影响其他业务需要使用domainZMCC的正常运作。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/2535",
+        "备注": ""
+    },
+    {
+        "序号": 591,
+        "问题现象": "在进行MIBTrap告警测试时，遇到以下几种常见告警情况：1.AC的CPU利用率过高告警2.AC内存告警3.无线链路中断告警4.AP链接终端已满告警",
+        "问题描述": "1.AC的CPU利用率过高告警：-配置：使用SNMP配置网管服务器接收来自AC的MIBTrap告警。-操作：尝试将CPU告警阀值设置为1，但配置时出现报错。-错误：将节点1.3.6.1.4.1.2011.10.2.6.1.1.1.1.7设置为1时，配置失败。-告警信息：AC显示CPU利用率过高的警告信息，但实际CPU利用率仅为3%。2.AC内存告警：-配置：使用SNMP配置网管服务器接收来自AC的MIBTrap告警。-操作：测试步骤与CPU利用率过高告警相同。-告警信息：AC显示内存告警信息，但具体告警内容未详细描述。3.无线链路中断告警：-触发条件：当AP的Radio从UP状态变为Down状态时，触发该告警。-告警信息：AC显示无线链路中断的告警信息。4.AP链接终端已满告警：-触发条件：在AP的Radio口下限制接入用户数为1，当成功接入第一个用户后，尝试接入第二个用户时触发该告警。-告警信息：AC显示AP链接终端已满的告警信息。",
+        "结论": "1.CPU利用率过高告警：配置错误导致告警触发条件无法正确设置，但通过调整配置节点（将7.0改为7.97）后，告警成功触发。2.内存告警：配置成功，但具体告警内容未详细描述。3.无线链路中断告警：配置成功，当AP的Radio状态变化时，告警能够正确触发。4.AP链接终端已满告警：配置成功，当AP的接入用户数达到限制时，告警能够正确触发。",
+        "解决办法": "1.CPU利用率过高告警：-步骤：1.使用SNMP配置网管服务器接收告警，配置命令为：```shsnmp-agenttarget-hosttrapaddressudp-domain192.168.2.3paramssecuritynamepublicv2c```2.查看CPU告警阀值，使用节点1.3.6.1.4.1.2011.10.2.6.1.1.1.1.7读取。3.将CPU告警阀值设置为1，但配置失败。4.将节点1.3.6.1.4.1.2011.10.2.6.1.1.1.1.7的值从7.0改为7.97，配置成功。5.配置节点`hwSysTrapResendPeriod`和`hwSysTrapCollectionPeriod`为9和3。-结果：AC成功显示CPU利用率过高的告警信息。2.内存告警：-步骤：同CPU利用率过高告警的测试步骤。-结果：AC成功显示内存告警信息。3.无线链路中断告警：-步骤：1.使用SNMP配置网管服务器接收告警。2.触发条件为AP的Radio从UP状态变为Down状态。-结果：AC成功显示无线链路中断的告警信息。4.AP链接终端已满告警：-步骤：1.使用SNMP配置网管服务器接收告警。2.在AP的Radio口下限制接入用户数为1。3.成功接入第一个用户后，尝试接入第二个用户。-结果：AC成功显示AP链接终端已满的告警信息。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/1331",
+        "备注": ""
+    },
+    {
+        "序号": 592,
+        "问题现象": "某局点购买了一台V7版本的AC（无线控制器）做Portal认证，但现场反馈终端设备在未经过Portal认证的情况下，能够直接访问微信和QQ，而访问其他应用或网页时则需要正常进行Portal认证。",
+        "问题描述": "1.Portal无感知配置检查：现场没有配置Portal无感知，排除了终端再次登录时自动免认证的可能性。2.Portalfree-rule配置检查：Portalfree-rule中配置的IP地址段未涉及微信和QQ的服务器IP，排除了因Portalfree-rule配置不当导致的免认证访问。3.Portal配置方式检查：现场在InterfaceVlan接口上配置了Portal，但在WLANService-template下没有开启Portalenablemethoddirect，导致部分流量（如微信和QQ）未上送到InterfaceVlan接口，从而未触发Portal认证。",
+        "结论": "问题的原因在于Portal认证配置的不规范性，特别是WLANService-template下的Portal配置未开启，导致微信和QQ的流量未被正确引导到InterfaceVlan接口进行Portal认证。",
+        "解决办法": "1.规范化Portal配置：建议只在一处（InterfaceVlan接口或WLANService-template）配置Portal，以确保所有流量都能正确触发Portal认证。2.开启WLANService-template下的Portal配置：将Portal配置从InterfaceVlan接口调整到WLANService-template下，并开启`portalenablemethoddirect`。3.确认配置效果：调整配置后，确认终端设备在访问微信和QQ时需要进行Portal认证，确保所有流量均受到统一的认证管理。通过上述调整，现场Portal认证恢复正常，终端设备访问微信和QQ时也需要进行Portal认证。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/22294",
+        "备注": ""
+    },
+    {
+        "序号": 593,
+        "问题现象": "在使用云简网络时，用户无法看到接入控制器（AC）上注册的无线接入点（AP）的数量及状态，或者显示的AP数量与实际在线数量相差很大。",
+        "问题描述": "用户张腾在使用云简网络的过程中遇到一个问题：虽然云简网络显示AC已经成功连接，但无法准确显示AC上注册的AP数量和状态，或者显示的AP数量明显少于实际在线的数量。",
+        "结论": "AC与云简网络之间的时间不同步可能是导致该问题的主要原因。如果AC的时间设置不正确，可能会导致与云简网络同步信息时出现错误或延迟，从而影响AP数量和状态的显示。",
+        "解决办法": "1.确认AC的时间设置是否正确：-检查AC的时间配置，确保时间与北京时间一致。-如果时间不正确，建议配置NTP服务器以保证时间的准确性。-配置NTP服务器的命令如下：```shellclockprotocolntpntp-serviceenablentp-serviceunicast-server*.*clocktimezoneBeijingadd08:00:00```-其中，`*.*`应替换为实际的NTP服务器地址。2.等待同步时间：-修改时间设置后，AC与云简网络同步信息需要一定的时间。-建议等待一段时间（例如10-15分钟）后再观察AP数量和状态是否恢复正常。反馈如果您有关于此案例的建议或反馈，请随时提出，以便我们进一步优化解决方案。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/127792",
+        "备注": ""
+    },
+    {
+        "序号": 594,
+        "问题现象": "在使用华三ACWX3024-5F和瘦APWA6638组网时，CloudNet发现AP不定时发射隐藏的SSID。",
+        "问题描述": "通过命令`displaywlanbssall`查看所有BSS的简要信息，发现扫描出的BSSID确实是华三AP的MAC地址。具体命令输出如下：```<Sysname>displaywlanbssallTotalnumberofBSSs:4APnameRIDSSIDBSSIDap11SSID100:1c-f08f-f804ap12SSID100:1c-f08f-f806```",
+        "结论": "AP有两个5G射频，且开启了双5G负载均衡功能，该功能默认会自动隐藏SSID，以防止某个5G射频过载。这是正常的功能行为，通常无需关注。",
+        "解决办法": "1.默认设置：过载5G射频隐藏SSID功能默认是开启的，无需特别操作。2.关闭隐藏SSID功能：-如果需要关闭此功能，可以使用以下命令：```undowlanradio-load-balanceoverload-5gssid-hide```3.配置负载均衡参数：-会话门限值：设置5G射频上的在线客户端数量达到或超过此值时隐藏SSID。默认值为5。-会话差值门限值：设置当前5G射频上的在线客户端数量与另一个5G射频上的在线客户端数量的差值达到或超过此值时隐藏SSID。默认值为4。-强制下线参数：当一个5G射频发生雷达避让时，强制同一AP内另一个5G射频上的半数客户端下线，以达到负载均衡。命令如下：```wlanradio-load-balanceoverload-5gssid-hide[sessionvalue[gapgap-value]][force-logoff]```-注意事项：配置`force-logoff`参数会导致客户端下线，如非必要，不建议使用此功能。如果当前环境中客户端数量过于密集，建议开启此功能以优化负载均衡。建议如果当前环境中客户端数量不多，且没有明显的负载不均衡问题，可以保持默认设置。如果环境中客户端数量较多，建议调整负载均衡参数以优化网络性能。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/225625",
+        "备注": ""
+    },
+    {
+        "序号": 595,
+        "问题现象": "：在某局点现场，两台WX3520HAC通过IRF（IntelligentResilientFramework）模式与单台WX5540HAC进行license共享。在AC上查看`ap-license-group`时，发现`grouptotallicenses`数目显示正确，但`groupusedlicenses`的显示数目不准确，与实际使用的license个数不符。",
+        "问题描述": "：现场组网方式为两台WX3520HAC做IRF，并与单台WX5540HAC创建双主模式的license共享组。`ap-license-group`命令用于查看license共享组的信息，但`groupusedlicenses`字段显示的已使用license数目有误。",
+        "结论": "：经确认，当前版本的license共享功能不支持IRF模式。因此，`groupusedlicenses`字段显示的已使用license数目不准确。",
+        "解决办法": "：为了确保license共享功能正常工作，建议将IRF模式的AC（WX3520H）拆分为独立的AC，分别与WX5540HAC进行license共享。如果必须使用IRF模式，可以考虑联系厂商获取最新的软件版本或技术支持，以确认是否有更新或解决方案支持IRF模式下的license共享。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/71265",
+        "备注": ""
+    },
+    {
+        "序号": 596,
+        "问题现象": "在结合RADIUS的Portal认证过程中，配置了PortalWeb服务器的URL中携带nas-port-id的端口号信息，但在服务器侧的日志信息中未显示该nas-port-id端口号信息。尽管设备有容错机制，认证过程仍正常进行，但客户发现其他华三无线设备可以显示nas-port-id信息，因此怀疑是否为版本问题。",
+        "问题描述": "客户配置了PortalWeb服务器的URL参数，使客户端重定向时携带nas-port-id信息。然而，设备上的debug重定向信息和服务器侧的日志信息中均未显示nas-port-id信息。RADIUS交互报文中确实包含了nas-port-id信息，但Portal重定向URL中未携带。具体配置如下：```plaintext#portalnas-port-idformat4portalfree-rule0sourceipanydestinationipxxx.xxx.xxx.xxx255.255.255.255portalfree-rule1sourceipanydestinationipxxx.xxx.xxx.xxx255.255.255.255portalfree-rule3sourceipanydestinationipxxx.xxx.xxx.xxx255.255.255.255portalfree-rule100sourceip192.168.0.0255.255.255.0destinationipany#portalweb-serverxxxxurlhttp://xxx.xxx.xxx.xxx:xxxx/wlanPortal/portal_manage/entranceurl-parameternasidvaluexxxxxxxxxxxxurl-parameteruseripsource-addressurl-parameterusermacsource-macurl-parameteruserurloriginal-urlurl-parameterwlannasidnas-port-id```",
+        "结论": "问题并非由版本引起，而是由于nas-port-id参数值未在适当的位置配置。在实验室验证中，发现通过在radio视图下配置nas-port-id的参数值后，报文可以正常携带nas-port-id端口号信息。因此，怀疑客户设备上的nas-port-id参数值配置不正确或缺失。",
+        "解决办法": "1.检查配置：首先从配置入手，检查是否有错误或缺失。2.配置nas-port-id参数值：在radio视图下配置nas-port-id的参数值，如下所示：```plaintext[WX5540H-wlan-ap-ap1-radio-1]service-templatelocalportalnas-port-idnasportidtest[WX5540H]portalweb-serverfhxz[WX5540H-portal-websvr-newpt]url-parameterwlannasidnas-port-id```3.验证配置：通过抓包等方式验证配置是否生效，确认Portal重定向URL中是否携带了nas-port-id信息。4.其他配置方式：若上述方法无效，可以尝试在AP视图、AP组视图和全局视图中配置nas-port-id参数值。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/24347",
+        "备注": ""
+    },
+    {
+        "序号": 597,
+        "问题现象": "：在某银行局点使用H3CWX系列AC的iMCWSM组件节能策略时，发现AP射频口下绑定的服务模板SSID1丢失。",
+        "问题描述": "：银行局点配置了iMCWSM组件的节能策略，该策略在启动和停止周期后，应保持SSID绑定的一致性。但在实际操作中，发现某些射频口（例如Radio2）在节能策略停止后，原本绑定的服务模板SSID1消失。",
+        "结论": "：故障的原因在于，在节能策略建立之后，通过其他方式修改了射频口的SSID绑定情况。例如，建立策略前，Radio1绑定SSID1，而Radio2未绑定SSID1；但在策略建立后，Radio2又通过其他途径绑定了SSID1。因此，当节能策略在停止阶段将所有射频口的绑定关系重置时，只恢复了建立策略时的初始状态，导致后来绑定的SSID1在Radio2上消失。",
+        "解决办法": "：1.在iMC上同步设备。2.重新创建节能策略，确保所有射频口的SSID绑定关系与当前配置一致。通过以上步骤，可以恢复AP射频口下丢失的服务模板SSID1，并解决故障问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/3277",
+        "备注": ""
+    },
+    {
+        "序号": 598,
+        "问题现象": "某大学的无线MESH链路建立异常，表现为MAP（MeshAccessPoint）的以太口插上网线后，以太口up，MAP才能在AC（AccessController）上注册成功，且MESH-LINK建立稳定；若未插网线，MESH-LINK建立后会频繁断开，导致连接不稳定。",
+        "问题描述": "1.配置检查：检查配置发现“portal-serviceenable”命令配置错误，使得AP角色变为MPP（MeshPortalPoint），但删除该命令后问题依旧存在。2.实验室复现：尝试在实验室复现客户现场现象，配置“portal-serviceenable”后MESH-LINK无法连接，删除该命令后链路建立但不稳定。3.调试信息：通过debug命令发现MESH链路在建立临时邻居后断开，再次建立时检测链路超时。4.接口状态：发现VLAN接口地址不稳定，导致MESH链路反复建立和断开。5.DHCP调试：收集DHCP调试信息，发现DHCP中继设备在回复DHCPACK时有时广播有时单播，导致VLAN接口异常，LWAPP（LightweightAccessPointProtocol）隧道无法建立，从而影响MESH链路的稳定性。",
+        "结论": "客户现场的MESH链路建立异常是由于DHCP中继设备的DHCP协议实现不标准引起的。具体表现为DHCP中继设备在回复DHCPACK时，第一次为广播，第二次为单播，导致VLAN接口状态不稳定，进而影响MESH链路的建立和维持。",
+        "解决办法": "1.更换DHCP中继设备：使用符合标准的DHCP中继设备，如H3C交换机。2.AC作为DHCP服务器：将MAP的DHCP服务器配置到AC上，通过二层网络获取地址，确保DHCP报文均为广播形式。3.配置静态IP地址：在MAP上手动配置VLAN接口的IP地址、AC地址及一条指向网关的静态路由，以确保MESH链路的稳定建立。通过上述方法，MESH链路可以稳定建立并维持，不再出现频繁断开的问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/4259",
+        "备注": ""
+    },
+    {
+        "序号": 599,
+        "问题现象": "在客户现场，WX5004控制器配置了WIPS热点检测功能后，使用安卓手机开启热点测试时，控制器能够正常发现热点。然而，使用iPhone开启热点测试时，控制器无法发现iPhone的热点。",
+        "问题描述": "1.设备及软件版本：客户现场使用的WX5004控制器，软件版本为Release2509P44。2.WIPS配置：部分AP配置为`wipsdetectmodedetect-only`，专门用于热点检测；其他AP配置为`wipsdetectmodemiddle`，同时进行覆盖和WIPS检查。3.测试情况：代理商工程师在使用detect-only模式的AP下测试iPhone热点，iPhone开启热点后不锁屏，并使用其他终端接入热点加大发包量，测试十多分钟后仍然无法发现iPhone热点。4.MAC地址差异：iPhone发出的热点MAC地址与手机上查看的“无线局域网地址”MAC地址不同，怀疑是iPhone的处理机制导致控制器无法发现热点。",
+        "结论": "1.iPhone热点的特殊处理机制：iPhone作为热点时，会使用本地管理MAC地址作为BSSID，这可能导致控制器无法正确识别和发现iPhone热点。2.软件版本问题：WX5004控制器的Release2509P44版本未提供对本地管理MAC地址的过滤功能，导致未能正确检测iPhone热点。3.解决方案：升级到最新版本R2509P51，并使能`detectadmin-mac-scanenable`命令，开启本地管理MAC过滤功能，可以有效解决该问题。",
+        "解决办法": "1.升级软件版本：将WX5004控制器的软件版本升级到R2509P51。2.使能本地管理MAC过滤功能：-在WIPS视图下执行命令`detectadmin-mac-scanenable`，开启本地管理MAC过滤功能。3.配置WIPS热点检测：-创建热点列表：`hotspotlinc`，SSID为需要检测的热点名称。-在攻击检测策略视图中开启热点攻击检测，并指定为rogueAP：`detecthotspot-attackactionclassifyrogue`。-在反制策略视图中开启对rogueAP的反制功能：`countermeasurerogue-ap`。-在虚拟安全域中引用上述配置：`virtual-security-domaintest`，绑定测试和反制AP。4.验证：确保AP配置为`detect-only`模式，其他模式可能影响检测效果。在实验室环境中使用WX3010E的P46版本进行测试，验证配置是否生效。测试结果升级到R2509P51版本并使能`detectadmin-mac-scanenable`后，控制器成功检测到iPhone热点。反制方式是终端连上后，AP仿冒iPhone的BSSID发送deauth报文，使终端无法连接到热点。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/7347",
+        "备注": ""
+    }
+]

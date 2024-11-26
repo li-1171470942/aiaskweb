@@ -1,0 +1,6 @@
+recursive-include staticpage/templates *
+include data/Odata/*.*
+include data/resultCSV/*.*
+include data/TYresult/*.*
+include data/urlList/*.*
+include requirements.txt

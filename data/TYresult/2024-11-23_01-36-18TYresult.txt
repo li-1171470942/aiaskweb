@@ -1,0 +1,182 @@
+[
+    {
+        "序号": 1500,
+        "问题现象": "在采购H3CWA2610H无线接入点（AP）时，可能会遇到出厂版本为V7的情况。使用传统方法将该款型AP降级到V5版本时，会遇到以下问题：通过V5AC降级时，AP下载版本成功后自动重启，但重启后仍然显示为V7版本，出现反复重启的情况。尝试格式化AP后，AP无法正常启动。通过boot界面手动降级V5时，导入V5版本的bin文件会提示文件错误“Somethingwrongwiththefile.”",
+        "问题描述": "H3CWA2610H出厂时的bootrom版本为V7.02，不支持自动降级到V5版本。因此，直接使用V5AC进行降级操作会导致失败。AP在尝试降级过程中会反复重启，最终仍停留在V7版本。",
+        "结论": "要成功将H3CWA2610H从V7版本降级到V5版本，需要先将AP的bootrom版本升级到V7.04，然后再通过V5AC进行降级操作。如果已经格式化过AP，可以直接通过手动升级bootrom到V7.04版本，再进行降级。",
+        "解决办法": "1.通过V7AC升级bootrom至V7.04版本：-步骤1：使用V7AC（版本需D016SP33及以上）将WA2610H注册上线，确保AP的bootrom升级至V7.04版本。-步骤2：在V7AC上开启capwap功能。```shell[AC]_hNowyouenterahiddencommandviewfordeveloper'stesting,somecommandsmayaffectoperationbywronguse,pleasecarefullyuseitwithourengineer'sdirection.[AC-hidecmd]fpl-diagenable//必须先enableAreyousureyouwanttoenableFPL-DIAG?[Y/N]y%FPL-DIAGhasbeenenabled.[AC-hidecmd]fpl-diagdrvcapwapset1//开启capwap```-步骤3：保存配置并重启设备，使capwap功能生效。-步骤4：将AP注册到V5AC上（版本需B109D050及以上），按照传统方法进行降级操作。2.手动升级bootrom至V7.04版本：-步骤1：准备一条安卓手机用的数据线，将其作为USB转串口线连接到AP。-步骤2：通过驱动精灵等软件自动更新驱动，设置好COM口配置。-步骤3：重启AP，按Ctrl+B进入boot界面，按Ctrl+F格式化系统。-步骤4：手动导入V7.04版本的bootware文件（文件需从无线L3获取），并更新。```shellEnteryourchoice(0-9):7Enteryourchoice(0-2):2Enteryourchoice(0-4):4Protocol(FTPorTFTP):tftpLoadFileName:apwtu41028467_v7.04.btwTargetFileName:apwtu41028467_v7.04.btwServerIPAddress:1.1.1.1LocalIPAddress:1.1.1.3SubnetMask:0.0.0.0GatewayIPAddress:0.0.0.0Enteryourchoice(0-4):1```-步骤5：更新完成后重启AP。3.在V5AC上配置AP模板并降级：-步骤1：在V5AC上配置好AP模板，确保AP可以自动获取地址并与AC二层可达。-步骤2：在AP的boot界面主菜单重启AP，让AP自动降级。降级期间AP可能会反复重启三次，无需人为操作。注意事项1.capwap功能：V7的AP.ipe本身不支持lwapp，因此在有V7版本的情况下需要降级V5，AC必须开启capwap。但如果已经格式化过AP，从bootrom过程中降级V5，就不需要开启capwap。2.业务中断：大量AP通过AC降级V5时，V5AC开启capwap功能会导致已在线的AP掉线，业务会中断。需注意申请窗口时间。3.版本传输：V5AC一次同时可以给32台AP传输版本，尽量预留多一点时间让AP下载版本，避免二次操作。4.回退问题：通过手动升级APboot时，如果AP已经有V7版本的文件，第一步需格式化，否则bootrom升级成功后，AP会发现boot与主版本文件不匹配，提示是否回退bootrom版本。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/9154",
+        "备注": ""
+    },
+    {
+        "序号": 1501,
+        "问题现象": "某局点的AP频繁掉线，设备显示掉线原因为“Failedtoretransmitmessage”，解释为AC下发AP关键信息超时无响应（一般是下发配置），AC主动断开连接。",
+        "问题描述": "1.链路测试：-现场AC长pingAP大包，没有丢包，但在ping期间，AP仍然发生了掉线。-普通ping没有丢包不代表链路没有问题，链路问题可能在特定情况下表现出来。-AP与AC之间的控制隧道使用端口5246，数据隧道使用端口5247。2.特定端口检测：-使用`wlanap-link-test`命令检测AP所在链路的稳定性，发现该链路在端口5246下丢包严重。-对比其他链路，没有出现类似丢包现象，怀疑该链路特定端口的通信不稳定。",
+        "结论": "该局点的AP频繁掉线是由于AP与AC之间的控制隧道（端口5246）链路不稳定导致的。普通ping测试没有发现丢包，但特定端口下的链路检测显示丢包严重，切换到稳定的MPLS链路后，AP可以稳定在线。",
+        "解决办法": "1.切换链路：-现场切换到稳定的MPLS链路，AP可以稳定在线。2.调整配置：-如果无法排查链路问题，可以尝试通过增大以下配置来缓解AP掉线的频率：-`echo-interval`：AP向AC发送的回声请求Echorequest时间间隔设置为30秒（默认10秒）。-`echo-count`：配置回声请求Echorequest报文的最大发送次数（默认3次）。-`keepalive-interval`：配置AP向AC发送CAPWAP数据隧道keepalive报文的时间间隔设置为30秒（默认10秒）。-`retransmit-interval`：配置AC发往AP的请求报文重传的时间间隔设置为8秒（默认5秒）。备注使用`wlanap-link-test`命令时需谨慎，WX2500X和WX3500X老版本使用该命令可能会导致AC异常重启。建议在WX2500XR5424版本以后和WX3500XE1205P01版本之后使用该命令。该案例由朱鹏飞七段在2022-08-23发表，并于2022-09-06进行了修订。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/211550",
+        "备注": ""
+    },
+    {
+        "序号": 1502,
+        "问题现象": "某电信业务规划无线组网，终端用户通过分支机构的AP接入网络，可以正常获取DHCP地址，但无法ping通业务网关地址，导致实际业务测试无法继续进行。",
+        "问题描述": "1.业务规划：总部部署AC管理总部及分支机构的AP，分支机构AP通过三层方式穿越公网注册到AC，分支用户数据通过CAPWAP隧道上送AC并交由BAS进行认证转发。由于总部VLAN资源紧张，无线业务需要规划QINQ以屏蔽无线用户的真实VLAN-Tag。2.配置情况：在AC上配置了QINQ，用户内层标签为200，外层标签为3750。具体配置命令如下：```wlanaptestmodelWA4320H-ACNid1prioritylevel7serial-id219801A0P79165G00884radio1service-template1vlan-id3750200radioenableradio2service-template1vlan-id3750200radioenableinterfaceVlan-interface3750second-dot1q200```3.初步测试：终端用户可以接入无线网络并获取DHCP地址，但无法ping通业务网关地址，初步判断可能是ARP报文透传问题。",
+        "结论": "AC开启QINQ功能后，无法实现快转，导致用户数据无法正常转发。关闭AC的快转功能后，业务转发恢复正常。",
+        "解决办法": "1.关闭FPGA快转功能：```undofpgawork-modefast-forwarding```2.关闭MAC快速转发功能：```undomacfast-forwarding```配置以上命令后，重新测试业务，终端用户能够正常ping通业务网关地址，业务测试恢复正常。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/7972",
+        "备注": ""
+    },
+    {
+        "序号": 1503,
+        "问题现象": "小贝路由器在Web概览页面显示无Internet连接。",
+        "问题描述": "小贝路由器配置为以AC作为网关并直接连接外网。配置完成后，发现Web概览页面显示无Internet连接。然而，内网访问外网业务正常，设备本身也能ping通域名及外网地址。设备已经成功上绿洲纳管，但仍然显示无Internet连接，怀疑该探测机制存在异常。",
+        "结论": "经过分析，发现小贝路由器的Internet连接状态显示问题可能是由于其对特定域名进行NQA（NetworkQualityAnalysis）探测的配置被误删除所致。具体来说，路由器通过定期探测http://cn.bing.com来判断Internet连接状态，当探测失败时会显示无Internet连接。",
+        "解决办法": "将NQA探测配置添加回路由器中，具体命令如下：```plaintext#nqaserverenable#nqaentryxiaobei-testtypehttp#frequency5000#history-recordenable#history-recordnumber1#probe-timeout500#urlhttp://cn.bing.com#nqaschedulexiaobei-teststart-timenowlifetimeforever```添加配置后，问题得以解决。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/151856",
+        "备注": ""
+    },
+    {
+        "序号": 1504,
+        "问题现象": "在使用WX5540H配置绿洲一键上网功能时，点击一键上网按钮后页面无法正常跳转。",
+        "问题描述": "配置了如下PortalWeb服务器的URL：```portalweb-servercloudurlhttp://oasisauth.h3c.com/portal/protocol?redirect_uri=http://182.245.120.235:8088/portal/cloudlogin.html```当终端点击一键上网按钮后，返回的URL为：```http://182.245.120.235:8088/portal/cloudlogin.html?code=772528i15d272b3a40740439c1123906&userip=192.168.204.8&portal_server=http://oasisauth.h3c.com:80/portal/protocol```通过抓包分析发现，终端的IP地址为192.168.204.16，但终端与182.245.120.235这个地址之间无法建立TCP连接。同时，由于AP跨公网注册并进行本地转发，而一些公网地址封禁了80端口，导致绿洲认证过程中涉及的终端访问AC的80端口请求失败。",
+        "结论": "问题的根本原因是配置中的URL地址（182.245.120.235）无法与终端建立连接，且绿洲认证过程中默认使用80端口，而80端口被公网地址封禁，导致认证失败。",
+        "解决办法": "1.将PortalWeb服务器的URL地址中的182.245.120.235替换为实际AC的公网地址，确保终端能够与该地址互通。2.修改绿洲认证过程中使用的端口，将80端口改为8088端口，以规避公网地址对80端口的封禁。-修改配置如下：```portalweb-servercloudurlhttp://oasisauth.h3c.com/portal/protocol?redirect_uri=http://<AC公网地址>:8088/portal/cloudlogin.htmliphttpport8088portallocal-web-serverhttptcp-port8088```通过以上修改，确保终端能够与AC的公网地址建立连接，并且使用未被封禁的8088端口进行绿洲认证。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/41257",
+        "备注": ""
+    },
+    {
+        "序号": 1505,
+        "问题现象": "某局点使用V7的AC插卡设备进行无线license共享时，共享特性未生效，所有设备的license共享状态显示为down。",
+        "问题描述": "该局点的AC插卡设备使用的版本为R5221，支持无线V7的license共享特性。现场配置了4台AC插卡设备，采用N+1的方式进行license共享，即AC1、AC2、AC3的license共享到AC4上。然而，配置完成后，所有设备的license共享状态均为down，无法正常同步。",
+        "结论": "问题的原因在于配置无线license共享特性时，主设备除了需要配置backup信息之外，还需要将其他主设备的信息也配置进去。每台主设备都需要配置所有其他设备的member成员信息，才能确保license共享成功。",
+        "解决办法": "1.修改AC1的配置：```plaintextwlanap-license-grouplocalip10.104.0.1memberip10.104.0.2memberip10.104.0.3memberip10.104.0.4backupap-license-synchronizationenable```2.修改AC2的配置：```plaintextwlanap-license-grouplocalip10.104.0.2memberip10.104.0.1memberip10.104.0.3memberip10.104.0.4backupap-license-synchronizationenable```3.修改AC3的配置：```plaintextwlanap-license-grouplocalip10.104.0.3memberip10.104.0.1memberip10.104.0.2memberip10.104.0.4backupap-license-synchronizationenable```4.修改AC4的配置：```plaintextwlanap-license-grouplocalip10.104.0.4backupmemberip10.104.0.1memberip10.104.0.2memberip10.104.0.3ap-license-synchronizationenable```通过上述配置修改，4台设备的license共享状态显示为正常，共享特性成功生效。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/34762",
+        "备注": ""
+    },
+    {
+        "序号": 1506,
+        "问题现象": "终端设备成功关联到无线网络后，能够跳转至Portal认证页面，但输入账号和密码后点击登录，页面持续加载无法完成认证，导致终端设备无法正常上网。",
+        "问题描述": "1.Portal页面重定向正常：终端设备能够正常跳转到Portal认证页面，说明PortalWeb服务器的HTTP页面和设备的重定向功能均无问题。2.AC与Portal服务器通信正常：AC能够ping通Portal服务器，且登录页面未提示“设备向服务器发送请求超时”，初步判断AC与Portal服务器之间的通信正常，但Portal或Radius报文交互存在问题。3.获取用户物理信息失败：设备在创建用户时未能获取到用户的物理信息，导致认证失败。4.Portal功能被禁用：设备日志显示Portal功能在接口上被禁用。5.AAA认证失败：设备尝试向Radius服务器发起认证请求，但返回的ACK_AUTH报文显示认证失败（ErrCode=1）。6.客户端被踢下线：由于AAA认证失败，Portal服务器将用户踢下线。",
+        "结论": "1.ARP表项问题：在二层注册、本地转发的组网环境下，AC由于旁挂在核心交换机上，终端的网关在核心交换机上，导致AC无法学习到终端的ARP表项，从而无法完成Portal客户端的合法性检查。2.授权配置缺失：即使在开启`portalhost-checkenable`命令后，AC仍然认证失败，原因是设备侧缺少授权配置，导致AAA认证阶段虽然认证成功，但授权失败。",
+        "解决办法": "1.开启Portal客户端合法性检查功能：-执行`portalhost-checkenable`命令，使AC在收到未认证Portal用户的认证报文后，不仅根据ARP表项，还会使用WLANSnooping表和DHCPSnooping表进行合法性检查。-这样即使AC没有终端的ARP表项，也可以通过其他表项检查客户端的合法性，从而允许Portal认证。2.补充授权配置：-在设备侧增加授权配置，确保AAA认证阶段的授权请求能够成功处理。-具体配置如下：```plaintextdomainportalauthenticationportalradius-schemeacaccountingportalradius-schemeac```总结问题定位：通过分析设备日志，确定问题主要出在AC无法获取终端的物理信息，以及AAA认证阶段的授权失败。解决措施：开启Portal客户端合法性检查功能，并补充设备侧的授权配置。经验分享：在处理Portal认证问题时，应详细了解报文交互的具体过程，以便快速定位问题并采取相应的解决措施。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/77059",
+        "备注": ""
+    },
+    {
+        "序号": 1507,
+        "问题现象": "1.本体无法注册：-本体AP无法上线，显示未注册。2.分体无法上线：-本体AP在线，但分体AP无法上线，显示未注册。",
+        "问题描述": "1.本体无法注册：-本体AP不占用license，但注册不上。-可能原因包括：-本体AP未获得正确的IP地址。-本体AP到AC之间的链路存在问题（如丢包率过高或中间链路环路）。-DHCPOption43填写错误，导致本体无法找到AC。-AC上本体模板配置错误（如型号或序列号不匹配）。2.分体无法上线：-分体AP占用license，本体AP在线是分体上线的前提条件。-可能原因包括：-本体AP未在线。-剩余license不足。-AC上分体模板配置错误（如型号或序列号不匹配）。-分体AP的模式设置错误（超瘦模式和直通模式的区别）。-本体AP供电异常（如POE端口关闭）。-本体AP和分体AP之间的链路存在问题。-分体AP未正确上报本体驱动管理信息。",
+        "结论": "终结者AP结构上虽然与普通AP有所不同，但排查思路基本一致。本体AP的注册问题主要集中在网络配置、链路质量和模板配置上。分体AP的上线问题主要集中在本体AP的状态、license数量、模式设置、供电和链路质量上。",
+        "解决办法": "1.本体无法注册：-检查IP地址：-确认本体AP是否通过DHCP获取到正确的IP地址，如无法获取，可手工配置IP地址进行测试。-使用命令：`<AC>displaywlanapname1010address`和`<WT1010>displaydhcpclientverbose`。-检查链路质量：-确认本体AP到AC之间的链路丢包率是否小于0.1%，特别注意中间链路是否存在环路。-使用命令：`<AC或者WT1010>ping-s1472-f-c1000-a192.168.0.17192.168.0.100`。-检查DHCPOption43：-确认DHCPOption43是否正确填写，本体AP是否能找到AC。-使用命令：`[WT1010]wlanacip192.168.0.111`进行测试。-检查AC模板配置：-核对AC上本体模板的型号和序列号是否正确。-使用命令：`[AC-wlan-ap-1010]displaythis`和`#wlanap1010modelWT1010serial-id219801A0T9C166000141`。2.分体无法上线：-确保本体在线：-优先保证本体AP在线。-检查license：-确认AC上剩余的license是否足够。-使用命令：`<AC>displaywlanapall`。-检查AC模板配置：-核对AC上分体模板的型号和序列号是否正确。-使用命令：`[AC-wlan-ap-420h]displaythis`和`#wlanap420hmodelWTU420Hserial-id219801A0WA9163Q05874vlan1radio1radioenableservice-templatelbradio2`。-检查模式设置：-确认分体AP的模式设置是否正确。WTU420H只支持超瘦模式，WTU410H和WTU430H只支持直通模式。-使用命令：`<AC>diswlanaprunning-configurationap-name1010|includeversion`。-检查供电情况：-确认本体AP的POE端口是否正常供电。-使用命令：`[AC-wlan-ap-1010]displaythis`和`[WT1010-probe]diagpoe1/0allstatus`。-检查链路问题：-确认本体AP和分体AP之间的链路是否正常，有条件时进行替换测试。-使用命令：`<1010>displayinterfaceWTU-Ethernet1/0/1`。-检查驱动管理上报：-确认分体AP是否正确上报本体驱动管理信息。-使用命令：`<WT1010>displayversion`和`<1010>displayinterfacebrief`。-检查序列号和MAC地址：-确认AC上分体AP的序列号和MAC地址配置是否正确。-使用命令：`<AC1>diswlanapname1020-3f-407verbose`和`[WT1020-4f-probe]diswlanwtuall`。3.快速查找最近掉线的AP：-使用命令：`<AC>displaywlanapconnectionrecordall`，该命令按AP状态最后变化的时间顺序显示，越靠上表示越近，Time表示AP状态最后变化的时间。通过上述步骤，可以系统地排查和解决终结者AP的注册问题，确保网络的正常运行。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/19704",
+        "备注": ""
+    },
+    {
+        "序号": 1508,
+        "问题现象": "某局点的部分苹果终端始终无法接入无线网络，无论是加密的802.1X认证SSID还是免密钥认证SSID，接入时均显示“无法接入网络”。",
+        "问题描述": "1.核对配置：检查了无线控制器的主要配置，未发现明显问题。2.终端测试：使用故障苹果终端尝试接入加密和未加密的SSID，均无法接入并获取IP地址。3.排除终端故障：确认故障苹果终端无线网卡正常，其他厂商的无线设备在同一环境中能正常接入。4.手动配置测试：在故障终端上手动配置一个IP地址后，可以正常访问业务。5.调试信息：通过收集故障终端的调试信息（`debuggingwlanclientMAC`和`debuggingwlanmacclient`），发现终端能够成功接入SSID，但随后主动下线，下线原因为接收到的断开关联帧（`reasoncode=8`）。6.客户端信息：使用`displaywlanclientmac-address`命令查看客户端信息，发现故障终端的MAC地址在线，但未分配IP地址。",
+        "结论": "问题的根本原因是现场DHCP服务器将部分终端的MAC地址禁止了，导致这些终端无法获取IP地址，从而无法正常接入无线网络。",
+        "解决办法": "1.检查DHCP配置：登录DHCP服务器，检查其配置，确保未将故障终端的MAC地址加入禁止列表。2.解除MAC地址禁止：如果发现故障终端的MAC地址被禁止，将其从禁止列表中移除。3.重启DHCP服务：重启DHCP服务，确保配置生效。4.终端重新连接：让故障终端重新连接无线网络，验证是否能够正常获取IP地址并接入网络。通过上述步骤，可以解决部分苹果终端无法接入无线网络的问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/27995",
+        "备注": ""
+    },
+    {
+        "序号": 1509,
+        "问题现象": "用户在无线WLAN环境中遇到网络性能下降、连接不稳定或终端设备无法正常接入等问题，怀疑是由于无线干扰导致。",
+        "问题描述": "无线WLAN干扰问题主要表现为2.4G频段的空口利用率过高，具体可以通过以下两种情况来判断：1.非WLAN干扰：AP当前信道的空口利用率中，`crtlbusy`的数值远大于`TxBusy`与`RxBusy`之和，且差值大于30%。常见干扰源包括4G信号、微波炉、无绳电话、蓝牙、无线摄像头等。2.WLAN同频干扰：AP当前信道的空口利用率中，`RxBusy`的数值很高，且在更换多个信道后，只有指定的某个或几个信道出现空口利用率过高的情况。这种干扰通常是由同一信道上的其他WLAN设备引起的。",
+        "结论": "1.非WLAN干扰：如果更换多种信道后，各信道的空口利用率均显著过高，且`crtlbusy`远大于`TxBusy`与`RxBusy`之和，可以初步判断为非WLAN干扰。2.WLAN同频干扰：如果更换信道后，只有指定的某个或几个信道出现空口利用率过高的情况，可以判断为WLAN同频干扰。",
+        "解决办法": "1.非WLAN干扰：-物理调整：调整AP或干扰源的位置，以物理上远离干扰源。-加装滤波器：在AP与天线之间加装滤波器，过滤特定频段的干扰信号。-更换AP款型：选择抗干扰能力更强的AP款型进行替换。2.WLAN同频干扰：-协调资源：关闭或降低周围WLAN设备的信号强度。-调整信道：选择空闲的信道，例如3、8、13等非常用信道。-提高信道利用率：在AP模板下配置`channel-reuse`选项，提高信道利用率。建议配置阈值为6或5，并观察是否有副作用，如用户无法接入或性能下降。附加信息频谱分析仪：使用专业无线勘测仪器频谱分析仪配合高性能天线对现场无线环境进行扫描，特别是2.4G临近频段的信号波动。现场观察：通过对现场的物理观察，确认是否存在明显的非WLAN干扰源，如运营商天线、微波炉等。收集照片与信息：将现场的照片和相关数据信息反馈给技术支持团队，以便进一步分析和处理。相关案例无线V7通用优化规范无线V5通用优化规范无线终端丢包通用排查评价与反馈如果您有关于该案例的建议或反馈，请联系作者或技术支持团队。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/42057",
+        "备注": ""
+    },
+    {
+        "序号": 1510,
+        "问题现象": "某局点的AP无法成功注册，状态显示为“I”，不会在“I”与“IL”状态之间切换。同时，AP获取的IP地址状态为“offered”。",
+        "问题描述": "1.组网及说明：-AC旁挂核心设备，采用集中转发模式。-AP的地址池配置在AC上。2.具体现象：-在AC上查看AP的状态为“I”，并且不会在“I”与“IL”状态之间切换。-在AC上查看地址池分配情况，发现地址已经分配出去，但状态为“offered”。",
+        "结论": "通过排查发现，AP获取IP地址状态为“offered”的原因可能是网络中存在环路。环路导致DHCP请求和响应报文在网段中循环传输，使得AP无法正确接收到DHCPOffer报文并回复DHCPRequest报文，从而无法获得“COMMITTED”状态的IP地址。",
+        "解决办法": "1.检查地址重叠：-确认AP的地址池配置是否与网络中其他设备的地址池存在重叠。如果存在重叠，需要调整地址池配置，确保唯一性。2.排查网络环路：-使用网络抓包工具（如Wireshark）或网络管理工具检查网络中的环路情况。-关闭可能存在环路的端口，或使用STP（生成树协议）等技术来防止环路。-排除环路后，重新检查DHCP地址分配情况，确认AP的IP地址状态是否变为“COMMITTED”。通过上述步骤，最终成功排除了网络中的环路问题，AP的状态恢复正常，能够成功注册并获得“COMMITTED”状态的IP地址。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/71888",
+        "备注": ""
+    },
+    {
+        "序号": 1511,
+        "问题现象": "在某局点的现场，AC（接入控制器）与IMC（智能管理中心）对接Portal认证后，认证成功页面总是自动跳转到认证前用户输入的页面，而客户希望页面不要跳转。",
+        "问题描述": "现场AC与IMC对接Portal认证时，认证成功后页面自动跳转到用户认证前访问的页面。通过设备上的Debug信息确认，重定向URL中携带了`User-url`参数，例如：```http://...:8080/portal?userurl=http://www.baidu.com&wlanusermac=```然而，检查AC配置时发现并没有配置`Url-parameter`相关参数。进一步查阅命令手册，确认当PortalServer的`ServerType`为IMC时，Portal重定向URL中会默认携带`Userurl`参数。",
+        "结论": "问题的原因在于，当PortalServer的`ServerType`设置为IMC时，设备在重定向URL中默认携带了`Userurl`参数。IMC识别并处理了这个参数，导致终端在认证成功后跳转到认证前用户访问的页面。",
+        "解决办法": "1.更改PortalServer的ServerType为CMCC：-将PortalServer的`ServerType`指定为CMCC。这样在不配置`Url-parameter`的情况下，重定向URL中就不会携带`Userurl`参数。-配置命令示例：```portalserverportalserverip...keycipher$c$3$/kyzgMnNgIw3qX32MI91H80LCUlybyWgaQ==urlhttp://...:8080/portalserver-typecmcc```2.添加Url-parameter配置，故意使用错误的参数名称：-在AC配置中添加`Url-parameter`，但故意将`Userurl`参数名称设置为一个IMC无法识别的错误名称，例如`userurlx`。-配置命令示例：```portalserverportalserverip...keycipher$c$3$/kyzgMnNgIw3qX32MI91H80LCUlybyWgaQ==urlhttp://...:8080/portalserver-typeimcurl-parameteruserurlx```这两种方法都可以解决页面自动跳转的问题，但第一种方法更符合规范，而第二种方法虽然有效，但需要违背常规配置。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/24374",
+        "备注": ""
+    },
+    {
+        "序号": 1512,
+        "问题现象": "客户现场使用WX3540H无线控制器（AC）配置802.1X认证，结合服务器采用PEAP-GTC认证方式。配置完成后，无线终端在进行准入认证时认证失败。",
+        "问题描述": "1.设备配置检查：无线AC上的802.1X认证配置如下：-服务模板：`service-template1ssiddx-testvlan100akm-modedot1xcipher-suiteccmpsecurity-iersnclient-securityauthentication-modedot1xnas-port-type5dot1x-domaingtcdot1xeap-terminationeap-profileeap-src`-RADIUS方案：`radiusschemegtcprimaryauthentication1.1.1.1keycipher$c$3$x6primaryaccounting1.1.1.2keycipher$c$3$keyauthenticationcipher$c$3$x0PDkSzRSiGLQ==keyaccountingcipher$c$3$OtAXyuser-name-formatwithout-domainnas-ip192.168.100.1`-EAP配置：`eap-profileeap-srcmethodpeap-gtcssl-server-policyssl-eap`-PKI域：`pkidomaineap-gtcpublic-keyrsageneralnameeap-gtc`-SSL服务器策略：`sslserver-policyssl-eappki-domaineap-gtc`-认证域：`domaingtcauthenticationlan-accessradius-schemegtcauthorizationlan-accessradius-schemegtcaccountinglan-accessradius-schemegtc`2.调试信息分析：通过开启AC的调试信息，发现如下报错：-`EAPTLS:RecvUnknownTLSversion[length0005]`-`EAPTLS:RecvTLS1.0Handshake[length0092],ClientHello`-`EAPTLS:SendUnknownTLSversion[length0005]`-`EAPTLS:SendTLS1.0Alert[length0002],fatalhandshake_failure`-`EAP_TLSprocessinghandshakemessagefailed`",
+        "结论": "从调试信息中可以看出，认证失败的原因是无线控制器上未导入正确的证书，导致TLS握手过程中出现未知的TLS版本和握手失败。",
+        "解决办法": "1.导入证书：在无线控制器（AC）上导入正确的PEAP-GTC证书。2.重新配置：确保证书导入后，重新检查和配置802.1X认证相关设置。3.验证：导入证书并重新配置后，再次进行终端认证测试，确认问题是否解决。通过上述步骤，成功解决了802.1XPEAP-GTC认证失败的问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/56201",
+        "备注": ""
+    },
+    {
+        "序号": 1513,
+        "问题现象": "用户希望在Windows电脑上直接捕获无线网络报文，但常见方法如使用Omnipeek软件、MacOS下的Wireshark、无线诊断工具、Ubuntu的aircrack-ng等，存在较高的入门门槛和学习成本，且有些方法需要特定的硬件设备。",
+        "问题描述": "在Windows系统中，用户希望能够以较低的成本和较低的技术门槛实现无线报文的捕获和分析，尤其是在没有额外专业抓包网卡的情况下。",
+        "结论": "通过在Windows电脑上安装Npcap工具（Wireshark3.0及以上版本默认包含），并使用Npcap中的WlanHelper工具，可以实现无线报文的捕获。此方法对于普通用户来说较为简便，无需专业的网卡和高昂的软件费用，但存在一些限制，如无法读取RSSI（接收信号强度指示）和信道信息。",
+        "解决办法": "1.安装Npcap工具：-安装Wireshark3.0及以上版本时，选择安装Npcap驱动。-在安装引导中，选择“Supportraw802.11traffic(andmonitormode)forwirelessadapters”以开启无线802.11报文的支持（含监控模式）。-选择“InstallNpcapinWinPcapAPI-compatiblemode”以兼容WinPcap模式。2.使用WlanHelper工具：-通过管理员身份打开命令提示符（CMD）窗口。-进入WlanHelper工具所在的目录：`cdC:\\Windows\\System32\\Npcap\\`。-使用命令`WlanHelper-h`查看支持的命令。-使用命令`WlanHelper-i`进入自动模式。-使用命令`WlanHelper{InterfaceNameorGUID}[Options]`来查看和修改网卡的工作模式和参数。例如：-查看当前工作模式：`WlanHelperWIFI-m`-查看支持的工作模式：`WlanHelperWIFI-s`-设置为监控模式：`WlanHelperWIFI-mmonitor`-关闭监控模式：`WlanHelperWIFI-mmanaged`-调整信道和频率：-设置2.4G频段：`WlanHelperWIFI-f2`-设置5G频段：`WlanHelperWIFI-f5`-设置信道（例如36信道）：`WlanHelperWIFI-c36`-设置信道（例如149信道）：`WlanHelperWIFI-c149`3.使用Wireshark进行捕获：-设置网卡为监控模式后，打开Wireshark。-选择支持监控模式的无线网卡进行捕获。4.注意事项：-只有部分无线网卡支持Npcap的驱动管理，具体支持的网卡及驱动列表可参考相关文档。-抓包过程中，可能无法读取RSSI和信道信息，因为Microsoft没有提供这些接口给Npcap。参考文档Wireshark捕获设置文档：[CaptureSetup/WLAN](https://wiki.wireshark.org/CaptureSetup/WLAN)Npcap用户指南：[NpcapGuide](https://github.com/nmap/npcap)通过上述步骤，用户可以在Windows电脑上轻松实现无线报文的捕获，虽然有一些限制，但仍然是一种非常实用的学习工具。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/183006",
+        "备注": ""
+    },
+    {
+        "序号": 1514,
+        "问题现象": "设备型号为WX6108E，版本为Version7.1.070,Release7536P05。在新增一块EWPXM2WCMD0FV7系列无线插卡后，设备启动时出现以下报错信息：```BootWareValidating...PressCtrl+BtoaccessEXTENDED-BOOTWAREMENU.........Done.Locatingfileflash:/WX6100E-CMW710-SYSTEM-R7536P05.bin...Done.Loading...Done.Loadingfileflash:/WX6100E-CMW710-SYSTEM-R7536P05.bin...Done!Locatingfileflash:/WX6100E-CMW710-BOOT-R7536P05.bin...Done.Loading...Done.Loadingfileflash:/WX6100E-CMW710-BOOT-R7536P05.bin..............................Done.Done!Loadingthemainimagefiles...Loadingfilecfa0:/system.bin..................................................................Done.[0.000000]0:Malformedearlyoption'pdtwcmxsupport'```",
+        "问题描述": "设备在启动过程中卡在上述报错阶段，持续时间约为十几分钟，之后系统会恢复正常运行。该现象表明设备在加载某些文件时遇到了问题，但最终能够完成启动。",
+        "结论": "1.设备版本兼容性：设备版本（WX6100E-7536P05）支持EWPXM2WCMD0FV7系列无线插卡，这一点通过设备诊断信息得到了验证。2.报错信息解析：报错信息`[0.000000]0:Malformedearlyoption'pdtwcmxsupport'`是由新增的无线插卡在启动过程中打印的，属于正常打印信息，不影响设备的任何功能。3.启动时间延长原因：启动时间延长的问题与报错信息无关，而是由于机框的版本和无线插卡的版本存在内核差异，导致启动过程中的某些步骤需要额外的时间来完成。",
+        "解决办法": "1.确认设备版本兼容性：通过设备诊断信息确认设备版本支持新增的无线插卡。2.忽略报错信息：报错信息`[0.000000]0:Malformedearlyoption'pdtwcmxsupport'`是正常现象，可以忽略，不影响设备功能。3.等待系统恢复：启动过程中虽然会卡在报错阶段，但系统会在十几分钟后恢复正常运行，无需进行额外操作。附加信息作者：杨志涛发表日期：2019-03-01修订日期：2019-06-11该案例对用户是否有帮助：有用若您有关于案例的建议，请反馈：建议反馈",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/53646",
+        "备注": ""
+    },
+    {
+        "序号": 1515,
+        "问题现象": "WA2620i-agn设备升级版本后，Web界面无法打开，浏览器显示“功能函数执行错误”。",
+        "问题描述": "用户刘文峰在升级AP设备的固件版本后，尝试通过浏览器访问Web界面时遇到了问题。浏览器提示“功能函数执行错误”，导致无法正常登录和管理设备。",
+        "结论": "问题的原因是浏览器缓存中保留了旧版本Web界面的数据，导致与新版本不兼容。",
+        "解决办法": "清空浏览器缓存后，重新登录设备的Web界面，问题得以解决。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/5421",
+        "备注": ""
+    },
+    {
+        "序号": 1516,
+        "问题现象": "某客户使用H3C无线AC+FITAP（AP型号：WA4320H-ACN）部署无线网络。在AP正常注册和配置完成后，远程登录AP查看信息时发现AP的CPU利用率异常高，约为56%至68%。AP上未关联无线终端，周围也无其他无线干扰，但其他AP也出现了类似的现象。",
+        "问题描述": "通过查看AP的诊断信息，发现占用CPU利用率较高的进程是KMAC进程。KMAC进程负责处理MAC地址表的学习，其高占用率表明AP频繁进行MAC地址学习。进一步通过“displaymac-address”命令检查MAC地址表项，发现AP上的MAC地址已经学习满，达到了255条的上限。",
+        "结论": "现场AP部署时网络规划存在问题，导致AP学习到网络中大量的MAC地址，从而导致KMAC进程占用CPU资源较高。由于AP本地MAC表项规格较小，建议在部署时为AP单独划分VLAN，以减小二层广播域，避免MAC地址学习过多导致的性能问题。",
+        "解决办法": "1.更改组网：为AP规划单独的VLAN，确保AP仅学习必要的MAC地址。2.减小二层广播域：通过划分单独的VLAN，减小AP所在网络的二层广播域，减少不必要的MAC地址学习。3.优化网络规划：在部署无线网络时，合理规划VLAN，确保AP的MAC地址表项不会因学习过多地址而满载。通过上述措施，AP的CPU利用率恢复正常，问题得以解决。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/20648",
+        "备注": ""
+    },
+    {
+        "序号": 1517,
+        "问题现象": "在相同场景下，WA2610E无线接入点（AP）在Fat模式和Fit模式下的信号强度存在显著差异。具体表现为，在Fit模式下，信号强度比Fat模式低了10几个dB。",
+        "问题描述": "用户刘文峰在相同位置使用电脑测试WA2610E的信号强度时发现，当AP处于Fit模式时，信号强度明显减弱。进一步调查发现，这是因为Fit模式下，AP连接到无线控制器（AC）并启用了漫游导航功能。在测试客户端所处的位置，漫游导航功能判断该位置符合降低信号强度的条件，从而导致AP主动降低了发射信号的强度。",
+        "结论": "Fit模式下，AC上的漫游导航配置导致AP在特定位置主动降低信号强度，从而影响了信号的覆盖范围和强度。在删除漫游导航的配置后，信号强度恢复正常。",
+        "解决办法": "1.删除漫游导航配置：在AC上删除或调整漫游导航的配置，以避免AP在特定位置主动降低信号强度。2.验证信号强度：删除配置后，重新在相同位置测试信号强度，确保信号强度恢复正常。详细配置命令```plaintextwlanoptionroam-navigationlevel10201```此命令用于删除漫游导航的配置，其中`level10201`是具体的配置参数。删除后，信号强度应恢复正常。发表与修订发表日期：2015-11-18修订日期：2019-06-09作者反馈作者刘文峰在2019-06-09对案例进行了修订，以提供更详细的解决方案和配置命令。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/5469",
+        "备注": ""
+    },
+    {
+        "序号": 1518,
+        "问题现象": "客户现场的WX5540E无线控制器配置了portal认证，使用的是电信的号百服务器。终端设备能够成功打开portal页面，但在输入用户名和密码后无法完成认证。",
+        "问题描述": "1.组网配置：-无线控制器型号：WX5540E-版本：Version5.20,Release2609P51-Portal服务器类型：IMC-配置了Portal服务器的IP地址、密钥、URL等信息。-配置了Portal的免认证规则，包括放通认证服务器和DNS服务器的IP地址。-接口Vlan-interface88和Vlan-interface100均启用了Portal认证，并配置了NAT功能。2.初步检查：-确认AC和Portal服务器的密钥无误。-检查Portal的免认证规则，确保认证服务器和DNS服务器的IP地址被正确放通。-建议关闭NAT功能，因为同时开启NAT和Portal可能导致Portal协议端口被占用，影响认证。3.进一步分析：-使用debug工具和Wireshark抓包工具分析设备处理流程。-debug信息显示，终端设备能够成功重定向到Portal页面，但Portal服务器向AC发起的RQE_CHALLENGE报文有误，AC无法识别。-Wireshark抓包结果显示，Portal报文携带的用户IP地址（user-ip）是Portal的NAS-IP地址，而不是终端设备的真实IP地址，这导致AC无法正确识别报文。",
+        "结论": "问题的根本原因是第三方Portal服务器在生成认证报文时，错误地携带了NAS-IP地址而非用户的真实IP地址（user-ip），导致AC无法识别并处理该认证请求。",
+        "解决办法": "1.检查配置：-确认Portal服务器、认证服务器的地址是否被正确放通。2.服务器类型配置：-如果Portal服务器是IMC，则将其服务器类型配置为IMC；如果是其他第三方服务器，则配置为CMCC。3.NAT功能配置：-建议不要在AC上同时配置NAT和Portal功能，以避免NAT占用Portal协议端口，影响认证。4.修改Portal服务器配置：-建议第三方Portal服务器从URL中正确截取用户的真实IP地址（user-ip），而不是使用NAS-IP地址。-现场修改Portal服务器上的配置后，问题得到解决。总结通过以上分析和解决办法，最终确认问题是由Portal服务器错误地将NAS-IP地址作为用户IP地址携带在认证报文中导致的。关闭AC上的NAT功能和修改Portal服务器的配置是解决问题的关键步骤。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/8258",
+        "备注": ""
+    },
+    {
+        "序号": 1519,
+        "问题现象": "：某局点配置了Portal无感知认证，用户在初次成功认证并上网后，当终端熄屏再次打开时，需要重新进行认证。",
+        "问题描述": "：1.用户首次认证成功后可以正常上网。2.终端熄屏后再打开，需要重新进行认证。3.收集第二次认证的Debug信息显示，AC向MAC服务器发送了查询报文，但服务器返回的ErrCode为1，表示未查询到绑定MAC。4.从Debug信息可以确定，MAC服务器并未绑定已经进行认证过的用户MAC。",
+        "结论": "：无感知认证配置不正确。具体来说，无感知相关的配置在无线服务模板下，而Portal配置在VLAN接口下，导致无感知服务没有生效。",
+        "解决办法": "：将Portal和MAC触发配置统一到无线服务模板或者VLAN接口下，以确保无感知认证功能正常工作。具体配置步骤如下：1.将Portal配置统一到服务模板中：```plaintextwlanservice-template1ssidHDDSvlan340portalenablemethoddirectportalapplyweb-serverportalbas-ip192.168.1.241portalapplymac-trigger-servermtsservice-templateenable```2.或者将MAC触发配置统一到VLAN接口下：```plaintextinterfaceVlan-interface340ipaddress10.6.37.254255.255.255.0portalenablemethoddirectportalapplyweb-serverportalbas-ip192.168.1.241portalapplymac-trigger-servermts```通过以上配置调整，确保无感知认证功能能够正常生效。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/132016",
+        "备注": ""
+    }
+]

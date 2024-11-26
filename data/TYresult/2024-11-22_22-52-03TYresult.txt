@@ -1,0 +1,182 @@
+[
+    {
+        "序号": 940,
+        "问题现象": "在某局点采用ADcampus方案后，无线终端获取到BYOD地址后无法自动弹出Portal页面，导致认证流程无法继续。",
+        "问题描述": "1.无线终端获取到BYOD地址后，无法自动弹出Portal页面。2.手动点击网站等信息也无法触发Portal弹出。3.通过输入任意网址可以弹出Portal页面，说明重定向功能没有问题。4.但终端无法通过域名访问互联网，只能通过IP地址访问，初步判断为DNS解析问题。5.终端无法ping通DNS服务器，进一步确认网络连通性存在问题。6.检查AC（无线控制器）配置发现，ACL规则中仅配置了以DNS服务器地址为目的地址的规则，而没有配置以DNS服务器地址为源地址的规则，导致DNS服务器无法与终端通信。",
+        "结论": "问题的根本原因是AC上的ACL规则配置不完整，缺少以DNS服务器地址为源地址的规则，导致DNS服务器无法响应终端的DNS请求，从而使得终端无法自动弹出Portal页面并完成认证流程。",
+        "解决办法": "1.修改AC上的ACL规则，增加以DNS服务器地址为源地址的规则。2.确保规则配置如下：-`rulepermitipdestinationEIA地址`-`rulepermitipsourceEIA地址`-`rulepermitudpdestination-porteqbootpc`-`rulepermitudpdestination-porteqbootps`-`rulepermitipdestinationdns服务器地址`-`rulepermitipsourcedns服务器地址`-`rule100denyip`3.保存配置并重启相关服务。4.问题解决后，无线终端能够正常自动弹出Portal页面并完成认证流程。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/106276",
+        "备注": ""
+    },
+    {
+        "序号": 941,
+        "问题现象": "在某局点使用分层AC解决方案时，AP能够在centralAC（WX5540E）上正常注册上线，但在localAC（WX2540H）上无法注册上线。",
+        "问题描述": "1.组网及说明：分层AC方案由centralAC和localAC组成，其中WX5540E作为centralAC，WX2540H作为localAC。2.配置情况：-CentralAC配置：正确配置了AP的型号、序列号、控制地址、VLAN和无线电服务模板。-LocalAC配置：正确启用了localAC功能，并配置了centralAC的IP地址。3.初步检查：-在centralAC上，使用`displaywlanapall`命令可以看到AP正常注册。-在centralAC上，使用`displaywlanlocal-acall`命令可以看到localAC正常上线。-在localAC的隐藏视图下，使用`displaysysteminternalwlanctrl-ap`命令发现AP未正常注册。4.详细分析：-在localAC上开启debug后，发现AP与localAC在建立CAPWAP隧道的join阶段出现报错：`Failedtoprocessthebottomhalfofjoinrequestmessagebecauseofinvalidapcb.uiapid=0,pstapcb=0,ulretcode=1073807361`。-经过分析，排除了AP注册数量达到规格和license不足的问题。-怀疑是版本适配问题，发现centralAC版本为D016SP28（R5228），localAC版本为D029SP1701（R5417P01），两个版本属于不同的分支。",
+        "结论": "AP无法在localAC上注册上线的问题是由于centralAC和localAC的软件版本不一致导致的。不同版本的AC在处理CAPWAP隧道的join请求时存在兼容性问题。",
+        "解决办法": "1.版本统一：将centralAC和localAC的版本尽量保持一致。2.无线特性包版本接近：如果localAC是融合AC，确保无线特性包的版本与centralAC的版本接近。3.具体操作：将centralAC的版本升级到R5417P01后，AP能够在localAC上正常注册上线。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/52526",
+        "备注": ""
+    },
+    {
+        "序号": 942,
+        "问题现象": "：在WBC云简平台上添加微信公众号认证模板后，输入微信公众号的ID和密码并尝试发布，但配置保存失败。即使等待半小时后退出并重新进入，配置仍未保存成功。",
+        "问题描述": "：1.设备信息：-AC型号：WX3510X-无线控制器插卡：EWPM1WBCE0ENT-AC内连地址：172.25.252.17-云简平台地址：172.25.252.182.网络配置：-AC上有DNS服务器，能ping通外网并解析微信的域名。-AC上配置了`iphostoasisauth.h3c.com172.25.252.18`，但未配置DNS代理，也未指定终端的DNS服务器为AC。3.具体问题：-在云简平台上添加微信公众号认证模板并输入相关信息后，配置保存失败，提示“保存配置中”。-重新进入平台后，发现配置未保存。",
+        "结论": "：问题的根本原因是终端设备无法解析认证域名`oasisauth.h3c.com`。虽然AC上有DNS服务器，但终端设备的DNS服务器未正确配置，导致无法解析认证域名，进而导致配置保存失败。",
+        "解决办法": "：在DHCP服务器的池中配置`dns-list172.25.252.17`，指定终端设备的DNS服务器为AC。具体步骤如下：1.登录AC设备的管理界面。2.进入DHCP服务器配置。3.在DHCP服务器池中添加`dns-list172.25.252.17`，确保终端设备能够正确解析认证域名`oasisauth.h3c.com`。通过以上配置，终端设备将能够正确解析认证域名，从而解决配置保存失败的问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/217866",
+        "备注": ""
+    },
+    {
+        "序号": 943,
+        "问题现象": "部分电脑在使用Portal+MAC认证时，虽然认证软件上显示Portal认证通过，但无法访问外网。终端更换IP地址后可以正常上网，但恢复原IP地址后问题依旧存在。",
+        "问题描述": "1.无法上网的终端在AC（接入控制器）上的`displayportaluserall`和`displaymac-authenticationconnection`命令中均未显示相关信息。2.为了保持终端问题现象，无线网络不进行IP地址变更操作，即使反复重连无线网络或重启终端认证软件，问题仍然存在。3.服务器侧抓包分析发现，AC侧回复`ack-info`后，服务器没有进行下一步认证动作。",
+        "结论": "经过服务器侧排查，发现锐捷SMP+平台有一个定时刷新功能，该功能在某些情况下可能导致认证信息无法正确同步或更新，从而影响部分终端的正常上网。",
+        "解决办法": "1.在锐捷SMP+平台上关闭定时刷新功能。2.搭建测试环境，验证关闭定时刷新功能后问题是否得到解决。3.确认问题解决后，将该设置应用到生产环境中。备注该问题的解决方法已经在测试环境中验证有效，建议在生产环境中进行同样的设置调整，以彻底解决部分终端无法上网的问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/223379",
+        "备注": ""
+    },
+    {
+        "序号": 944,
+        "问题现象": "在现场部署H3CWA5530无线接入点（AP）时，发现AP无法成功注册到V7AC（WX5540H）无线控制器上。通过console登录AP后，发现AP处于胖模式（FatMode），而需要配合AC使用时，AP必须处于瘦模式（FitMode）。",
+        "问题描述": "1.设备信息：-AP型号：H3CWA5530-AC型号：H3CWX5540H-AP当前模式：胖模式（FatMode）-AP当前版本：Version7.1.064,ESS2329P012.问题背景：-部署环境：现场网络环境-操作步骤：工程师通过console登录AP，发现AP无法注册到AC上，检查后确认AP处于胖模式。",
+        "结论": "AP无法注册到AC上的原因是AP处于胖模式，而需要配合AC使用时，AP必须切换到瘦模式。通过console登录AP并进行模式切换和版本更新后，AP成功注册到AC上。",
+        "解决办法": "1.连接console线：-使用CRT或超级终端软件新建一个串口连接。-将AP上电启动，通过console登录AP。2.进入扩展BootWare菜单：-在AP启动过程中，按Ctrl+B进入扩展BootWare菜单。-输入回车键进入主菜单。3.格式化flash：-输入Ctrl+F，选择格式化flash。-系统会提示所有文件将丢失，输入Y确认格式化。4.切换AP模式：-输入Ctrl+Y，选择更改AP模式。-选择2，即瘦模式（FitMode）。-系统会提示切换模式将格式化存储介质，输入Y确认切换。5.更新AP版本：-输入3，进入以太口子菜单。-输入5，修改以太口参数。-设置以下参数：-协议（Protocol）：TFTP-文件名（LoadFileName）：wa5300.ipe-服务器IP地址（ServerIPAddress）：192.168.0.10-AP本地IP地址（LocalIPAddress）：192.168.0.50-子网掩码（SubnetMask）：255.255.255.0-网关IP地址（GatewayIPAddress）：0.0.0.0（直接回车）-输入2，更新主镜像文件。-系统会自动下载并解压更新文件。6.重启AP：-输入0，返回主菜单。-再次输入0，重启AP。7.验证：-AP重启后，通过console登录AP，确认AP已经成功切换到瘦模式并加载了新的版本文件。-AP会主动向AC获取版本文件并更新到flash中运行。总结通过上述步骤，成功将H3CWA5530无线接入点从胖模式切换到瘦模式，并更新了版本文件，最终AP成功注册到V7AC（WX5540H）无线控制器上。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/22281",
+        "备注": ""
+    },
+    {
+        "序号": 945,
+        "问题现象": "某医院无线查房系统终端（三星平板电脑，Android系统）在不同无线接入点（AP）之间漫游切换时，存在明显的延迟。终端只有在与当前接入的AP信号减弱至完全无法接入时，才会中断连接并重新连接到信号强度更好的AP。",
+        "问题描述": "1.发现：客户现场弱电工程师与我司办事处工程师联合测试发现终端无法实现主动漫游。2.原因：客户原有无线AC设备（WX5002）不支持B96版本的新特性“主动触发客户端重连接”。3.临时措施：建议将该楼层的8个AP切换至新AC板卡上，但新AC板卡版本（R2307P02）仍不支持此特性。4.最终解决：需要将新AC板卡升级到R2307P03及以上版本才能启用该特性。",
+        "结论": "通过将无线AC设备升级到支持“主动触发客户端重连接”特性的版本（R2308P07），并配置相应的RSSI值，可以显著改善终端在无线查房系统中的漫游切换速度，确保系统的正常运行。",
+        "解决办法": "1.升级AC设备：将现网主备AC设备都升级到最新版本（R2308P07）。2.配置漫游特性：-在AC系统模式下全局开启“主动触发客户端重连接”特性：```shellwlanoptionclient-reconnect-triggerrssi-signal-check```-也可以针对特定AP单独开启该特性，通过map-configure下发到AP，或直接登录到AP输入命令开启。但需要注意，AP重启后需重新配置。3.设置RSSI值：将wlanoptionclient-reconnect-triggerrssi-signal-check值设置为20，根据现场环境调整至合适的值（经验值为15）。4.注意事项：该特性主要针对某些漫游性能较差的终端，如iPad在无线医疗查房系统中的应用。在一般场景下不推荐使用，同时需确保无线覆盖无盲区。日期2015-10-20发表，2019-06-11修订。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/5088",
+        "备注": ""
+    },
+    {
+        "序号": 946,
+        "问题现象": "某局点使用无线控制器加瘦AP组网，DHCP服务器为WindowsServer，无线控制器作为DHCP中继为终端分配地址。部分移动终端（如苹果、安卓手机和平板）在连接到SSID后无法获取IP地址，而笔记本电脑终端获取地址正常。",
+        "问题描述": "1.配置检查：-无线控制器配置检查显示无异常，均为基本配置。-PC终端获取IP地址正常，说明基本数据链路没有问题。2.Debug信息分析：-移动终端（MAC地址：38f8-8937-bfd1）的DHCPDiscover报文和DHCPOffer报文交互正常，但最终未收到DHCPACK报文。-PC终端的DHCPRequest报文和DHCPACK报文交互中，Broadcastflag为1时正常，为0时获取异常。-进一步分析发现，移动终端的DHCP请求中Broadcastflag为0，即请求单播回应，而PC终端会尝试单播和广播两种方式。3.抓包分析：-在AP和无线控制器之间抓包，发现单播ACK报文未发送到AP。-在无线控制器的内联口抓包，发现单播ACK报文出现在内联口且未做LWAPP封装，说明该报文走的是有线口。4.配置检查：-业务VLAN405和406的三层接口配置分别为10.154.97.0/24和10.154.98.0/24网段。-终端获取的地址为10.154.99.0/24网段，而无线控制器上没有该网段的三层接口。",
+        "结论": "问题的根本原因是移动终端的DHCP请求中Broadcastflag为0，请求单播回应。由于无线控制器上没有10.154.99.0/24网段的三层接口，单播的DHCPACK报文走默认路由，从有线口发出，导致移动终端无法接收到该报文。",
+        "解决办法": "在业务VLAN405和406上配置10.154.99.0/24网段的子接口地址，使无线控制器能够正确处理单播的DHCPACK报文。具体配置如下：```plaintext#interfaceVlan-interface405ipaddress10.154.97.253255.255.255.0dhcpselectrelaydhcprelayserver-select1ipaddress10.154.99.1255.255.255.0sub#interfaceVlan-interface406ipaddress10.154.98.253255.255.255.0dhcpselectrelaydhcprelayserver-select1ipaddress10.154.99.2255.255.255.0sub```通过以上配置，确保无线控制器能够正确处理单播的DHCPACK报文，从而使移动终端能够成功获取IP地址。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/4758",
+        "备注": ""
+    },
+    {
+        "序号": 947,
+        "问题现象": "在H3C无线AP的室外安装过程中，由于气候条件、供电稳定性、防雷措施和线缆铺设不当等原因，导致设备可能无法正常工作，甚至出现损坏的情况。",
+        "问题描述": "1.气候条件：在极端气候条件下（如高温或低温），设备可能因为温度过高或过低而无法正常运行。2.供电问题：室外设备供电不稳定，电源线直接从户外引入可能导致设备遭受雷击。3.接地问题：设备接地不良，可能导致雷电电流无法有效泄放，从而损坏设备。4.防雷问题：避雷器安装不当或未安装避雷针，可能导致设备在雷电天气中受损。5.线缆问题：线缆布放不合理，可能导致信号干扰和雷击风险增加。",
+        "结论": "H3C无线AP的室外安装需要综合考虑气候防护、稳定供电、可靠接地和有效防雷等多方面因素，以确保设备的正常运行和长期稳定性。不当的安装和维护可能导致设备故障，影响网络性能，甚至造成设备损坏。",
+        "解决办法": "1.室外防护箱-在气候恶劣地区，防护箱应加装加热或降温设备，确保机箱内的设备工作在0℃～65℃的范围内。-机箱内部空间要合理，设备不能堆叠放置，四周需预留10cm左右的散热空间。-AP应与机箱固定，避免随意晃动。-机箱配备走线槽，将电源线、信号线和雷电泄放地线分开，避免强弱电之间的相互干扰和雷电泄放的影响。2.设备供电-供电电压采用带PE的三相电，并且确保电源接线排的PE端接地。-推荐前置稳压源为设备供电，并且24小时持续供电。如果没有稳压源时可采用小区的居民电源，尽量避免使用工业电源。-交流电源线从户外引入时，交流电源口应外接防雷接线排（或电源口避雷器）来防止设备遭受雷击；使用防雷接线排时，交流电先进入防雷接线排，经防雷接线排后再进入设备，禁止直接从户外拉电源线为设备供电。3.设备接地-确保AP以及相连的对端设备、避雷器以及所用电源接线排的PE端都是可靠接地的，最好接到同一个地排上。-接地线截面积要求不小于6mm²，长度要尽量短。-接地线不宜与信号线平行走线或相互缠绕，接地线上严禁接头、严禁加装开关或熔断器。-埋设接地体时，角钢或钢管长度不小于0.5m。角钢应不小于50mm×50mm×5mm，钢管壁厚应不小于3.5mm，材料采用镀锌钢材。-可利用周围环境进行接地，如建筑物的楼顶接地网、内部钢筋暴露在外的部分、以及最终会埋入地下的自来水管道等。-接地线接头必须使用OC/OT端子等可靠连接方式和接地排相连，不建议使用螺钉直接压接导线的方式连接。4.设备防雷-电源和信号避雷器位置应安装在靠近被保护设备侧，且避雷器的OUT或Surge端要接出户一侧的线缆，IN或Protect端则要接被保护设备，不可反接。-尽量不要使用带接地指示的防雷接线排，如果同一个漏电保护器下的线路上过多使用这种接线排可能会因漏电流过大造成漏电保护器动作。-避雷器和被保护设备之间进行等电位连接并确保接地，接地线和等电位连接线尽量控制在30cm以内。-天线安装后在周围建筑物里面不宜是最高点，如果是最高点，那么必须安装避雷针。5.设备线缆-非屏蔽线缆应穿钢管埋地敷设，钢管两头接地。-光纤本身不属于导体，不会感应和传递过电压，但光缆加强芯（金属的）却极易感应、传递雷击过电压，因此建议在光缆进户端做好接地，最好有独立的接地汇流排接地。-对于非屏蔽线且不能穿管埋地敷设的，应在出箱线缆的对应端口处使用避雷器。-各类线缆分类布放，如电源线与信号线分开布放，输入输出分开布放，高压低压分开布放。通过以上措施，可以有效提高H3C无线AP在室外环境中的稳定性和安全性。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/741",
+        "备注": ""
+    },
+    {
+        "序号": 948,
+        "问题现象": "在进行基站设备拉远组网时，NR和LTE小区在查询状态时出现未激活的情况，具体表现为时延限制导致。",
+        "问题描述": "1.拉远场景：-BBU到FSW拉远-FSW到FSW拉远-FSW到RRU拉远2.具体问题：-NR小区：在查询DU小区状态时，小区未激活，原因为时延值超过上限（Thedelayvaluehasexceededtheupperlimit）。-LTE小区：-小区状态异常，查询时显示小区未激活，原因为时延限制导致。-小区状态正常，但基带资源状态异常，同样显示未激活原因为时延限制导致。3.原因分析：-当FSW间拉远及FSW到RRU拉远的参数设置与实际光纤拉远长度不一致时，会导致小区建立异常。-合并小区实现导致的正常情况，建议每次查询小区状态时关注各基带扇区的详细状态。",
+        "结论": "小区未激活的原因主要与时延限制有关，特别是当拉远模式的设置与实际拉远距离不匹配时。合并小区实现可能导致某些情况下基带资源状态异常，但小区状态正常。",
+        "解决办法": "1.规避拉远距离限制：-hub与BBU之间：最多10km（受10km光模块限制），应在CAD设计图纸中规避。-hub与级联的hub之间：有两个规格（200米以内、2km内），HUB级联不能超出2km。2.现场开局判断：-如果不确定实际拉远情况，可以根据FSW和RRU上报的时延值来粗估拉远距离。时延与距离的估算方法如下：-拉远200米时，时延约1000纳秒。-拉远2千米时，时延约10000纳秒。-拉远10千米时，时延约50000纳秒，以此类推。3.时延调整：-hub级联超出200米：可根据NR小区的基带载波状态、LTE小区的CRM时延delay相关告警，来配合现场开局判断；也可根据HUB的时延DSPFSWDELAY来进行调整。-级联HUB设置为2km模式：BBU发送时延提前，pRRU与BBU之间的最大距离从10km减少到8km限制。4.CAD图纸审核：-在CAD图纸审核阶段，应关注hub与级联hub之间的距离，确保不超过2km。建议反馈如果有任何关于案例的建议或进一步的问题，请及时反馈。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/220520",
+        "备注": ""
+    },
+    {
+        "序号": 949,
+        "问题现象": "：某局点在进行Portal开局时，部分终端（均为电脑）无法弹出Portal页面。",
+        "问题描述": "：在典型ACFIT-AP组网中，IMC作为认证服务器。经现场检查，故障终端与正常终端在配置和网段上没有差异。故障终端无法ping通服务器，而删除Portal配置后，可以正常ping通服务器。AC上的debug日志显示，AC已经正常进行了重定向，但故障终端仍然请求第三方网段地址，导致不断触发重定向过程。初步判断AC状态正常，问题与终端强相关。进一步分析：通过对比故障终端和其他正常终端的设置，发现故障终端之前连接过其他网络并开启了VPN。VPN改变了终端的默认路由，导致终端无法正确访问Portal服务器，从而无法弹出Portal页面。",
+        "结论": "：故障原因是故障终端开启了VPN，导致默认路由改变，使得终端无法正常访问Portal服务器。",
+        "解决办法": "：现场删除故障终端上的VPN配置，问题得到解决。终端恢复正常访问Portal服务器，Portal页面成功弹出。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/124148",
+        "备注": ""
+    },
+    {
+        "序号": 950,
+        "问题现象": "在室外无线网络部署中，遇到需要选择天线类型的问题，即选择定向天线还是全向天线，以满足特定的网络覆盖和通信需求。",
+        "问题描述": "室外无线AP天线主要分为两种类型：定向天线和全向天线。定向天线在水平方向图上表现为一定角度范围内的辐射，有方向性；而全向天线在水平方向图上表现为360°均匀辐射，无方向性。选择哪种天线取决于多个因素，包括通信距离、覆盖范围、目标密度、频率利用率、站点分布以及价格等。",
+        "结论": "定向天线：适合通信距离远、覆盖范围小、目标密度大、频率利用率高的环境。它的信号波瓣宽度较小，增益较大，能够集中信号，提高远距离通信的效果。全向天线：适合通信距离近、覆盖范围大、价格相对便宜的环境。它的信号波瓣宽度较大，增益相对较小，但能够均匀覆盖360°范围，适用于多站点分布在不同方向的场景。",
+        "解决办法": "1.天线选购：-多站点分布：如果需要覆盖多个站点且这些站点分布在AP的不同方向，建议选择全向天线。-单方向站点：如果所有站点都集中在同一方向，建议选择定向天线。-天线接头：确保天线的接头形式与AP匹配。-天线增益：根据实际需求选择合适的天线增益大小，增益越大，信号越强，但波瓣宽度越小。2.天线安装：-防雷设备：室外天线与无线AP之间应增加防雷设备，以保护设备免受雷击。-定向天线安装：天线的正面应朝向远端站点的方向，确保信号能够集中传输。-全向天线安装：推荐安装高度为5米，确保信号均匀覆盖周围区域。-定向天线安装：推荐安装高度为10米，确保信号能够覆盖更远的距离。-视距要求：天线和站点之间应尽可能保持视距（肉眼可见，中间无明显障碍物），以减少信号衰减和干扰。通过以上总结，可以更好地理解室外AP天线的选择和安装要点，从而有效部署室外无线网络。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/22827",
+        "备注": ""
+    },
+    {
+        "序号": 951,
+        "问题现象": "某局点使用msg360应用限速功能对特定网段下的无线终端进行限速，但限速措施未能生效。",
+        "问题描述": "客户在msg360上配置了应用限速规则，具体操作如下：1.选择“行为管理”下的“应用限速”页面，点击<添加>按钮，弹出“添加规则”对话框。2.在“添加规则”对话框中，配置规则名、网络、用户组、应用组、地址范围、生效时间及上下行速率限制，然后点击<确定>按钮。尽管配置步骤看似正确，但限速功能对无线终端不起作用。",
+        "结论": "问题的根本原因在于客户选择了“system”用户组。该用户组默认不包含无线用户，因此应用限速规则无法对无线用户生效。需要选择包含无线用户的用户组才能使限速功能正常工作。",
+        "解决办法": "1.删除当前配置中的“system”用户组。2.选择默认的“所有用户组”或创建一个包含无线用户的用户组。3.重新配置应用限速规则，确保用户组设置正确。经过上述调整，限速功能成功生效。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/108458",
+        "备注": ""
+    },
+    {
+        "序号": 952,
+        "问题现象": "：客户在某局点使用WX3520XESS1209设备进行MAC+1X认证时，终端上线失败，提示MAC认证失败。告警信息：```%Aug1316:13:08:8422024xxx.xxx.9.57STAMGR/5/STAMGRMACALOGIN_FAILURE:Username=xxxxUserMAC=xxxx-xxxxBSSID=8061-6c6a-c0d1SSID=xxxx_1XAPName=xxxxc6a-c0c0RadioID=2VLANID=301UsernameFormat=MACaddress;AuserfailedMACauthentication.Reason:AAAprocessedauthenticationrequestandreturn13.```",
+        "问题描述": "：客户现场使用第三方服务器进行认证，所有认证用户账号都存储在AD域控制器上。客户希望在一个服务模板下同时进行MAC+dot1x认证，并且都是远程认证。当前配置如下：```plaintextwlanservice-templatexxx21xssidxxxx1Xvlan301clientforwarding-locationapakmmodedot1xcipher-suiteccmpcipher-suitetkipsecurity-iersnsecurity-iewpaclient-securityauthentication-modemac-and-dot1xdot1xdomaintxxxndi_macservice-templateenable```但是终端上线时，会提示MAC认证失败。",
+        "结论": "：1x认证和MAC认证不冲突，但在服务模板下没有正确配置MAC认证的域。因此，AAA服务器在处理MAC认证请求时返回了错误代码13（表示认证失败）。",
+        "解决办法": "：在服务模板中添加MAC认证的域配置，具体如下：```plaintextwlanservice-templatexxx21xssidxxxx1Xvlan301clientforwarding-locationapakmmodedot1xcipher-suiteccmpcipher-suitetkipsecurity-iersnsecurity-iewpaclient-securityauthentication-modemac-and-dot1xdot1xdomaintxxxndi_macmac-authenticationdomainxxxservice-templateenable```添加上述配置后，终端上线问题得到解决，能够正常进行MAC+dot1x认证。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/227663",
+        "备注": ""
+    },
+    {
+        "序号": 953,
+        "问题现象": "在某局点，无线POS机和平板电脑在进行刷卡交易时，无线POS机会不定时地出现无法被平板电脑调用的情况，导致客户无法正常进行支付。",
+        "问题描述": "1.连通性测试：-平板电脑无法通过网络与无线POS机通信，使用`ping`命令测试网络连通性时发现网络不通。-使用笔记本电脑接入同一网络，测试笔记本与平板电脑和无线POS机的连通性，发现笔记本与平板电脑通信正常，但与无线POS机通信不通。-查看笔记本电脑的ARP表，发现能够找到平板电脑的ARP表项，但找不到无线POS机的ARP表项。2.报文分析：-通过无线抓包分析，发现平板电脑发送的ARPRequest报文没有收到无线POS机的ARPResponse报文，导致两者之间的ARP学习无法完成，进而影响通信。3.实验室复现：-在实验室环境中使用现场的AP（WA2612-fit）和POS机（富基vx680机型）模拟现场情况，复现了相同的通信问题。-与POS机厂家技术人员合作定位问题，发现该款POS机所用网卡兼容性较差，监测频宽较窄，而AP在5.5Mbps和11Mbps两个速率下的信号频偏较大，导致POS机无法正确接收ARP报文，从而丢弃相关报文。",
+        "结论": "问题的根本原因是无线POS机所用网卡的兼容性较差，且监测频宽较窄，无法正确接收AP在5.5Mbps和11Mbps两个速率下发射的信号，导致ARP交互失败，进而影响了平板电脑与无线POS机之间的通信。",
+        "解决办法": "1.禁止射频速率：-在AP上禁止5.5Mbps和11Mbps的射频速率，以减少频偏对通信的影响。2.更换设备：-更换为网卡兼容性较好的无线POS机设备，以确保稳定通信。3.升级AC版本：-升级无线控制器（AC）的软件版本至D033及以上，以提高系统的兼容性和稳定性。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/4601",
+        "备注": ""
+    },
+    {
+        "序号": 954,
+        "问题现象": "在WX系列AC本地Portal认证环境下，多个SSID需要绑定到不同的RADIUS服务器，以实现针对不同用户群体（例如教师和学生）的独立认证。然而，默认配置下，所有SSID的用户认证请求可能都被发送到同一个RADIUS服务器，导致无法实现细粒度的用户管理和认证分离。",
+        "问题描述": "在一个大型园区网络中，需要为教师和学生分别提供独立的无线网络SSID（teacher和student），并且这两个SSID的用户需要在不同的RADIUS服务器上进行认证。具体需求如下：1.AP部署位置灵活，只要能获得IP地址和DNS地址，就能在AC上完成注册并提供无线服务。2.两个SSID（teacher和student）的用户自动获取IP地址，网关和地址池由AC管理，且SSID分属不同的网段。3.使用AC本地Portal认证，为teacher和student用户提供不同的Portal认证界面，并且teacher用户在radiusserver-1上认证，student用户在radiusserver-2上认证，RADIUS服务器不开启携带服务后缀的功能。",
+        "结论": "通过在AC上配置不同的RADIUS认证方案和域（domain），可以实现不同SSID的用户在不同的RADIUS服务器上进行认证。这种配置方法能够在大型园区网络中有效管理大量用户，确保教师和学生群体的认证独立性和安全性。",
+        "解决办法": "1.AP注册配置：-AP采用DNS方式注册，确保AP可以灵活部署并自动获得IP地址和DNS地址。2.RADIUS服务器配置：-创建两个RADIUS认证方案（server1和server2）：-server1用于teacher用户，配置如下：```plaintextradiusschemeserver1server-typeextendedprimaryauthenticationX.X.X.XprimaryaccountingX.X.X.Xkeyauthentication123keyaccounting123user-name-formatwithout-domainnas-ipY.Y.Y.Y```-server2用于student用户，配置如下：```plaintextradiusschemeserver2primaryauthenticationZ.Z.Z.ZprimaryaccountingZ.Z.Z.Zkeyauthentication123keyaccounting123user-name-formatwithout-domainnas-ipY.Y.Y.Y```3.域（domain）配置：-创建两个域（student和teacher），分别绑定不同的RADIUS认证方案：-student域：```plaintextdomainstudentauthenticationportalradius-schemeserver1authorizationportalradius-schemeserver1accountingportalradius-schemeserver1access-limitdisablestateactiveidle-cutdisableself-service-urldisable```-teacher域：```plaintextdomainteacherauthenticationportalradius-schemeserver2authorizationportalradius-schemeserver2accountingportalradius-schemeserver2access-limitdisablestateactiveidle-cutdisableself-service-urldisable```4.接口配置：-在VLAN接口上配置Portal认证，并绑定相应的域：-student网段：```plaintextinterfaceVlan-interface116ipaddressX.X.X.XX.X.X.XportalserverPORTALmethoddirectportaldomainstudent```-teacher网段：```plaintextinterfaceVlan-interface1162ipaddressX.X.X.XX.X.X.XportalserverPORTALmethoddirectportaldomainteacher```实施效果实施完成后，连接不同的SSID（teacher或student）的用户在上网时会弹出相应的Portal认证页面，输入用户名和密码后，认证请求会被发送到对应的RADIUS服务器（teacher用户发送到radiusserver-1，student用户发送到radiusserver-2），从而实现不同SSID的用户在不同的RADIUS服务器上进行认证。此方案适用于大型园区网络，能够有效管理大量用户并确保认证的独立性和安全性。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/453",
+        "备注": ""
+    },
+    {
+        "序号": 955,
+        "问题现象": "某移动局点配置了IPv6Portal认证，用户能够正常获取IPv4和IPv6地址，并且能够正常弹出Portal认证页面。但在输入用户名和密码点击登录后，页面提示“系统繁忙，请稍后再试”，AC上没有该用户IP地址的调试信息，抓包显示Portal认证系统已向AC发送REQCHALLENGE（PortalType:1）报文，但AC未回复ACKCHALLENGE（PortalType:2）报文。",
+        "问题描述": "组网情况：未提供具体组网信息。Portal认证配置：-IPv6Portal：`portalserveripv6testipv6XXX8::1keycipher$3IqFBEnv7iXJw1nW99xqa8opVKQp+ftXARy7Aurlhttp://XXX:6080/index.phpserver-typecmcc`-IPv4Portal：`portalserveripv4testip218.206.248.116urlhttp://XXX/index.phpserver-typecmcc`测试情况：当AC上配置IPv4Portal认证服务器时，Portal认证能够正常通过。",
+        "结论": "问题的原因是AC上配置的IPv6Portal认证服务器的IPv4地址与实际使用的Portal认证系统的IPv4地址不匹配。在移动局点中，IPv4和IPv6通常使用相同的Portal认证系统（同一个IPv4地址）。当使用不同的Portal认证系统（不同的IPv4地址）或只配置了IPv6的Portal认证服务器时，AC无法处理来自该Portal认证系统的报文，导致认证失败。",
+        "解决办法": "在AC上增加IPv4Portal认证服务器的配置，确保AC能够处理来自Portal认证系统的IPv4报文：```plaintextportalserveripv4testip218.206.248.116urlhttp://XXX.116:6080/index.phpserver-typecmcc```配置完成后，Portal认证能够正常通过。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/3480",
+        "备注": ""
+    },
+    {
+        "序号": 956,
+        "问题现象": "某局点无线AC升级后，除了新增的7台WA6320AP成功上线外，其余110台AP（包括WA5320、WT1024、WTU430等型号）均无法上线。",
+        "问题描述": "1.升级背景：为了兼容WiFi6AP（WA6320），无线AC进行了版本升级至R5447P03，并新增了交换机接入WA6320AP。2.初步排查：通过DHCP服务器查询MAC地址，发现离线AP未分配到IP地址。进一步查询网关ARP信息，确认AP未获取到IP地址。3.可能原因：初步判断为DHCP服务器地址池被冲突满或网络环路。4.进一步排查：-清空DHCP服务器冲突地址池后，问题依然存在。-按照交换机拓扑连线排查，未发现环路。-修改全网AP注册的VLAN标签，只保留新增的WiFi6POE交换机为VLAN1，问题得到收敛。-再次修改新增的WiFi6POE交换机的VLAN标签，问题再次发生。",
+        "结论": "问题的根本原因在于新增的POE交换机的上联口配置了`portbridgeenable`命令，导致该接口转发同源同宿报文，使得其他AP认为网络中存在IP地址冲突，从而无法获取IP地址并上线。",
+        "解决办法": "1.删除配置：在POE交换机的上联口（接口Ten-GigabitEthernet1/0/28）删除`portbridgeenable`命令。2.VLAN配置：全网不使用VLAN1，确保AP注册的VLAN标签配置正确且不会冲突。通过以上操作，问题得到彻底解决，所有AP均成功上线。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/188530",
+        "备注": ""
+    },
+    {
+        "序号": 957,
+        "问题现象": "：现场反馈LTE手机通话异常，无法入网。5G侧业务正常。在测试手机上的软件cellular-Z上，终端能够搜到该局点的LTE小区，但左上角显示为无服务。",
+        "问题描述": "：现场LTE手机无法正常入网，具体表现为手机显示“无服务”。抓取现场基站侧日志，分析LTE相关进程运行情况及告警日志，发现LTERRC进程出现异常。随机接入日志显示，基站虽然收到MSG1并正常下发MSG2，但未能正确解析MSG3。MSG3指示时序不符合预期，实际在SFN/SF:208/9，而根据协议应为SFN/SF:208/5，导致随机接入失败，终端脱网。",
+        "结论": "：问题定位为基站LTERRC进程出现异常，导致基站时序错乱。时序错乱进一步引发随机接入问题，使得终端无法正常入网。根据现场版本及维护日志分析，当前版本长时间运行会出现进程变量翻转异常，拖死LTE进程，从而导致上述问题。",
+        "解决办法": "：规避办法：在维护界面去激活LTE小区，再激活LTE小区，触发RRC进程重新拉起。解决方案：升级到E1202版本后，该问题将被彻底解决。修订日期：作者在2024-08-02对此案例进行了修订。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/205149",
+        "备注": ""
+    },
+    {
+        "序号": 958,
+        "问题现象": "：安卓终端启用portalmac-trigger-server后无法进行portal认证，且AC无法学习到安卓终端的ARP信息。",
+        "问题描述": "：1.现场环境：现场AP和AC是其他厂商设备，我司的AC只负责portal认证。2.历史情况：之前使用V5版本的AC时，portal认证没有问题。3.更换设备后：更换为V9版本的AC后，安卓终端启用portalmac-trigger-server后无法进行portal认证，且AC无法形成安卓终端的ARP表项。4.测试情况：现场更换多个不同品牌的安卓终端测试，结果一致，均无法形成ARP表项。苹果终端则正常。5.抓包分析：抓包显示AC收到了安卓终端的ARP报文，但没有形成ARP表项。6.研发确认：V5和V9版本的ARP学习代码逻辑不同。V9版本的AC默认通过ARP表项来获取信息，也可以通过DHCPSnooping表项或无线client表项来获取，但由于现场无线设备是其他厂商的，client表项无法获取；ARP表项又因为终端发送的是ARPProbe而无法形成。",
+        "结论": "：V9版本的AC在处理安卓终端的ARP报文时存在逻辑差异，导致无法正确学习到安卓终端的ARP信息，从而影响portal认证。苹果终端的ARP报文格式与V9版本AC的处理逻辑匹配，因此不受影响。",
+        "解决办法": "：在V9版本的AC上配置DHCPSnooping，通过DHCPSnooping表项来完成无感知的portal认证。这样可以绕过ARP表项无法形成的问题，确保安卓终端能够正常进行portal认证。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/218531",
+        "备注": ""
+    },
+    {
+        "序号": 959,
+        "问题现象": "某局点反馈，使用WA5530胖模式的无线终端会偶发性地出现与网关不通的情况。尽管终端仍连接着WiFi，并且AC上能看到client信息，但终端无法ping通网关。重连WiFi后，问题可以恢复。",
+        "问题描述": "1.终端与网关不通：终端连接WiFi，但无法ping通网关，且终端侧没有网关的ARP信息。2.其他终端正常：同一AP下的其他终端与网关通信正常。3.AP配置与调试：-在AP上配置一个与终端同VLAN的IP地址，以调试终端与网关通信的ARP报文。-AP上debug显示，AP收到了终端的ARP请求，并且也收到了网关回应的ARP请求，AP软件层面显示ARP学习正常。-AP驱动层也显示正常收发ARP报文。4.终端信息：客户现场使用的是较新的笔记本，网卡驱动型号未知。",
+        "结论": "问题的直接原因是终端侧的ARP学习异常。进一步分析发现，尽管AP软件和驱动层都正常处理ARP报文，但终端侧未能正确学习到网关的ARP表项。最终，通过查看AP的配置发现服务模板下的加密方式配置了tkip，而某些较新的终端可能对tkip加密算法的兼容性不好，导致了ARP学习异常。",
+        "解决办法": "1.更改加密方式：建议删除服务模板中tkip加密方式的配置，改为更现代且兼容性更好的ccmp加密算法。2.配置修改：具体配置命令如下：```plaintextwlanservice-template1ssidH3C-Guestakmmodepskpreshared-keypass-phrasecipher$c$3$EIx/nFwYOY+IsLyDCCKXE+swvh1rSWA1xf+uwbjhccipher-suiteccmpsecurity-iersnsecurity-iewpaservice-templateenable```3.验证效果：删除tkip配置后，终端未再出现偶发性和网关不通的现象，问题得到解决。总结该问题的根本原因是某些较新的无线终端对tkip加密算法的兼容性不好，导致ARP学习异常，进而无法与网关通信。通过将加密方式改为更现代且兼容性更好的ccmp，问题得以解决。建议在配置无线网络时，尽量避免使用tkip加密算法，以减少兼容性问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/123941",
+        "备注": ""
+    }
+]

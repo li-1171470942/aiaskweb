@@ -1,0 +1,182 @@
+[
+    {
+        "序号": 920,
+        "问题现象": "某局点的Portal认证弹出页面较慢，IMC持续告警，AC的CPU利用率持续性过高，有时已达到100%。PTTP进程的CPU占用率约为30%，明显超出正常值。",
+        "问题描述": "通过查看近期CPU使用记录，发现AC上CPU使用率持续性过高，情况比较严重。进一步检查task任务列表，发现PTTP进程的CPU占用率明显异常，已远远超出正常值10%，成为CPU占用率高的主要原因。PTTP进程一般应在10%以内，该进程负责在Portal认证过程中通过TCP仿冒回应终端并实现AC的重定向。现场由于AP数量较多且人流量大，无线网络又使用明文方式，导致众多无线终端虽然没有Portal认证账号，但也会连接上无线网络并触发Portal认证，从而导致PTTP进程的CPU占用率过高。",
+        "结论": "PTTP进程CPU占用率过高是由于大量无线终端连接明文SSID并触发Portal认证所导致。这不仅影响了Portal认证的响应速度，还导致AC的CPU利用率持续过高，影响了系统的整体性能。",
+        "解决办法": "1.更改加密方式：将明文SSID更改为加密方式，设置接入密钥，控制接入网络的用户数量。2.配置Portal认证触发流量：通过命令`[H3C-Vlan-interface1]portalmac-triggerenablethreshold3`给Portal认证触发配置一定的流量阈值，减少部分Portal认证的触发。3.开启重定向报文限速：通过以下命令限制PTTP处理速率，降低其CPU占用率：-`anti-attackprotocolportal_synenable`：开启Portal重定向报文总限速。-`anti-attackprotocolportal_synflow-threshold1100`：开启Portal重定向报文流限速，每条流每秒处理1个报文，每秒触发100个。-`anti-attackenable`：开启总限速。4.开启Portal无感知认证：对于二次上线的用户，将不会触发PTTP进程，从而减少PTTP的使用率。推荐使用此方法。5.更新版本：使用B109P43及以上版本，这些版本合入了web降噪功能，可以大幅度降低非法流量触发PTTP进程的情况。通过上述措施，可以有效降低PTTP进程的CPU占用率，提升系统的整体性能和Portal认证的响应速度。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/4604",
+        "备注": ""
+    },
+    {
+        "序号": 921,
+        "问题现象": "某局点在每天早上8:50-9:15期间，无线终端访问外网业务出现卡顿和丢包现象。",
+        "问题描述": "1.组网结构：光猫——AC（网关和出口）——SW——AP——client。2.初步测试：分段ping测试发现AC在早高峰期间ping外网不通或丢包严重。3.设备检查：查看故障时段AC设备的内存、CPU利用率，未发现任何异常。4.更换设备：客户联系运营商更换了光猫，但故障依旧存在。5.配置优化：尝试在WAN口配置tcpmss1360和mtu1492，情况有所改善但仍然存在丢包和业务卡顿。6.深入分析：开启debugicmp后，发现外网未回包，同时AC当前连接数在4300+，无故障时段连接数在2800+左右，怀疑是运营商连接数限制导致的。7.并发连接数测试：分别在PC——光猫和光猫——AC——PC两种环境下进行测试，每组环境测试三次，确定该局点的并发连接数限制为4k。",
+        "结论": "通过上述分析和测试，可以确定该局点在早高峰期间上网卡顿和ACping外网丢包的问题是由于运营商连接数限制导致的。",
+        "解决办法": "1.联系运营商：设备侧无法优化，需要联系运营商解决连接数限制问题。2.持续监控：在运营商解决问题后，持续监控网络性能，确保问题得到彻底解决。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/219244",
+        "备注": ""
+    },
+    {
+        "序号": 922,
+        "问题现象": "某局点无线终结者本体WT1024-X-EI无法在WX5540H无线控制器上注册成功，注册状态在“IL”和“I”之间卡住。",
+        "问题描述": "经过初步排查，发现无线控制器上的AP版本文件列表中有WT1024-X-EI适配的wt1024x.ipe文件，但在尝试将其设置为启动文件时，系统提示“Failedtosetwt1024x.ipeasbootfile,theimagewt1024x.ipeisincompatiblewithhardware”，即该版本文件与硬件不兼容。进一步检查发现，无线终结者本体的系统版本为V7，R2228，而版本说明书中指出该本体适配的版本为V7，E2210P01，这意味着当前本体的版本高于无线控制器所能支持的版本。",
+        "结论": "无线终结者本体WT1024-X-EI注册失败的原因是其当前系统版本（V7，R2228）高于无线控制器WX5540H所能提供的适配版本（V7，E2210P01），导致版本不兼容问题。",
+        "解决办法": "1.创建手工AP模板并关闭版本升级功能：-在无线控制器上创建一个手工AP模板，指定型号为WT1024X-EI。-设置AP的序列号。-关闭AP的版本升级功能，防止控制器尝试升级不兼容的版本。-操作命令示例：```shell[AC]wlanap【ap名字】modelWt1024X-EI[AC-wlan-ap-officeap]serial-id219801a1arc193000269[AC-wlan-ap-officeap]firmware-upgradedisable```2.在Boot模式下格式化本体：-将无线终结者本体WT1024-X-EI在Boot模式下进行格式化，清除当前版本信息，使其能够重新注册并加载适配的版本。-操作方法取决于具体设备的Boot模式操作指南。3.升级无线控制器版本：-由于现场的无线控制器版本较老（R5210P01），建议升级无线控制器的软件版本，以支持更高版本的无线终结者本体WT1024-X-EI。-可以参考控制器的升级指南进行版本升级。最终，通过在Boot模式下格式化本体，问题得到了解决，本体成功注册到无线控制器上。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/74005",
+        "备注": ""
+    },
+    {
+        "序号": 923,
+        "问题现象": "现场的接入点（AP）在三层网络环境中注册时，状态停留在“I”或“DC”（Datacheck）阶段，无法成功上线。尽管AP能够获取IP地址并且能够Ping通位于中心机房的接入控制器（AC），但AC上出现了关于WTP数据通道异常的错误信息，具体表现为没有接收到目的端口号为5247的CAPWAP数据报文。",
+        "问题描述": "通过查看AC上的调试日志，发现AC收到了目的端口号为5246的CAPWAP控制报文，但没有收到目的端口号为5247的CAPWAP数据报文。进一步的流量统计显示，POE交换机正确地将CAPWAP5246和5247的报文转发出去，但在AC的出口处，只有5246的报文被接收，5247的报文则全部被阻断。这表明在AC与AP之间的网络路径中，某个设备或防火墙规则阻止了5247端口的流量。",
+        "结论": "问题的根本原因在于教育网中间设备对CAPWAP协议的UDP端口号5247进行了阻断，导致AP无法通过该端口与AC建立数据通道，从而无法完成注册过程。由于教育网中间设备无法进行维护，因此需要采取其他措施来解决问题。",
+        "解决办法": "1.将AC下移至AP局域网内部：将AC从中心机房移至AP所在的局域网内部，这样可以避免中间网络设备对5247端口的阻断，确保AP能够正常注册并上线。2.排除中间链路干扰：为了进一步验证中间链路的问题，可以将AP暂时连接到AC的本地网络进行测试，以排除其他潜在的网络干扰因素。3.网络策略调整：如果可能，联系教育网的管理员，请求调整中间设备的防火墙策略，允许UDP端口号5247的流量通过。通过上述措施，AP最终成功上线，问题得以解决。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/24942",
+        "备注": ""
+    },
+    {
+        "序号": 924,
+        "问题现象": "：客户新购买的跑步机与手机均能正常连接我司的AP，且两者均能正常上网，但跑步机的数据无法同步到手机的APP中。",
+        "问题描述": "：1.跑步机和手机均能正常连接到公司的AP，并且上网功能正常。2.客户配置了二层隔离，但在网关上已经配置了本地ARP代理，其他二层终端互访无异常。3.跑步机数据同步到手机APP的功能未能正常工作。4.更换手机热点后，数据同步功能正常，排除了手机本身的问题。",
+        "结论": "：问题可能是由于跑步机使用广播或组播方式同步数据，而二层隔离限制了这种数据传输方式。虽然配置了本地ARP代理，但可能未能完全解决广播或组播数据的传输问题。",
+        "解决办法": "：1.建议客户将跑步机的MAC地址放通，允许其与手机进行二层通信。2.或者取消跑步机所在AP下的二层隔离，以确保跑步机和手机之间可以正常进行广播或组播数据的传输。通过上述方法，问题得到了解决。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/102590",
+        "备注": ""
+    },
+    {
+        "序号": 925,
+        "问题现象": "H3C的AP无法在其对应的AC上三层注册上线，而友商的AP可以正常在其AC上三层注册上线。",
+        "问题描述": "在DHCP服务器的AP管理地址池中，通过OPTION138属性给友商AP下发AC的IP地址信息，通过OPTION43属性给H3CAP下发H3CAC的IP地址信息。然而，H3C的AP在获取DHCP属性时，优先使用了OPTION138中指定的友商AC的IP地址，而不是OPTION43中指定的H3CAC的IP地址。这导致H3C的AP无法正确发现并注册到H3C的AC上。",
+        "结论": "问题根因在于DHCP属性的优先级顺序为：OPTION138>OPTION43>OPTION52（IPv6CAPWAP）。H3C的AP在获取到OPTION138属性后，会优先使用其中指定的AC地址，而不会继续关注OPTION43属性中携带的H3CAC的IP地址。",
+        "解决办法": "1.同时配置OPTION138和OPTION43：-在DHCP服务器的AP管理地址池中，同时为OPTION138添加H3C和友商AC的IP地址。-在H3C的AC上关闭自动发现和固化功能，使用手动模式配置AP上线模板。2.测试验证：-测试验证在这种配置下，H3C的AP和友商的AP是否都能正常上线。-结果表明，H3C的AP会同时向两个AC的IP地址发起CAPWAPdiscoverrequest请求，友商的AC可能会回复拒绝或不回复，而H3C的AC会回复H3C的AP，从而让H3C的AP顺利上线。3.手动指定AC地址：-作为临时解决方案，可以在H3C的AP上通过命令`wlanacipxxx`手动指定H3CAC的IP地址，使AP能够正确上线。4.不同管理VLAN：-建议客户将H3C和友商的AP分别使用不同的管理VLAN，但客户坚持使用同一VLAN。因此，上述解决方案是有效的折中办法。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/226833",
+        "备注": ""
+    },
+    {
+        "序号": 926,
+        "问题现象": "部分无线终端会获取到192.168.1.0的网段地址，但核心设备的地址池中并没有配置该网段。",
+        "问题描述": "1.现场拓扑：-核心设备作为网关，旁挂AC，上联防火墙，防火墙上联电信的家用路由器作为出口。2.故障现场：-部分无线终端获取到的IP地址为192.168.1.0网段。-核心设备的地址池中并没有配置192.168.1.0网段。-终端获取的网关地址为192.168.1.1，并通过`arp-a`命令查看到该网关的MAC地址。-在核心设备上查看MAC地址表项，发现192.168.1.1的MAC地址是从1/0/19接口学到的。-检查该接口对端设备，发现是作为出口的家用路由器，并且该路由器上开启了DHCP功能，地址池正是192.168.1.0网段。",
+        "结论": "家用路由器上的DHCP功能导致部分无线终端获取到了192.168.1.0网段的地址，而这些地址并不在核心设备的地址池中。因此，无线终端无法正常访问网络。",
+        "解决办法": "将核心设备与家用路由器之间的网线断开，以阻止家用路由器的DHCP功能影响无线终端的地址分配。断开后，无线终端能够正常获取核心设备地址池中的地址，业务恢复正常。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/228078",
+        "备注": ""
+    },
+    {
+        "序号": 927,
+        "问题现象": "某局点使用Bonjour智能终端无法相互发现，尤其是在跨三层网络情况下。",
+        "问题描述": "1.网络环境：集中转发，终端的网关在AC上。2.现场反馈：使用AC的Bonjour网关功能时，智能终端（被访问终端）与客户端（访问终端）跨三层无法发现。3.初步检查：-网络连通性：现场测试智能终端与客户端跨三层ping包没有问题，网络连通性正常。-配置检查：对现场的配置进行了检查，没有发现明显的配置问题。4.进一步分析：-开启debugbonjour发现报错信息：`*Mar1614:35:29:0642020H3CBONJOUR/7/EVENT:Questionhap.tcp.localdidn'tmatchpolicy.`-检查`displaybonjouractive-service-type`命令，发现没有hap类型的服务。",
+        "结论": "智能终端使用的是hap的服务类型，而AC的配置中没有支持hap类型的服务，导致跨三层网络无法发现智能终端。",
+        "解决办法": "1.查看配置：确认`bonjouractiveservicetype`中没有hap的配置。2.添加自定义服务类型：-使用命令`bonjourservicetypehaptcpdescriptionPhilips`添加自定义的服务类型hap。-使用命令`bonjouractivateservicetypeuser-definedhap`激活该服务类型。3.验证配置：使用`displaybonjourservice`命令检查，确认服务类型中已包含hap类型。4.结果：配置完成后，智能终端与客户端跨三层网络发现功能恢复正常。总结通过添加并激活自定义的Bonjour服务类型hap，解决了智能终端在跨三层网络中无法相互发现的问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/104901",
+        "备注": ""
+    },
+    {
+        "序号": 928,
+        "问题现象": "客户采购了两台WX5510EAC和WA2620i-AGNAP部署无线网络，配置了1+1快速热备和Portal认证。目前，无线用户可以正常接入并认证，访问指定网络。然而，终端通过Portal认证后，无法远程登录备份AC进行管理，Telnet连接备份AC时停留在“正在连接”状态。",
+        "问题描述": "1.终端接入无线网络后，ping备份AC地址不通。2.终端接入无线网络后，远程到主AC上ping备份AC，ping正常。3.终端上Telnet备份AC时，连接停留在“正在连接”状态。4.在主AC业务接口取消Portal认证后，终端接入ping备份AC正常，表明问题与Portal协议有关。5.在主AC上查看去往备份AC的路由表，发现路由表通信时使用业务网段地址通信。6.分析表明，Portal协议阻断了数据报文，导致无法远程管理备份AC。",
+        "结论": "问题的根本原因是Portal认证机制在主AC上阻断了终端到备份AC的入方向报文。由于无线终端通过Portal认证后，主AC使用业务接口地址与有线网络通信，而这些报文需要跨VLAN转发，因此在备份AC的入方向报文被Portal协议阻断，导致无法远程管理备份AC。",
+        "解决办法": "1.在主AC和备份AC上配置`portalfree-rule`，放通连接备机接口入方向的所有报文。2.具体配置命令如下：-在主AC上：```plaintextportalfree-rule10sourceinterfaceGigabitEthernet1/0/7destinationipany```-在备份AC上：```plaintextportalfree-rule10sourceinterfaceGigabitEthernet1/0/7destinationipany```3.配置完成后，测试终端通过Portal认证后是否可以正常远程登录备份AC进行管理。通过上述配置，终端可以通过Portal认证后正常访问备份AC，实现全网设备的可管理性。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/5149",
+        "备注": ""
+    },
+    {
+        "序号": 929,
+        "问题现象": "在使用V5设备进行AC（接入控制器）和AP（接入点）跨公网注册的组网中，当终端设备采用本地转发模式时，无法获取DHCP分配的地址，导致无法正常上网。然而，如果终端设备配置为静态IP地址，则可以正常上网。",
+        "问题描述": "在本地转发模式下，终端设备的DHCP请求报文作为普通数据报文发送，没有封装在隧道中。因此，这些广播报文无法跨三层网络到达AC，导致DHCP请求失败。而在集中转发模式下，DHCP请求报文被封装在隧道中，可以成功到达AC并完成地址分配。",
+        "结论": "本地转发模式下，终端设备的DHCP请求报文无法跨三层网络到达AC，因此终端设备无法获取地址。这是由于V5设备在本地转发模式下不支持DHCP报文的隧道封装，导致广播报文无法跨公网传输。",
+        "解决办法": "1.V5设备：在服务模板视图下配置命令`clientdhcp-servercentralized`，使能客户端的DHCP报文封装在数据隧道中转发，由AC处理DHCP报文。这样可以解决终端设备在本地转发模式下无法获取地址的问题。2.V7设备：V7设备没有`clientdhcp-servercentralized`命令，因此无法在本地转发模式下通过AC处理DHCP报文。建议将终端设备的地址池配置在本地交换机上，以确保终端设备能够正常获取地址并上网。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/51137",
+        "备注": ""
+    },
+    {
+        "序号": 930,
+        "问题现象": "无线控制器（AC）在测试或临时调整过程中，经常需要使用管理AP的临时license。但当临时license超过其有效期后，尽管在查看时显示“AvailableTimeLeft”为0，该license在AC重启后会失效，导致AP无法注册。",
+        "问题描述": "无线控制器（AC）的license注册情况如下：临时license具有特定的有效时间，例如90天。永久license则没有时间限制。当临时license超过有效期后，查看license时“AvailableTimeLeft”显示为0，但此时license仍暂时有效，可以继续管理AP。一旦AC重启，临时license会完全失效，AP将无法注册。",
+        "结论": "临时license在超过其有效时间后，虽然在系统中仍显示为有效，但在AC重启后会彻底失效，导致无法管理AP。因此，需要注意临时license的有效期，并在到期前采取相应措施。",
+        "解决办法": "测试需求：可以重新申请新的临时license并进行注册。业务需求：建议联系供应商或服务商购买正式的永久license，以确保AP管理的持续性和稳定性。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/2540",
+        "备注": ""
+    },
+    {
+        "序号": 931,
+        "问题现象": "在某局点，7603机框版本为V56710P01+EWPX1WCME0，重启时AC插卡（版本为V75205P02）出现如下界面，并保持此界面约十分钟后才可重启成功：```Imagefilecfa0:/boot.binisself-decompressing...Done.Systemimageisstarting...31:UsingdefaultMacaddress31:SanityCheckfailedonprom_info@8025ecf831:sizeof(psbinfo)=288,psbinfoversion=1,prominfo->magicdword=900dbeef00000001,prominfo->size=12031:argc=7,argv=80007fb0,envp=0,prom_info=8025ecf831:argv[1]=[mem=128M]31:argv[2]=[console=ttyS1,9600]31:argv[3]=[pages_linux=0x0a00]31:argv[4]=[usenewsema]31:argv[5]=[nmiclearerl]31:argv[6]=[comware_address=0x82500000]31:arcscmdline=[mem=128Mconsole=ttyS1,9600pageslinux=0x0a00usenewsemanmiclearerlcomware_address=0x82500000]31:phoenixiobase=0xb800000031:MACADDRBASE:00:01:02:03:04:0531:MasterCPUThread:3of7runningonPhoenix3131:Usingdefaultbootparameters:31:RamStart=0x100000,RamSize=0xff0000031:&phnxcounters=0x8026a000,sizeof(phnxcounters)=0x140031:on_chipinitdone31:CPUrevisionis:000c100531:DeterminedphysicalRAMmap:31:memory:0ff00000@00100000(usable)31:User-definedphysicalRAMmap:31:memory:08000000@00000000(usable)31:getcomareadress,str=,comwaremem_addr=8250000031:####31:COMWAREbinaryisassumedtobeat8250000031:sizeis3a3ab34bytes,entryat:8415fd94!31:####31:Onnode0totalpages:3276831:DMAzone:32768pages,LIFObatch:731:DMA32zone:0pages,LIFObatch:031:Normalzone:0pages,LIFObatch:031:HighMemzone:0pages,LIFObatch:031:(PROM)CPUpresentmap:031:PhysCPUpresentmap:80000000,possiblemap8000000031:Detected0SlaveCPU(s)31:Built1zonelists31:Kernelcommandline:mem=128Mconsole=ttyS1,9600pageslinux=0x0a00usenewsemanmiclearerlcomwareaddress=0x8250000031:1582@trapinit80100000@text8000001f@ebase31:InterruptrunninginCompatibilitymode,ebaselocatedat0x8000000031:Primaryinstructioncache16kB,2-way,linesize32bytes.31:Primarydatacache8kB2-way,linesize32bytes.```",
+        "问题描述": "在某局点的7603机框（版本为V56710P01+EWPX1WCME0）上，AC插卡（版本为V75205P02）重启时，系统启动过程中出现了长时间停留在“SanityCheckfailedonprom_info@8025ecf8”界面的情况，大约需要十分钟才能完成重启。",
+        "结论": "根据分析，V5版本的机框与V7版本的AC插卡在重启时打印出此信息是正常现象，不会影响业务运行，也没有安全隐患。",
+        "解决办法": "无需采取任何解决措施，该现象为正常情况，不影响业务运行，无隐患。若对此现象有进一步的疑问或需要更详细的解释，建议联系技术支持进行咨询。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/102913",
+        "备注": ""
+    },
+    {
+        "序号": 932,
+        "问题现象": "AP（WAP722E-W2）成功注册到AC（MSG360-20）上，但在AC上通过map文件给AP下发配置时失败。",
+        "问题描述": "1.在线状态检查：AP在线状态显示为R/M，表明AP注册过程没有问题；手动将map文件的内容粘贴到AP上可以成功配置。2.文件查看：在AC上使用`more+map文件名`命令查看map文件时，提示该文件无法打开。3.文件验证：在AP上逐条配置命令，然后将这些命令粘贴出来形成新的map文件，再次通过AC下发时配置成功。4.文件格式分析：通过Notepad++打开两个map文件，发现无法被下发的map文件编码格式为UCS-2，而正常情况下应为UTF-8。",
+        "结论": "问题的原因是map文件的编码格式不正确。AC无法识别UCS-2编码格式的map文件，导致配置下发失败。",
+        "解决办法": "将map文件的编码格式从UCS-2修改为UTF-8，然后再次通过AC下发配置。这样可以确保AC能够正确识别并下发配置文件。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/211906",
+        "备注": ""
+    },
+    {
+        "序号": 933,
+        "问题现象": "：现场组网的胖胖mesh网络中，存在mesh链路丢包的情况。",
+        "问题描述": "：设备日志显示，mesh链路出现震荡，原因是Keepalive超时。具体日志如下：`%Dec916:59:20:5922023chukouWMESH/5/MESH_LINKDOWN:MeshlinkoninterfaceWLAN-MeshLink4isdown:peerMAC=xxxx-xxxx-8c80,RSSI=32,reason:Linkkeepalivefailure(local).``%Dec916:59:22:1672023chukouWMESH/5/MESH_LINKUP:MeshlinkontheinterfaceWLAN-MeshLink5isup:peerMAC=xxxx-xxxx-8c80,peerradiomode=1,RSSI=32`通过收集`debugwlanmeshall`日志，发现虽然有收到对端报文，但计时器仍然超时。",
+        "结论": "：现场AP绑在混凝土柱子上，环境中存在干扰，导致mesh链路的Keepalive报文频繁超时，进而引发链路震荡和丢包问题。",
+        "解决办法": "：经现场确认，尝试更换信道为165后，mesh链路恢复正常，不再出现丢包和链路震荡的情况。建议在存在干扰的环境中，选择较少干扰的信道进行组网。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/226396",
+        "备注": ""
+    },
+    {
+        "序号": 934,
+        "问题现象": "某局点在使用wa6638设备进行注册时，AP无法成功上线。",
+        "问题描述": "通过开启debug信息，发现AP在注册过程中存在重传失败的问题。具体错误信息如下：`RetransmissionTimerofTunnelId:1expired.``Failedtoretransmitconfigurationrequestandtoredownthetunnel.Numberofretransmissionsexceededthelimit3.``Closecapwapclientudpport:62084``CAPWAPtunneltoAC172.31.1.06wentdown.Reason:Retransmissionfailed.`进一步分析发现，使用大包从APpingAC不通，但小包能通。与第三方设备的运维工程师沟通后，确认网络报文存在大小限制，导致报文传输失败。",
+        "结论": "问题的根本原因在于有线侧第三方设备对网络报文的大小有限制，导致CAPWAP控制报文在传输过程中被丢弃，从而引起AP注册失败。",
+        "解决办法": "1.根本解决方法：联系第三方设备的运维工程师，调整网络报文的大小限制。2.临时解决方法：在AP视图下配置控制报文的片段大小，命令为`[AC-wlan-ap-xxx]fragment-sizecontrol1000`，以确保AP可以顺利上线。通过上述配置，AP可以暂时上线，但建议尽快解决有线侧的报文大小限制问题，以避免后续可能出现的类似问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/153946",
+        "备注": ""
+    },
+    {
+        "序号": 935,
+        "问题现象": "绿洲AP明细中显示的AC序列号与设备的真实序列号不一致。",
+        "问题描述": "在绿洲AP明细中，如果AC设备进行了堆叠配置，主备AC会显示同一个虚拟序列号，该虚拟序列号的后缀是随机生成的。这种情况下，主备AC被视为一个整体，以确保在主备切换时不会丢失数据。",
+        "结论": "这是正常现象，不是绿洲系统的显示问题。AC设备在堆叠时使用虚拟序列号是为了维护主备切换的连续性和数据完整性。",
+        "解决办法": "如果需要查看AC设备的真实序列号，可以进入AC的基本信息页面进行查看。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/117533",
+        "备注": ""
+    },
+    {
+        "序号": 936,
+        "问题现象": "在某局点使用WX3540X设备进行固定账号认证时，虽然能够弹出认证界面，但输入账号和密码后无法成功登录，提示登录失败。",
+        "问题描述": "1.配置检查：现场按照官网提供的云简平台认证手册进行了开局配置，大部分配置由云简平台下发。检查配置后，发现与手册中的固定账号认证配置没有明显差异。2.云简平台认证方案：根据手册，AP跨公网注册解决方案有两种，一是“配置CMCC方案”，二是“修改HTTP服务端口方案”。默认情况下，设备侧提供HTTP服务的端口为80。如果运营方无法为AC或路由器设备申请对外提供服务的80端口，需要对AC或路由器设备及网络中的其他相关设备进行额外配置。现场选择了方案一。3.额外配置：根据方案一的要求，进行了如下配置：-修改了云简平台的Web服务器URL：`#portalweb-servercloudurlhttp://oasisauth.h3c.com/portal/protocol?redirect_uri=http://182.XXX.XXX.XXX:8088/portal/cloudlogin.html`-修改了HTTP服务端口：`#iphttpport8088`-配置了本地Web服务器：`#portallocal-web-serverhttptcp-port8088`4.TCP连接检查：检查AC本地与云简网络互联的TCP连接信息，发现AC与错误的云简网络IP和端口建立了连接（101.36.161.143:443），而正确的云简网络IP和端口应为101.36.161.146:80。",
+        "结论": "问题的原因在于AC与错误的云简网络IP和端口建立了连接，导致固定账号认证请求无法正确到达云简平台。",
+        "解决办法": "1.手动指定域名对应的正确IP地址：在原有AC的配置基础上，增加`iphost`命令手动指定域名`oasisauth.h3c.com`对应的正确IP地址101.36.161.146。```plaintext#dnsserver119.6.6.6#iphostoasisauth.h3c.com101.36.161.146```2.重启AC设备：完成上述配置后，重启AC设备，确保配置生效。3.验证：重启后再次测试固定账号认证，问题得到解决。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/195814",
+        "备注": ""
+    },
+    {
+        "序号": 937,
+        "问题现象": "：某局点WX3520X设备内存使用率偏高，达到85%。",
+        "问题描述": "：通过命令`displaymemory`查看设备内存使用情况，发现总内存为1631008KB，已使用1405026KB，剩余225982KB，缓存占用127690KB，自由内存占比为14.7%。进一步通过命令`displayprocessmemory`查看进程占用情况，发现`drvuserd`进程占用内存非常高，达到70481700KB。",
+        "结论": "：`drvuserd`进程用于处理IMC（IntelligentManagementCenter）轮询发送的消息。长时间并频繁处理IMC消息可能导致该进程异常，消息积压，从而引起内存占用率升高。根据技术公告https://zhiliao.h3c.com/Theme/details/204563，这一现象已被确认，并建议采取相应措施解决。",
+        "解决办法": "：1.临时解决方法：-如果问题尚未触发，可以在设备侧关闭SNMP服务。-如果问题已经触发，可以重启设备以临时恢复内存使用情况。2.彻底解决方法：-升级设备固件到E1051P01及之后的版本，以彻底解决`drvuserd`进程异常导致的内存占用问题。发表日期：2023-09-28反馈：若您有关于该案例的建议或反馈，请提供详细信息以便进一步改进。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/221466",
+        "备注": ""
+    },
+    {
+        "序号": 938,
+        "问题现象": "客户新增需求，希望将分部的Portal账户拿到总部上网，通过IMC下发权限来控制各账户的上网权限。然而，分部的账户在总部通过Portal认证成功后，会在两秒钟内自动掉线。",
+        "问题描述": "环境描述：某局点分为总部和分部，两边的AC（接入控制器）是相互独立的，但使用同一台IMC（智能管理中心）进行Portal认证。认证过程：分部的账户在总部通过Portal认证成功后，设备主动发送Type8的下线请求给IMC，下线原因为NASError。日志分析：-认证成功后，IMC下发了ACL3011规则。-设备接收到ACL3011规则并成功应用。-但随后设备发送了Type8的下线请求，强制客户端下线。-进一步分析发现，主备AC之间的配置不一致，备AC上没有配置ACL3011规则，导致同步失败。",
+        "结论": "问题的根本原因是主备AC之间的配置不一致。具体来说，备AC上没有配置与主AC相同的ACL3011规则，导致Portal在线信息同步失败，最终主AC发送Type8的下线请求强制客户端下线。",
+        "解决办法": "配置同步：在备AC上配置与主AC相同的ACL3011规则。配置一致性检查：确保主备AC之间的所有相关配置保持一致，特别是在涉及Portal认证和ACL下发的情况下。双机热备配置：配置双机热备时，应特别注意主备AC之间的配置同步，以避免因配置不一致导致的各种异常现象。通过以上措施，问题得到了解决，分部的账户在总部上网时不再自动掉线。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/6059",
+        "备注": ""
+    },
+    {
+        "序号": 939,
+        "问题现象": ":用户无法获得IP地址。",
+        "问题描述": ":在使用H3C无线产品时，用户在连接无线网络后无法成功获取IP地址，导致无法正常访问网络。",
+        "结论": ":1.客户端问题:-客户端网卡故障。-客户端操作系统问题，如DHCP客户端服务未正常运行。2.网络设备问题:-AP（无线接入点）掉电或硬件故障。-业务VLAN不通，导致客户端无法获取IP地址。-DHCP服务器的IP地址池已用完，无法分配新的IP地址。",
+        "解决办法": ":1.客户端初步预判:-运行“cmd”“ipconfig/renew”尝试查看“ipconfig”是否解决问题。-禁用后启用网卡或者重启PC尝试解决。2.局方判断:-在网管上查看设备是否可达，检查设备告警信息。-确认业务VLAN是否通畅，需要各二层设备透传业务VLAN数据，由维护部门确认。-检查DHCP服务器的IP地址池是否已用完，如有必要，扩大地址池或释放已用地址。-检查AP自身硬件问题，确保AP正常转发报文。3.现场工程师操作:-在交换机上配置端口`portaccessvlanXX`，并接入有线网卡的客户端来判断或排除无线网络问题。发表日期:2008-09-05修订日期:2008-09-05反馈:若您有关于案例的建议，请反馈。作者:宋斌关注:人关注：人评价:该案例对您是否有帮助：有用/无用您的评价:1",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/88043",
+        "备注": ""
+    }
+]

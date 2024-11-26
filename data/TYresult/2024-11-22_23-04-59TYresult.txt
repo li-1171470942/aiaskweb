@@ -1,0 +1,182 @@
+[
+    {
+        "序号": 980,
+        "问题现象": "在某局点使用AC（WX2540HV7）下连AP进行集中转发模式的本地Portal认证时，用户在终端浏览器中输入http://10.48.40.2/portal可以弹出Portal认证页面，但无法成功认证。",
+        "问题描述": "1.网络配置：-无线AC为WX2540H（V7），同时承担PortalWeb服务器和Portal认证服务器的职责。-下连AP网段为VLAN48和VLAN49，上网网段为VLAN40，IP地址为10.48.40.1/24。-AC的VLAN40地址为10.48.40.2/24。-http://10.48.40.2/portal为认证页面，http://222.222.222.222为Portal认证成功后的跳转页面。2.配置检查：-DHCP服务器配置：-VLAN40网段：网关为10.48.40.1，DNS为8.8.8.8。-VLAN48网段：网关为192.168.48.1。-VLAN49网段：网关为192.168.49.1。-服务模板配置：-使能IPv4Portal认证，指定为直接认证方式。-服务模板调用Web服务器并使能Portal认证。-配置最大IPv4Portal用户数为1。-Portal服务器配置：-开启Portal客户端合法性检查功能。-配置Portal自由规则，允许访问特定IP地址。-创建本地PortalWeb服务器，配置默认认证页面文件为defaultfile.zip。-配置HTTP服务端口号为80。3.调试信息：-终端可以ping通Portal服务器的地址，但认证失败。-收集AC上的调试信息，发现重定向可以成功，但认证失败。",
+        "结论": "问题的主要原因在于：1.服务模板和VLAN40下的Portal认证配置重复，导致认证过程异常。2.Portal自由规则中包含认证成功后的跳转地址222.222.222.222，导致用户在未认证前即可直接访问该地址，无法触发Portal认证。3.Web服务器配置中缺少必要的URL参数，影响认证过程的正常进行。",
+        "解决办法": "1.删除重复的Portal认证配置：-在服务模板和VLAN40下只需一个调用Portal认证，删除多余的配置。```plaintextwlanservice-templateczdhssidchuanxinvlan40portalenablemethoddirect//删除以下两行//portalapplyweb-serverweb//portalipv4-max-user1service-templateenable```2.调整Portal自由规则：-删除Portal自由规则中直接放通认证成功后跳转地址222.222.222.222的规则。-增加一条允许DNS查询的自由规则，确保用户可以解析域名。```plaintextportalfree-rule10sourceipanydestinationip8.8.8.8255.255.255.255```3.完善Web服务器配置：-在Web服务器配置中增加必要的URL参数，确保认证过程中传递正确的信息。```plaintextportalweb-servernewpturlhttp://10.48.40.2/portalurl-parametersssidssidurl-parameterwlanacnamevalueACurl-parameterwlanuseripsource-address```调试步骤1.检查认证页面访问：-在终端浏览器中手动输入Portal服务器地址，检查是否可以打开认证页面。2.检查网络连通性：-如果无法打开认证页面，使用ping命令检查终端到Portal服务器的连通性。-如果ping通，则排查Portal服务器配置；否则检查终端网关到Portal服务器之间的路由。3.测试跳转访问：-在测试终端浏览器中输入IP地址测试，确保浏览器可以跳转访问Portal认证地址（如果使用域名测试，需确保DNS可达）。4.收集诊断信息：-在AC上收集客户端详细信息和诊断信息。```plaintext[H3C]displaywlanclientmacxxxverbose<H3C>displaydiagnostic-informationSaveordisplaydiagnosticinformation(Y=save,N=display)?[Y/N]:yPleaseinputthefilename(*.diag)[flash:/default.diag]:Diagnosticinformationisoutputtingtoflash:/default.diag.Pleasewait...Savessuccessfully.<H3C>tftp1.1.1.1putflash:/default.diag```5.开启认证调试：-在AC上开启Portal认证相关的调试信息，以便进一步排查问题。```plaintext<H3C>debuggingportalpacket<H3C>debuggingportalpacketinterfacexxx<H3C>debuggingportalerror<H3C>debuggingradiusall<H3C>terminalmonitor<H3C>terminaldebugging```通过上述步骤和调整，可以有效解决本地Portal认证失败的问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/22578",
+        "备注": ""
+    },
+    {
+        "序号": 981,
+        "问题现象": "在使用WX系列AC（无线控制器）设备时，用户希望根据不同的场景需求自动控制AP（接入点）的Radio接口或service-template服务模板的开启与关闭，以实现绿色节能和高效管理。",
+        "问题描述": "用户需要在无人值守的情况下，通过配置定时任务来自动控制WX系列AC设备上的APRadio接口或service-template服务模板的开关状态。具体需求包括：每天08:00至20:00开启Radio接口，其他时间关闭。每周周一至周五开启Radio接口，其他时间关闭。每周周一至周五的08:00至20:00开启Radio接口，其他时间关闭。每月1日至10日开启Radio接口，其他时间关闭。在特定日期和时间关闭Radio接口。延迟指定时长后关闭Radio接口。每天08:00至20:00开启指定的service-template服务模板，其他时间关闭。",
+        "结论": "通过配置WX系列AC设备的定时任务功能，可以实现上述多种场景下的自动控制APRadio接口或service-template服务模板的开关状态，从而达到节能和提高管理效率的目的。",
+        "解决办法": "1.定时开关所有APRadio接口-每天08:00至20:00开radio，其他时间关radio```shellsystem-view[AC]jobradio_disable[AC-job-radio_disable]viewsystem[AC-job-radio_disable]time1repeatingat20:00commandwlanradiodisableall[AC-job-radio_disable]time2repeatingat20:00commandy[AC-job-radio_disable]quit[AC]jobradio_enable[AC-job-radio_enable]viewsystem[AC-job-radio_enable]time1repeatingat08:00commandwlanradioenableall[AC-job-radio_enable]time2repeatingat08:00commandy[AC-job-radio_enable]quit```-每周周一至周五开radio，其他时间关radio```shellsystem-view[AC]jobradio_disable[AC-job-radio_disable]viewsystem[AC-job-radio_disable]time1repeatingat23:59week-dayFricommandwlanradiodisableall[AC-job-radio_disable]time2repeatingat23:59week-dayFricommandy[AC-job-radio_disable]quit[AC]jobradio_enable[AC-job-radio_enable]viewsystem[AC-job-radio_enable]time1repeatingat00:01week-dayMoncommandwlanradioenableall[AC-job-radio_enable]time2repeatingat00:01week-dayMoncommandy[AC-job-radio_enable]quit```-每周周一至周五的08:00至20:00开radio，其他时间关radio```shellsystem-view[AC]jobradio_disable[AC-job-radio_disable]viewsystem[AC-job-radio_disable]time1repeatingat20:00week-dayMoncommandwlanradiodisableall[AC-job-radio_disable]time2repeatingat20:00week-dayMoncommandy[AC-job-radio_disable]time3repeatingat20:00week-dayTuecommandwlanradiodisableall[AC-job-radio_disable]time4repeatingat20:00week-dayTuecommandy[AC-job-radio_disable]time5repeatingat20:00week-dayWedcommandwlanradiodisableall[AC-job-radio_disable]time6repeatingat20:00week-dayWedcommandy[AC-job-radio_disable]time7repeatingat20:00week-dayThucommandwlanradiodisableall[AC-job-radio_disable]time8repeatingat20:00week-dayThucommandy[AC-job-radio_disable]time9repeatingat20:00week-dayFricommandwlanradiodisableall[AC-job-radio_disable]time10repeatingat20:00week-dayFricommandy[AC-job-radio_disable]quit[AC]jobradio_enable[AC-job-radio_enable]viewsystem[AC-job-radio_enable]time1repeatingat08:00week-dayMoncommandwlanradioenableall[AC-job-radio_enable]time2repeatingat08:00week-dayMoncommandy[AC-job-radio_enable]time3repeatingat08:00week-dayTuecommandwlanradioenableall[AC-job-radio_enable]time4repeatingat08:00week-dayTuecommandy[AC-job-radio_enable]time5repeatingat08:00week-dayWedcommandwlanradioenableall[AC-job-radio_enable]time6repeatingat08:00week-dayWedcommandy[AC-job-radio_enable]time7repeatingat08:00week-dayThucommandwlanradioenableall[AC-job-radio_enable]time8repeatingat08:00week-dayThucommandy[AC-job-radio_enable]time9repeatingat08:00week-dayFricommandwlanradioenableall[AC-job-radio_enable]time10repeatingat08:00week-dayFricommandy[AC-job-radio_enable]quit```-每月1日至10日开radio，其他时间关radio```shellsystem-view[AC]jobradio_disable[AC-job-radio_disable]viewsystem[AC-job-radio_disable]time1repeatingat23:59month-date10commandwlanradiodisableall[AC-job-radio_disable]time2repeatingat23:59month-date10commandy[AC-job-radio_disable]quit[AC]jobradio_enable[AC-job-radio_enable]time1repeatingat00:01month-date1commandwlanradioenableall[AC-job-radio_enable]time2repeatingat00:01month-date1commandy[AC-job-radio_enable]quit```-在2012年6月19日00:00关radio```shellsystem-view[AC]jobradio_disable[AC-job-radio_disable]viewsystem[AC-job-radio_disable]time1at00:002012/06/19commandwlanradiodisableall[AC-job-radio_disable]time2at00:002012/06/19commandy[AC-job-radio_disable]quit```-延迟1小时后关radio```shellsystem-view[AC]jobradio_disable[AC-job-radio_disable]viewsystem[AC-job-radio_disable]time1one-offdelay01:00commandwlanradiodisableall[AC-job-radio_disable]time2one-offdelay01:00commandy[AC-job-radio_disable]quit```2.定时开关指定service-template服务模板-每天08:00至20:00开service-template1，其他时间关闭```shellsystem-view[AC]jobservice1_disable[AC-job-service1_disable]viewwlan-st-1[AC-job-service1_disable]time1repeatingat20:00commandservice-templatedisable[AC-job-service1_disable]quit[AC]jobservice1_enable[AC-job-service1_enable]viewwlan-st-1[AC-job-service1_enable]time1repeatingat08:00commandservice-templateenable[AC-job-service1_enable]quit```说明其他场景的配置步骤可以参照上述示例进行调整。配置完成后，设备将根据设定的时间自动执行相应的命令，实现定时开关APRadio接口或service-template服务模板的功能。确保在配置过程中输入的命令和时间准确无误，以避免不必要的错误。希望这些总结和配置步骤能帮助您有效地管理WX系列AC设备，实现绿色节能和高效管理。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/810",
+        "备注": ""
+    },
+    {
+        "序号": 982,
+        "问题现象": "某局点在云简网络上配置固定账号认证时，终端设备无需进行认证即可访问部分网络资源。",
+        "问题描述": "1.组网及说明：AP直接注册到云简网络上，配置固定账号认证。2.告警信息：无告警信息。3.终端访问情况：终端设备在未进行Portal认证的情况下，可以访问部分网络资源。",
+        "结论": "1.Portal认证状态：终端设备在云简网络上只有client表象，没有Portaluser表象，说明终端尚未进行Portal认证或认证未成功。2.FreeRule检查：检查了Portal的FreeRule配置，发现放通的地址包括常见的DNS地址（114.114.114.114）和一些特定的网站（如微信相关域名），但这些地址与终端能访问的网站不匹配。3.无感知配置：虽然命令行配置了无感知认证，但云简上未启用相应的开关，因此无感知认证不生效。4.临时放行：检查了临时放行配置，未发现相关配置。5.逃生配置：检查了逃生配置，未发现相关配置。6.终端流量分析：最终通过分析终端报文流量发现，终端设备使用的是IPv6地址，而云简网络暂不支持IPv6的认证，导致终端设备在未认证的情况下可以访问网络资源。",
+        "解决办法": "删除终端设备的IPv6配置，确保终端设备只获取IPv4地址。这样，终端设备在访问网络资源时必须进行Portal认证。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/219138",
+        "备注": ""
+    },
+    {
+        "序号": 983,
+        "问题现象": "Portal无法弹出认证页面。",
+        "问题描述": "Portal认证页面无法弹出，可能的原因包括：1.仿冒模块限速：仿冒模块为防止攻击，每秒只能处理256个报文，超过部分将被丢弃。2.仿冒模块存在老连接：老连接未释放，导致新的TCP连接无法建立。3.DNS未放通：终端在浏览器上输入网址域名后，必须先完成DNS解析才能发起TCP连接请求，从而触发重定向。如果终端未配置DNS或DNS不可用，则无法发起TCP连接和触发重定向。4.终端浏览器缓存认证页面：终端切换热点后，可能使用之前保存的Portal页面进行认证，导致认证失败。",
+        "结论": "Portal无法弹出认证页面的问题可能由以下几种情况导致：仿冒模块限速，导致报文被丢弃。仿冒模块存在未释放的老连接，阻止了新的TCP连接。终端未配置或无法使用DNS，导致无法完成DNS解析和TCP连接请求。终端浏览器缓存了老的认证页面，导致在新热点下认证失败。",
+        "解决办法": "1.启动调试信息进行收集：-`debugportalaclinterfacexxx`（xxx为VLAN接口）-`debugportaltcp-cheat`-`debugportalserver`-如果出现“FailedtoprocessHTTPpacket:under-attack”，则说明是仿冒模块限速问题（问题1）。-如果出现长时间无法推出页面的现象，可以使用`displayportaltcp-cheatstatistics`查看是否已有网卡IP地址相关的表项，如果有则说明是仿冒模块存在老连接问题（问题2）。2.常用的调试命令：-`debuggingportalruleacl`：用户上线后转发有问题时使用。-`debuggingportalconnection`：用户上下线有问题时使用。-`debugportalpacket`：用户上下线有问题时使用。-`debugportalserver`：本地Portal认证用户上下线有问题时使用。-`debugportaltcp-cheathttp`：重定向有问题时使用。-`debuggingportalall`：一般遇到问题时可以都打开，但建议关闭ACL调试以避免信息过多。3.显示统计信息的命令：-`displayportalconnectionstatistics`：显示Portal用户连接统计信息。-`displayportaltcp-cheatstatistics`：显示Portal仿冒模块统计信息。4.处理建议：-对于DNS未放通的问题，建议检查终端的DNS配置，确保DNS可用。-对于终端浏览器缓存认证页面的问题，建议清除浏览器缓存或直接在浏览器地址栏输入任意IP地址进行测试，以确保触发新的重定向请求。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/6952",
+        "备注": ""
+    },
+    {
+        "序号": 984,
+        "问题现象": "在某局点使用WX3540H设备进行短信认证时，偶尔会出现终端认证成功后能够正常跳转到认证成功页面，但在后续浏览网页时，又会被重定向到认证页面的情况。",
+        "问题描述": "1.终端状态检查：第一次认证成功后，AC设备上显示终端已在线并获取了正确的IP地址（192.168.217.71），但portal在线用户信息中，此IP地址对应的MAC地址与实际终端的MAC地址不符。2.debug信息分析：设备从portal服务器获取终端信息时，已经出现了IP地址与MAC地址的错误匹配。进一步检查radius信息，发现设备向radius服务器发起认证时携带的MAC地址也是错误的。3.可能原因：portal用户在未手工下线的情况下直接断开无线关联，导致portal用户并未下线。当DHCP租约超期，另一个终端获取此IP地址并发起portal认证时，系统会误认为该终端已认证成功，从而导致重定向问题。",
+        "结论": "问题的根本原因在于portal用户的在线状态与实际终端的在线状态不一致，导致IP地址与MAC地址的错误匹配。这通常是由于DHCP租约期设置过短，而配置的idle-cut时间不足以在DHCP租约超期前将闲置的用户踢下线。",
+        "解决办法": "1.配置idle-cut：在domain域下配置portal的idle-cut时间，并确保此时间小于DHCP租约期的一半。例如，如果DHCP租约期为24小时，idle-cut时间可以设置为12小时。2.清除在线用户：在配置idle-cut之前，确保AC上没有portal在线用户。如果不确定，可以执行命令`portaldeleteuserall`将所有用户踢下线，然后再进行配置。通过上述措施，可以有效避免因IP地址和MAC地址不匹配导致的重定向问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/33128",
+        "备注": ""
+    },
+    {
+        "序号": 985,
+        "问题现象": "用户使用阿里巴巴云的无线ACWX5540E和WA4620i-ACN部署无线网络，并要求接入无线网络的用户通过第三方深蓝Portal服务器进行Portal认证以验证合法性。网络搭建完成后，用户在连接无线网络并正常获取IP地址后，通过浏览器访问www.baidu.com，浏览器正常推送Portal认证页面，但用户输入账户和密码后页面停留在认证页面，无法成功认证并访问内网数据。",
+        "问题描述": "1.AC调试信息：AC调试记录显示AC收到了用户访问网页的请求，并成功将用户重定向到Portal服务器的认证页面（http://10.100.110.107/index_2.html）。2.认证流程问题：根据Portal协议认证流程，用户在认证页面上输入账户和密码后，Portal服务器应向AC发起挑战请求或认证请求报文。然而，AC调试记录中未收到Portal服务器发送的认证报文。3.初步怀疑：怀疑Portal服务器上配置的NAS-IP地址错误，但检查后发现NAS-IP地址配置正确。4.进一步分析：通过抓包分析发现，Portal服务器发送的协议报文中ver字段数值为02，而AC上对于ver字段的定义中，01表示IPV4Portal认证，02表示IPV6Portal认证。AC仅配置了IPV4的Portal认证。",
+        "结论": "问题的根本原因是Portal服务器发送的协议报文中的ver字段数值为02，而AC仅配置了IPV4的Portal认证，导致AC无法正确识别和处理认证请求，从而导致用户认证失败。",
+        "解决办法": "1.确认配置：-在配置Portal服务器时，确保服务类型选择为cmcc。-在配置Radius时，不能选择扩展模式。-在Portal服务器上配置NAS-IP时，确保使用的是设备的路由最近地址。2.修改协议报文：-协调Portal服务器侧将发送的协议报文中的ver字段数值从02修改为01，以匹配AC的IPV4Portal认证配置。3.测试验证：-修改后，用户重新测试认证流程，发现认证成功并可以正常访问内网数据。4.后续建议：-在配置Portal认证时，确保设备和Portal服务器的协议版本一致。-如果配置检查均无误，及时进行抓包分析，以提高问题处理效率。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/4460",
+        "备注": ""
+    },
+    {
+        "序号": 986,
+        "问题现象": "AP指示灯亮蓝灯。终端无法Ping通小贝路由的默认管理地址192.168.1.1。无法通过浏览器登陆小贝路由的管理界面进行管理。多次重启AP后问题依旧。",
+        "问题描述": "某局点反馈现场有一台小贝路由WAP422S出现故障。设备的AP指示灯亮蓝灯，终端设备无法Ping通小贝路由的默认管理地址192.168.1.1，也无法通过浏览器登陆其管理界面。多次重启设备后，问题仍未解决。",
+        "结论": "经过分析，小贝路由WAP422S可能工作在桥接下级模式。在该模式下，小贝路由作为二层设备不提供DHCPServer功能，因此PC等终端设备无法直接从其获取IP地址。设备的管理地址会从上层设备自动获取，不再是默认的192.168.1.1，这导致了默认管理地址无法登陆的情况。",
+        "解决办法": "1.方法一：参考小贝路由第一次设置为桥接下级模式时的登录提示进行登录管理。2.方法二：将小贝路由恢复出厂设置，用默认管理地址192.168.1.1进行登录管理。恢复出厂设置的方法是长按reset键6秒以上。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/102314",
+        "备注": ""
+    },
+    {
+        "序号": 987,
+        "问题现象": "某局点的WX2540H无线终端在使用过程中频繁出现无线连接中断4-5秒（终端上的无线WiFi图标消失），随后又重新连接的问题。大部分终端均受到影响，尤其是苹果电脑。现场测试显示终端连接家用路由器时没有出现类似问题。",
+        "问题描述": "1.所有SSID均受影响：现场所有的SSID都会导致大部分终端频繁掉线。2.终端主动发送去关联和去认证报文：通过AP的debug日志发现，终端掉线的原因是AC收到了终端主动发送的去关联（disassociation）和去认证（deauthentication）报文，具体原因码为2和3。3.信号强度差异：空口抓包显示，苹果电脑在固定位置时接收到的743a-20f0-ee22AP的信号强度有显著差异（-87和-53），怀疑存在非法AP。4.非法AP行为：抓包中发现BSSID为743a-20f0-ee21的设备也在给终端发送去关联或去认证报文，而终端实际只连接了743a-20f0-ee22的AP。",
+        "结论": "1.极大可能是非法设备反制：根据上述现象，尤其是终端主动发送去关联和去认证报文、信号强度差异和非法AP行为，怀疑现场存在其他设备仿冒AP，不断向终端发送去关联或去认证报文，导致终端频繁掉线。2.终端上线延时的可能性：另一种可能性是终端上线过程中存在延时，导致终端已经开始发送数据报文时，AC尚未将终端信息同步到AP上，这种情况下AP会主动发送原因码为6的去认证报文。不过，这种可能性较低，需要进一步验证。",
+        "解决办法": "1.配置服务模板命令：在服务模板中配置`unknown-client-drop`命令，该命令会使得AP在收到未知终端的报文时仅丢弃报文而不发送去认证报文。配置命令如下：```shell[WX5510E-wlan-st-1]unknown-client-drop```如果配置后问题依然存在，基本可以确认现场存在反制源。2.人工排查反制源：确认问题是由非法设备反制导致后，需要人工逐个排查现场设备，找到并移除反制源。3.参考相关案例：可以参考H3C知了平台上的相关排查案例（[案例链接](https://zhiliao.h3c.com/Theme/details/5591)），虽然不是完全相同，但可以提供一定的排查思路和方法。通过上述步骤，最终确认并移除了反制源，解决了无线终端频繁掉线的问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/141465",
+        "备注": ""
+    },
+    {
+        "序号": 988,
+        "问题现象": "配置了逃生服务模板后，WX3508H无线控制器在模拟服务器不可达时，逃生功能生效，但当服务器恢复后，客户端无法进行802.1X认证接入网络。",
+        "问题描述": "现场使用WX3508H无线控制器结合iMC进行802.1X认证接入网络，最初尝试在iMC侧使用RADIUS逃生方案，但后来改为在无线控制器侧配置逃生服务模板实现逃生。配置逃生服务模板后，模拟服务器不可达时，逃生模板生效，但当服务器恢复后，客户端仍然无法进行认证。",
+        "结论": "问题的原因在于，在配置逃生服务模板前，现场尝试使用过iMC侧的RADIUS逃生工具，导致iMC的uAM（UserAccessManager）工作模式被设置为逃生模式。尽管无线控制器侧配置了逃生服务模板，uAM工作模式未从逃生模式切换回正常模式，导致客户端在服务器恢复后无法进行正常认证。",
+        "解决办法": "1.检查无线控制器侧的配置，确认逃生服务模板配置正确。2.检查iMC侧的配置，确保uAM工作模式为正常模式。3.按照指导手册的步骤，将iMC的uAM工作模式从逃生模式调整为正常模式。4.重新测试客户端的802.1X认证，确认服务器恢复后客户端可以正常认证接入网络。通过上述步骤，可以确保逃生服务模板生效，同时在服务器恢复后，客户端能够正常进行802.1X认证。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/215495",
+        "备注": ""
+    },
+    {
+        "序号": 989,
+        "问题现象": "”、“",
+        "问题描述": "”、“",
+        "结论": "”、“",
+        "解决办法": "”四个方面进行总结如下：问题现象用户在选择WA1208E系列FatAP时，对不同型号之间的共性功能特性存在困惑，尤其是在802.11i安全机制、802.11eQoS机制、802.11f切换机制、覆盖范围、多VLAN支持、网桥模式、负载均衡、认证和计费方式以及室外应用环境适应性等方面。问题描述用户希望了解WA1208E系列FatAP（包括WA1208E-G、WA1208E-DG、WA1208E-AG和WA1208E-AGP四种型号）的产品共性，以便在实际应用中更好地选择和配置适合的设备。结论WA1208E系列FatAP的四种型号（WA1208E-G、WA1208E-DG、WA1208E-AG和WA1208E-AGP）在以下几个方面具有相同的功能特性：1.全面支持802.11i安全机制、802.11eQoS机制、802.11f切换机制。2.大范围覆盖：高接收灵敏度，达到-97dBm（1Mbps，普通AP-95dBm），保证更远的覆盖范围。3.多VLAN支持：虚拟AP方式支持多VLAN，最多支持8个虚拟SSID的VLAN划分，每个VLAN用户可以独立认证。4.兼作网桥使用：WDS模式支持PTP（点对点）和PTMP（点对多点）工作模式，支持连接速率锁定和传输报文整合，提高传输效率。5.负载均衡：支持基于用户数和基于流量的负载均衡。6.多种认证和计费方式：可以对上行和下行业务流进行计费，支持预付费业务，在用户余额不足时主动切断网络连接；对于每个SSID能够配置是否需要计费，可以只进行认证而不计费。7.适应室外恶劣应用环境：支持室外机箱，并内置防雷防雨防冻套件，充分考虑到室外安装工程需求。解决办法1.了解共性功能：用户可以通过上述总结，了解WA1208E系列FatAP的共性功能特性，从而在选择不同型号时有更明确的参考。2.选择合适型号：根据实际需求（如室内或室外使用、是否需要防雷防雨防冻等），选择最适合的WA1208E型号。3.配置和管理：用户可以根据共性功能特性，对设备进行相应的配置和管理，如设置多VLAN、启用负载均衡、配置认证和计费方式等。4.查阅详细文档：如果需要更详细的配置步骤和技术参数，建议查阅WA1208E系列的官方技术文档或联系技术支持。希望以上总结对您有所帮助！如果您有任何其他问题或需要更多详细信息，请随时反馈。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/84288",
+        "备注": ""
+    },
+    {
+        "序号": 990,
+        "问题现象": "某局点使用WA6520S-C型号的无线接入点（AP），在云AP模式下连接路由器。现场反馈，苹果笔记本电脑的内网上传速度非常慢，只有20多Mbps，而下载速度正常。无论是单终端还是多终端测试，上传速度均无明显提升。终端与AP距离很近，协商速率能达到860Mbps，信号强度为-45dbm。",
+        "问题描述": "1.终端协商速率和信号强度:苹果笔记本终端与AP协商速率为860Mbps，信号强度为-45dbm，终端与AP距离很近。2.上行路由器配置:检查上行路由器配置，未发现任何限速设置。3.友商AP对比:在相同环境下，苹果笔记本连接其他厂商的AP时上传速度正常，可达到200-300Mbps。4.实验室测试:实验室使用相同版本的AP和Windows电脑、手机进行测试，上传和下载速度均正常，能达到500-600Mbps。再次远程检查现场，发现只有苹果终端存在上传速度慢的问题，Windows终端上传速度正常。5.初步怀疑:基于上述信息，初步怀疑是AP与苹果终端的兼容问题。",
+        "结论": "经过分析和对比测试，最终确定问题是由于WA6520S-CAP与苹果终端在802.11n报文聚合协商过程中存在兼容性问题，导致苹果终端的上传速度显著降低。",
+        "解决办法": "在AP的射频配置中启用802.11n报文发送抑制功能，具体命令如下：```shelloptiondot11n-restraintenablepacket-number64packet-length96000```该命令通过控制AP对802.11n客户端的A-MPDU聚合过程，限制聚合的报文个数不超过64个，聚合后的报文总长度不超过96000字节，从而规避了AP与苹果终端的聚合协商问题。配置该命令后，现场苹果终端的上传测速显著提升到300多Mbps，故障消失。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/225888",
+        "备注": ""
+    },
+    {
+        "序号": 991,
+        "问题现象": "终端完成Portal认证后，每隔48小时，即使终端一直在使用网络，也会在终端侧提示“无法上网”，需要重新断开WiFi后重连。此时，会重定向自动弹出Portal认证页面，需要用户重新进行Portal认证。",
+        "问题描述": "1.终端表现：终端完成Portal认证后，每隔48小时，即使终端一直在使用网络，也会提示“无法上网”，需要重新断开WiFi后重连。2.服务器侧表现：服务器侧显示是AC（接入控制器）向服务器侧发起了终端Portal下线请求。3.AC侧表现：故障发生时，AC上的Portal表项消失，即通过`displayportaluserusernamexxx`搜索找不到对应终端的记录。终端重新Portal认证后，AC上才会再次出现Portal表项。",
+        "结论": "1.配置检查：AC上的Portal域配置中没有发现`authoriation-attributeidle-cut`相关的闲置切断配置，且终端在故障时一直在使用流量，不存在被闲置切断的可能性。2.RadiusScheme检查：AC上的`displayradiusscheme`显示1812和1813端口近期没有发生block的记录。3.抓包分析：通过Wireshark抓包和AC上的debug记录发现，终端Portal登录48小时后，AC先向服务器发送了一次计费更新报文，服务器回复了`accountingresponse`报文，但随即AC立刻向服务器发送了`NTF_LOGOUT`报文请求下线（携带原因是：Session-timeout）。4.计费更新异常：AC在收到服务器的计费应答报文后，发现`RespCode=0`，于是判定终端Session超时，发送了`NTF_LOGOUT`报文给服务器，请求终端下线。这很可能是由于服务器回复的`AccountingResponse`报文中没有携带相关的属性，导致AC错误地判断Session时间到了。5.Session时长来源：通过Wireshark报文分析，终端的Portal认证成功后，服务器通过`Access-Accept`报文向终端携带了`Session-Timeout`48小时的属性。",
+        "解决办法": "1.修改服务器侧机制：需要排查服务器侧为什么给AC发送的计费更新报文没有携带相关的属性，并进行相应的修改，确保服务器在`AccountingResponse`报文中正确携带`Session-Timeout`属性。2.配置验证：在修改服务器侧配置后，重新进行终端认证和网络使用测试，验证是否解决了每隔48小时Session超时的问题。3.日志监控：建议在AC和服务器侧增加日志监控，以便在后续出现问题时能够快速定位和解决。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/219260",
+        "备注": ""
+    },
+    {
+        "序号": 992,
+        "问题现象": "：某局点无线控制器上配置了多个且地址池范围较大的DHCP地址池，以满足终端流动性大和同一时间终端数量多的环境需求。然而，客户发现通过命令`disdhcpserverfree-ip`查看DHCP地址池的空闲地址信息时，1F地址池的空闲地址显示为空，即使新的终端仍然能够正常获取到地址上网。",
+        "问题描述": "：客户对1F地址池的使用情况感到担忧，因为命令`disdhcpserverfree-ip`显示该地址池没有剩余的空闲地址。但是，通过命令`disdhcpserverstatisticspool1F`查看1F地址池的统计使用率时，显示的利用率仅为13.04%，并且有534个自动绑定地址、35484个已过期地址。此外，现场重新启动了DHCP服务后，能够看到地址池的剩余地址，但随着网络使用，这些地址又从显示中消失，尽管新终端仍能正常获取地址上网。",
+        "结论": "：经过实验室验证，得出以下结论：1.设备运行和显示信息没有问题，DHCP空闲地址实际上是在两个列表中分类显示的。2.命令`disdhcpserverfree-ippoolname`显示的是从未被分配过的地址，因此在终端流动性非常大的情况下，这些地址可能因为曾经都被分配过而不再显示。3.命令`disdhcpserverexpiredpoolname`则显示了已经分配但已过期且可以被重新分配的地址。4.要准确查看DHCP地址池的空闲地址，需要将上述两个命令显示的地址范围相加，即为实际的空闲地址范围。",
+        "解决办法": "：为了帮助客户准确了解DHCP地址池的空闲地址情况，建议使用以下方法：1.使用`disdhcpserverfree-ippoolname`命令查看从未被分配过的地址。2.使用`disdhcpserverexpiredpoolname`命令查看已过期可以被重新分配的地址。3.将两个命令显示的地址范围相加，以得到实际的空闲地址总数。4.定期监控地址池的使用情况，特别是关注已过期地址的数量，以确保地址池的有效管理和利用。这种方法可以帮助客户更全面地了解地址池的使用状况，避免因显示问题而产生的误解。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/17015",
+        "备注": ""
+    },
+    {
+        "序号": 993,
+        "问题现象": "某局点在进行IRF堆叠拆分演练测试时，发现当拔除堆叠线后，IRF分裂，备机重启。重启记录显示，重启原因与IRF合并有关。",
+        "问题描述": "该局点使用的是WX6112E设备，型号为EWPXM1MAC0F，运行R5457版本。现场配置了AP热备份相关配置，包括：`#wlanhot-backupkeepalivetimeout1000`：设置Keepalive超时时间为1000毫秒。`#wlanap-backuphot-backupenableglobal`：全局启用AP热备份功能。在拆堆叠演练过程中，系统记录显示先是链路检测到了1秒超时，随后收到了IRF合并重启的报文。整个过程的中断时间为1.6秒（28391601-28391585=16*100ms）。",
+        "结论": "通过现场反馈的信息和日志分析，发现问题的原因是：1.链路超时检测：配置了1000毫秒的Keepalive超时时间，导致在拆堆叠过程中，当某一路流量中断超过1秒时，系统认为该AC故障。2.IRF合并重启：在拆堆叠过程中，当一路流量中断后，IRF堆叠分裂。如果另一路流量在短时间内恢复，系统会再次尝试合并，导致备机重启。现场反馈平时运行正常，只有在拆堆叠演练时出现问题，这进一步验证了上述分析。",
+        "解决办法": "1.不建议现网业务配置毫秒级堆叠：毫秒级的Keepalive超时时间对于现网业务来说过于敏感，容易在流量切换过程中误判设备状态。2.删除热备相关配置：-`#wlanhot-backupkeepalivetimeout1000`：删除或调整该配置，以避免过短的超时时间。-`#wlanap-backuphot-backupenableglobal`：删除或禁用该配置，以减少不必要的热备份操作。具体操作步骤如下：```shell删除Keepalive超时时间配置undowlanhot-backupkeepalivetimeout1000禁用全局AP热备份功能undowlanap-backuphot-backupenableglobal```通过以上调整，可以减少在拆堆叠过程中因超时时间过短导致的误判和重启问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/214600",
+        "备注": ""
+    },
+    {
+        "序号": 994,
+        "问题现象": "客户在使用360浏览器进行portal认证时，无法正常认证，页面显示异常。",
+        "问题描述": "客户使用360浏览器访问portal认证页面时，请求的内容与其他浏览器（如Chrome、Firefox等）不一致，导致认证页面无法正常加载和完成认证过程。通过抓包工具分析发现，360浏览器的请求存在异常。",
+        "结论": "360浏览器在某些模式下对网页请求的处理方式与其他浏览器不同，导致portal认证页面请求异常，进而影响认证流程的正常进行。",
+        "解决办法": "将360浏览器的模式从默认模式改为极速模式，可以解决认证页面请求异常的问题，使客户能够正常完成portal认证。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/4297",
+        "备注": ""
+    },
+    {
+        "序号": 995,
+        "问题现象": "：某学校采用WA2610E-GNP（或WA1208E-GNP）+室分的方式部署校园网络，所有AP突然掉线。",
+        "问题描述": "：经过初步排查，发现在DHCP服务器上没有任何报文记录。查看DHCP服务器的IP地址分配情况，发现AP获取的地址都已过期，并且无法ping通。进一步排查接入层交换机到DHCP服务器的路由，确认路由正常。现场登录AP检查配置，发现AP的GigabitEthernet1/0/1接口配置为trunk模式，但未允许VLAN1的报文通过。在AC上查看本地转发配置文件，确认文件中也未允许VLAN1的报文通过。由于AP获取地址是通过interfaceVlan-interface1发送DHCP请求报文的，因此配置错误导致AP无法正常获取地址，从而掉线。",
+        "结论": "：AP突然掉线的原因是本地转发文件配置错误，导致AP无法通过VLAN1发送DHCP请求报文，进而无法获取地址。",
+        "解决办法": "：修改本地转发文件，允许VLAN1的报文通过。具体配置命令如下：```plaintextvlan1001interfaceGigabitEthernet1/0/1portlink-typetrunkporttrunkpermitvlanall```修改配置后，AP陆续上线，问题解决。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/1435",
+        "备注": ""
+    },
+    {
+        "序号": 996,
+        "问题现象": "某局点使用WX5560H结合IMC进行Portal认证时，用户在第一次认证时会遇到认证失败的情况，Web界面上提示“该用户在认证过程中”。再次尝试认证后，用户能够成功认证并上线。",
+        "问题描述": "1.终端首次认证失败：终端首次尝试认证时，IMC侧无感知，终端认证失败。2.IMC发送下线请求：IMC侧检测到终端的IP地址有历史上线记录，因此在正式认证前向设备侧发送了REQ_logout请求。3.设备侧回应错误码：设备侧（WX5560H）回应ACK_logout，并附带errcode=2，表示用户不存在。IMC侧配置为CMCC模式，无法正确处理errcode=2，导致下线失败。4.多次尝试后认证成功：IMC侧会进行三次下线尝试，如果三次尝试后仍未收到期望的errcode=3，IMC会强制进行REQ_auth，此时终端能够成功认证并上线。",
+        "结论": "问题的根本原因是IMC和AC（WX5560H）之间的配置不一致。IMC配置为CMCC模式，但AC配置为CMCC模式时返回的errcode=2，导致IMC无法正确处理下线请求，进而影响了第一次认证的流程。在多次下线尝试失败后，IMC会忽略这些错误并强制进行认证，导致终端最终能够上线。",
+        "解决办法": "1.修改配置：指导客户在设备侧和IMC侧同时将Portal服务器类型（servertype）修改为IMC模式。2.验证效果：修改配置后，AC回应的errcode变为3，IMC能够正常处理下线请求，认证流程恢复正常，问题得到解决。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/68266",
+        "备注": ""
+    },
+    {
+        "序号": 997,
+        "问题现象": "使用MIBBrowser网管软件通过SNMP协议读取WX5004AC设备的启动文件时，返回了多个数据，无法确定哪个索引对应设备上boot-loader指定的主启动文件名。",
+        "问题描述": "在进行设备管理时，网管软件（NMS）通过SNMP协议向设备（Agent）发送Get请求，设备回应GetResponse报文，返回多个软件版本文件名。这些文件名的索引（635699X）是累加计数的，当删除一个版本文件并上传一个新版本文件时，新的版本文件不会使用删除文件的索引号，而是分配一个新的索引号。因此，网管软件无法直接确定哪个索引对应当前的主启动文件。",
+        "结论": "通过读取主启动文件索引节点（OID：1.3.6.1.4.1.2011.10.2.3.1.2.1.1.3）并结合软件版本节点（OID：1.3.6.1.4.1.2011.10.2.3.1.4.2.1.2）的数据，可以确定设备当前的主启动文件名为：wx5004-cmw520-r2308p06.bin。设备命令行验证结果与网管测试数据一致。",
+        "解决办法": "1.读取主启动文件索引并记录：-使用OID：1.3.6.1.4.1.2011.10.2.3.1.2.1.1.3读取当前主启动文件的索引。-示例命令：```plaintextSNMPQUERYSTARTED1:h3cSysCurImageIndex.97(integer)6356995SNMPQUERYFINISHED```2.读取设备Flash或CF卡中的文件名：-使用OID：1.3.6.1.4.1.2011.10.2.3.1.4.2.1.2读取设备上的所有软件版本文件名。-示例命令：```plaintextSNMPQUERYSTARTED1:h3cSysImageName.6356993(octetstring)wx5004-cmw520-r2308p01.bin2:h3cSysImageName.6356994(octetstring)main.bin3:h3cSysImageName.6356995(octetstring)wx5004-cmw520-r2308p06.binSNMPQUERYFINISHED```3.确定主启动文件：-将读取到的主启动文件索引与软件版本文件名的索引进行匹配，找到对应的主启动文件名。-例如，索引6356995对应的是文件名wx5004-cmw520-r2308p06.bin，因此可以确定当前的主启动文件为wx5004-cmw520-r2308p06.bin。4.验证结果：-在设备上使用命令行验证主启动文件：```plaintext[WX5004]displayboot-loaderThebootfileusedthistime:cfa0:/wx5004-cmw520-r2308p06.binattribute:mainThebootfileusednexttime:cfa0:/wx5004-cmw520-r2308p01.binattribute:mainThebootfileusednexttime:cfa0:/wx5004-cmw520-r2308p01.binattribute:backupFailedtogetthesecurebootfileusednexttime!```-网管测试数据与设备命令行查看数据一致，确认主启动文件为wx5004-cmw520-r2308p06.bin。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/719",
+        "备注": ""
+    },
+    {
+        "序号": 998,
+        "问题现象": "配置了dot1x认证后，客户端出现异常掉线，且掉线现象没有明显的规律性。",
+        "问题描述": "多个局点反馈，在启用dot1x认证后，客户端设备频繁掉线，影响网络的稳定性和用户体验。掉线现象不固定，难以预测，且涉及多种类型的终端设备。",
+        "结论": "通过综合分析，发现导致客户端异常掉线的主要因素有以下几点：1.认证服务器配置问题：大部分情况下，认证的radiusscheme中配置成了server-typeextended扩展模式，这种模式下IMC会下发私有属性，而一些终端设备不能识别这些属性，导致认证失败或不稳定。2.WLAN-ESS接口配置问题：wlan-ess接口下没有关闭组播和握手机制，这可能导致网络中的某些终端设备在处理这些机制时出现问题。3.5G视频口频宽配置问题：11AC产品在5G频段默认使用80M频宽捆绑模式，但这种模式对苹果终端的兼容性较差，容易导致掉线。4.网卡电源性能设置问题：部分终端的网卡在节能模式下工作，这可能导致网卡性能下降，从而引发掉线问题。",
+        "解决办法": "针对上述问题，可以采取以下解决方案：1.调整radiusscheme配置：将radiusscheme中的server-type配置为standard模式，避免下发不兼容的私有属性。2.关闭wlan-ess接口下的组播和握手机制：在wlan-ess接口配置中，执行`undodot1xmulticast-trigger`和`undodot1xhandshake`命令，关闭不必要的组播和握手机制。3.调整5G视频口频宽：对于11AC产品的5G视频口，将频宽配置调整为20M或40M捆绑模式，提高与苹果终端的兼容性。4.修改网卡电源性能设置：将终端设备的网卡电源性能设置为最高性能模式，避免节能模式下的性能下降导致掉线。一般情况下，按照上述步骤进行优化后，客户端异常掉线的问题可以得到有效解决。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/17361",
+        "备注": ""
+    },
+    {
+        "序号": 999,
+        "问题现象": "在医院的不同功能区域，无线网络存在信号覆盖不连续、终端信号接收能力低、设备漫游时业务中断等问题，影响了医护人员的工作效率和医院的管理水平。",
+        "问题描述": "1.无线查房：医生需要在病房和护士站之间频繁移动，并使用移动智能终端（如平板电脑、PDA等）调取电子病历和下医嘱。这些终端信号接收能力低，需要实现无缝连续覆盖。2.无线医疗设备管理：医疗设备在手术室、检查室等科室间流动，需要通过无线网络进行实时定位和管理。AP部署需要注重空间密度和信号连续覆盖。3.特殊病人管理：特殊病人群体（如婴儿、精神病人等）需要实时位置信息查询、紧急情况告警等。这类应用要求实现医院内外的信号连续无盲区全覆盖。4.无线输液：在门诊等人员流动性大的环境中，无线PDA用于输液管理，需要保证信号在房间和走廊之间的连续覆盖，防止人群对信号的遮挡。5.无线导医：医生通过移动终端将患者信息传输到前台分诊人员的计算机上，需要在医院内实现连续无盲区的信号覆盖，以支持漫游需求。",
+        "结论": "医院无线网络覆盖需要根据不同功能区域的特点，选择合适的部署方案，确保信号连续、稳定、无盲区，并且能够支持终端的移动性和业务连续性。主要关注点包括信号强度、覆盖范围、终端接收能力和墙体对信号的衰减等。",
+        "解决办法": "1.无线查房：-采用插座式AP：适用于新建网络，外形隐蔽，信号良好，需在走廊上单独部署AP以保证信号连续。-X-分AP设备：多个分路天线入室，根据用户位置调整信号，成本较低，但需考虑墙体材料和障碍物。2.无线医疗设备管理：-高密度AP部署：在设备可能流动的区域，如手术室、检查室等，增加AP密度，确保信号连续覆盖。-MIMO效应：选择无钢筋墙体，采用11NAP设备，通过功分和天线入室部署形成MIMO效应，提高信号质量。3.特殊病人管理：-室内外结合覆盖：采用室内外结合的方式，室内信号密度高，室外密度低，确保整个医院及周边区域无盲区。-WiFi结合射频识别技术：实现对特殊病人的实时位置信息查询和告警，提高管理效率。4.无线输液：-垂直覆盖：在门诊等人员密集区域，采用垂直覆盖方式，确保信号在房间和走廊之间的连续性，防止人群遮挡。-天线入室：使用美化天线并入室安装，提高信号强度和终端可见性。5.无线导医：-连续无盲区覆盖：在门诊等区域，采用室内外结合的高密度AP部署，确保信号连续无盲区。-信号隔离和降低干扰：使用11N设备调成11G模式，通过功分和天线入室部署，降低干扰，提高信号质量。6.通用方案：-走廊部署AP：一个AP覆盖4-6个房间，适用于无卫生间且墙体对信号衰减较小的病房。-大功率AP：在墙体较厚的情况下，采用大功率（500mw）AP，确保每个房间的信号覆盖效果良好（-40dBm到-50dBm之间）。通过以上方案，可以有效解决医院无线网络覆盖的问题，提高医护人员的工作效率和医院的管理水平。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/1762",
+        "备注": ""
+    }
+]

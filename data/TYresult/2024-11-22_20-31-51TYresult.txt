@@ -1,0 +1,182 @@
+[
+    {
+        "序号": 460,
+        "问题现象": "：某局点配置二层隔离后，终端无法实现单播访问，表现为终端之间无法互ping，且在AC上使用`diswlanclient`命令查看终端信息时，发现该VLAN内的终端没有显示IP地址。",
+        "问题描述": "：1.客户需求是只隔离广播和组播，不隔离单播。2.按照配置命令`user-isolationvlanxxxenablepermit-unicast`和`user-isolationvlanxxxpermit-macxxxx`进行配置，且开启AC的ARP代答功能`vlanxxxarpfast-replyenable`。3.配置完成后，终端之间仍然无法互ping，且AC上无法看到该VLAN内终端的IP地址。4.检查服务模板配置，发现关闭了通过ARP和DHCP方式学习客户端IPv4地址的功能，即配置了`undoclientipv4-snoopingdhcp-learningenable`和`undoclientipv4-snoopingarp-learningenable`。",
+        "结论": "：问题的根本原因是服务模板中关闭了通过ARP和DHCP方式学习客户端IPv4地址的功能，导致AC无法获取终端的IP地址，进而无法进行ARP快速代答，使得单播访问无法正常工作。",
+        "解决办法": "：在服务模板下开启通过ARP和DHCP方式学习客户端IPv4地址的功能，具体命令如下：```bashclientipv4-snoopingdhcp-learningenableclientipv4-snoopingarp-learningenable```配置完成后，AC将能够正常获取终端的IP地址，从而实现单播访问。客户的需求得到满足。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/136605",
+        "备注": ""
+    },
+    {
+        "序号": 461,
+        "问题现象": "在某局点使用wx3540h无线控制器配置无线用户Portal认证时，尽管无线客户端能够ping通IMC服务器，并且能够通过Web页面重定向到Portal认证页面，但在输入用户名和密码后，提示“设备拒绝请求”。",
+        "问题描述": "1.设备配置：无线控制器（AC）旁挂在核心交换机上，用户的网关也在核心交换机上。2.调试信息：-Portal调试信息：设备上启用`debuggingportal`后，发现AC对Portal服务器的请求认证报文的响应报文中`ErrCode`为1，表明认证失败，设备拒绝了认证请求。-Radius调试信息：启用`debuggingradiusall`后，没有发现任何Radius报文的信息，说明Radius报文没有在设备侧进行三层解封装。3.配置检查：检查发现AC上无线用户网段的VLAN虚接口被shutdown了，导致无法进行Radius报文的解封装，从而导致设备侧拒绝认证请求。",
+        "结论": "问题的根本原因是AC上无线用户网段的VLAN虚接口被shutdown，导致Radius报文无法在设备侧进行三层解封装，进而导致Portal认证请求被拒绝。",
+        "解决办法": "1.启用VLAN虚接口：在无线用户网段所在VLAN的虚接口视图下，输入`undoshutdown`命令，启用该接口。2.配置说明：对于v7版本的无线控制器，无线用户的Portal认证可以在服务模板下配置，网关可以配置在核心交换机上，但控制器上也必须创建无线用户所在VLAN的虚接口，否则无法进行Radius报文的解封装，从而导致认证请求被拒绝。示例配置```plaintextinterfaceVlan-interface94undoshutdownipaddress10.24.94.254255.255.255.0dhcpselectrelaydhcprelayserver-address10.24.1.206```通过以上步骤，可以解决“设备拒绝请求”的问题，使无线用户能够成功通过Portal认证。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/20866",
+        "备注": ""
+    },
+    {
+        "序号": 462,
+        "问题现象": "：在某局点采用ADCampus组网的情况下，终端无法获取地址进行认证，导致网络不通。",
+        "问题描述": "：该局点的组网方式包括终结者本体（WT1020）和终结者分体（WTU430），采用本地转发模式，无线业务使用了VLAN3501和3502。map文件自动下发到AP，但实际测试中发现，终端无法获取地址进行认证。原因是本体上行口未放通相应的业务VLAN，导致网络通信无法正常进行。",
+        "结论": "：在ADCampus组网中，当采用本体+直通分体的模式时，AC（接入控制器）上的授权VLAN信息只能同步到直通分体上，而无法同步到本体上。因此，本体map文件中相应的VLAN声明和放通需要手动配置，无法实现自动化配置。",
+        "解决办法": "：对于ADCampus+本体+直通分体+本地转发的组网模式，需要手动在本体的map文件中配置VLAN及放行信息，确保本体上行口放通相应的业务VLAN，从而保证终端能够正常获取地址并进行认证。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/101750",
+        "备注": ""
+    },
+    {
+        "序号": 463,
+        "问题现象": "在使用WX3520H无线控制器结合绿洲平台配置微信连WIFI功能时，客户在绿洲平台添加微信公众号时遇到“无效的公众号”错误提示，导致门店无法成功添加。",
+        "问题描述": "1.白名单配置：客户已经按照《绿洲上线及认证业务开局指导书》的要求，在微信公众号的“基本配置–IP白名单”中添加了绿洲平台的IP地址：139.217.7.53，139.217.17.204，139.219.0.33。2.重置参数：尝试重置AppId和AppSecret后重新添加门店，但仍然无法成功，且之前的公众号也无法添加，提示“无效的公众号”。3.手动输入格式检查：客户手动输入微信公众号时，格式和特殊符号均正确，但仍然报错。4.复制粘贴测试：使用管理员的公众号直接复制粘贴到绿洲平台成功添加，但客户公众号手动输入时失败。",
+        "结论": "问题的根源在于手动输入微信公众号时可能导致字符编码不一致，从而引发“无效的公众号”错误。直接复制粘贴微信公众号可以避免这一问题。",
+        "解决办法": "1.直接复制粘贴：在绿洲平台上添加微信公众号时，建议直接从微信公众号管理后台复制完整的公众号信息，然后粘贴到绿洲平台的相应字段中，以确保字符编码的一致性。2.检查白名单：确保微信公众号的白名单配置正确，已添加绿洲平台的IP地址。3.重置AppId和AppSecret：如果问题依旧存在，可以尝试重置AppId和AppSecret后重新添加。通过上述方法，可以有效解决客户在绿洲平台上添加微信公众号时遇到的“无效的公众号”错误。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/20929",
+        "备注": ""
+    },
+    {
+        "序号": 464,
+        "问题现象": "现场反馈：AP在断电重启或运行过程中掉线再上线后，概率性出现配置错误的情况。",
+        "问题描述": "1.正常配置：-AP正常注册到AC上，采用本地转发。-下发给AP的MAP文件配置：```plaintextinterfaceGigabitEthernet1/0/1portlink-typetrunkporttrunkpermitvlan57922124125porttrunkpvidvlan8```2.故障配置：-AP断电重启或掉线再上线后，实际运行的配置变为：```plaintextinterfaceGigabitEthernet1/0/1portlink-typetrunkundoporttrunkpermitvlan1porttrunkpermitvlan57to922porttrunkpvidvlan8port-isolateenable```",
+        "结论": "1.排除人为配置：现场确认故障发生前不存在人为修改配置的情况。2.检查MAP文件：两台AC的MAP文件一致，没有问题。3.检查远程配置同步功能：-发现AP组配置中存在远程配置同步功能（`remote-configurationenable`）。-该功能导致AP上线时会清除所有现有的VLAN、以太网链路聚合及接口配置，并重新从AC请求配置。-远程配置同步功能与AC向AP下发MAP文件不能同时配置，否则会导致AP配置混乱、频繁被改动。",
+        "解决办法": "1.删除远程配置同步功能：-在AC上删除AP组中的远程配置同步功能配置：```plaintextwlanap-groupdefault-groupnoremote-configurationenable```2.仅使用MAP文件下发配置：-确保AP仅通过MAP文件获取配置。通过上述操作，问题得以解决。远程配置同步功能（`remote-configurationenable`）和AC下发MAP文件（`map-configuration`）功能不能同时使用。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/215485",
+        "备注": ""
+    },
+    {
+        "序号": 465,
+        "问题现象": "某分支机构下的无线终端无法接入无线网络，尽管无线AP正常释放信号。",
+        "问题描述": "组网及说明：使用V7WX5560HAC与无线AP配合，形成典型的瘦AP组网，AC和AP之间跨三层，穿越广域网注册。链路检查：AP与AC之间的链路ping测试正常，无明显延迟和丢包，AP在线状态稳定。AP日志分析：查看AP的verbose日志信息，发现以下参数配置：-Echocount:3counts-Keepaliveinterval:10seconds-Discovery-responsewait-time:2seconds-Statisticsreportinterval:50seconds-Fragmentsize(data):1500-Fragmentsize(control):1450-MACtype:LocalMAC&SplitMAC-Tunnelmode:LocalBridging&802.3Frame&NativeFrame-CAPWAPdata-tunnelstatus:Down进一步抓包确认：发现UDP5427端口（CAPWAP数据隧道）的报文在通过防火墙后消失。",
+        "结论": "问题的原因是防火墙对CAPWAP数据隧道端口（UDP5427）进行了限制，导致数据隧道无法建立，进而无线终端无法成功关联到AP。",
+        "解决办法": "防火墙配置修改：在防火墙上修改限制规则，放通CAPWAP数据隧道端口（UDP5427）。验证：修改后，再次检查AP与AC之间的数据隧道状态，确认其已恢复正常（Up状态），终端成功关联并接入无线网络。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/117207",
+        "备注": ""
+    },
+    {
+        "序号": 466,
+        "问题现象": "客户在使用V7的无线控制器WX3510H结合绿洲进行微信连WiFi认证时，点击“微信连WiFi”按钮后出现“网络连接失败”的错误提示。错误代码为31305111。此问题在安卓终端和苹果终端上均有发生。",
+        "问题描述": "客户局点的无线网络采用本地转发模式，AP（接入点）跨公网注册到AC（无线控制器）上。从终端设备点击“微信连WiFi”按钮后，无法正确跳转到微信认证页面，提示网络连接失败。通过详细查看错误信息，发现错误代码为31305111，表明终端设备未能成功连接到认证服务器。",
+        "结论": "经分析，问题主要出在PortalWebServer的配置上。具体来说，配置中的URL参数`redirecturl`应改为`redirect_uri`，并且需要使用客户AC的公网映射地址，而不是示例中的IP地址。此外，考虑到AP跨公网注册的场景，80端口可能被封，因此需要将80端口修改为8088。",
+        "解决办法": "1.修改PortalWebServer的URL配置：-将`redirecturl`参数改为`redirect_uri`。-使用客户AC的公网映射地址，而不是示例中的IP地址。-修改后的配置示例：```plaintextportalweb-servercloudurlhttp://oasisauth.h3c.com/portal/protocol?redirect_uri=http://X.X.X.X:8088/portal/cloudlogin.htmlcaptive-bypassiosoptimizeenableserver-typeoauthif-matchuser-agentCaptiveNetworkSupportredirect-urlhttp://oasisauth.h3c.com/generate_404if-matchuser-agentDalvik/2.1.0(Linux;U;Android7.0;HUAWEI)redirect-urlhttp://oasisauth.h3c.com/generate_404if-matchoriginal-urlhttp://10.168.168.168temp-passif-matchoriginal-urlhttp://captive.apple.com/hotspot-detect.htmluser-agentMozillatemp-passredirect-urlhttp://oasisauth.h3c.com/portal/protocol?redirect_uri=http://X.X.X.X:8088/portal/cloudlogin.htmlif-matchoriginal-urlhttp://www.apple.comuser-agentMozillatemp-passredirect-urlhttp://oasisauth.h3c.com/portal/protocol?redirect_uri=http://X.X.X.X:8088/portal/cloudlogin.html```2.修改80端口为8088：-由于AP跨公网注册，80端口可能被封，因此需要将80端口修改为8088。-修改后的配置示例：```plaintextiphttpport8088iphttpenableiphttpsenable```3.检查配置细节：-确保配置命令中没有遗漏下划线或输入错误。-仔细检查所有配置项，确保正确无误。通过上述修改，客户终端设备可以正常进行微信连WiFi认证，问题得到解决。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/49274",
+        "备注": ""
+    },
+    {
+        "序号": 467,
+        "问题现象": "某局点在进行Portal认证时，AC（AccessController，接入控制器）可以正常执行重定向操作，但Portal页面无法加载，提示向PortalServer发送请求过程中出现异常。",
+        "问题描述": "1.初步分析：根据IMC（IntelligentManagementCenter，智能管理中心）侧的反馈，Portal认证流程中，IMC在推送页面之前需要向设备发送req_info报文以确认终端的真实性。2.报文未回复：IMC已经发送了req_info报文，但AC没有回复。3.无效报文统计：进一步查看AC的Portal报文统计发现，无效Portal报文统计在持续上升，初步怀疑是密钥配置错误。4.密钥重新配置：现场重新配置Portal密钥后，故障依旧存在。5.抓包分析：现场抓包发现，IMC给AC发送的REQ_INFO报文中，终端的IP地址是NAT（NetworkAddressTranslation，网络地址转换）之后的地址，AC上没有该IP地址对应的终端，因此认为报文有问题。6.参数配置问题：尽管AC上已经配置了wlanuserip参数，IMC却没有识别，导致认证失败。",
+        "结论": "主要问题是IMC发送给AC的REQ_INFO报文中，终端的IP地址是NAT之后的地址，导致AC无法找到对应的终端，从而认为报文有问题。进一步确认发现，IMCEIA（EndpointIdentityandAccessManagement，终端身份和访问管理）不识别wlanuserip参数，只能识别userip参数。",
+        "解决办法": "现场调整WebServer参数，使其携带userip参数，故障得以解决。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/213750",
+        "备注": ""
+    },
+    {
+        "序号": 468,
+        "问题现象": "：客户反馈无线用户计费话单错误，具体表现为用户使用CMCCWEB（运营商收费SSID）上网时，话单中出现了7daysinn（酒店租用的免费SSID）的记录，导致移动后台报出话单异常。",
+        "问题描述": "：1.用户在酒店连接CMCC_WEB进行上网，AC正常上报话单。2.用户在未切换AP的情况下，连接了酒店租用的7days_inn（免费SSID）。3.由于AC侧的连接未老化，继续上报7days_inn的流量话单，导致计费系统出现异常记录。",
+        "结论": "：问题的原因是AC侧的连接未老化，导致在用户切换SSID时，AC继续上报错误的流量话单。根据现场情况和话单分析，确认问题出现在同一AP（74:51:BA:3E:8A:E7）下，用户在未切换AP的情况下进行了SSID切换。",
+        "解决办法": "：建议现场开启`portalwlanssid-switchlogoff`命令，该命令配置后，用户在接入新的SSID时会被AC强制下线，从而避免错误话单的产生。具体配置如下：```plaintextinterfaceWLAN-ESS17descriptionTO-[7daysInn]portaccessvlan917port-securityport-modepskport-securitytx-key-type11port-securitypreshared-keypass-phrasecipher$c$3$RaSdUV+24XmFsyNFbc8KpxbDV56nq5HU9V6QinterfaceVlan-interface1010undoipv6ndrahaltipv6ndautoconfigmanaged-address-flagipv6ndautoconfigother-flagipv6addressXXX/96ipaddressXX.XX.XX.125255.255.240.0portalcontrol-modemacportalservergmcc-mac-portalmethoddirectportalserveripv6methoddirectportalnas-idXXportalnas-port-typewirelessportalnas-ipXX.XX.XX.225access-userdetecttypearpretransmit5interval60portalmac-triggerenableperiod60threshold1024ipv6dhcpserverapplypool1开启SSID切换后强制下线功能portalwlanssid-switchlogoff```通过配置上述命令，可以确保用户在切换SSID后，AC会强制其下线，从而避免错误话单的上报。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/4058",
+        "备注": ""
+    },
+    {
+        "序号": 469,
+        "问题现象": "在某局点的会议室召开会议期间，客户反馈无线网络使用异常，频繁出现网络中断和无法搜索到无线信号的情况，严重影响了现场的无线体验。",
+        "问题描述": "1.现场设备配置：使用H3C5540E控制器配合WA4320i-ACNAP进行无线覆盖，接入层交换机为5510款型POE交换机，负责给AP供电。2.初步判断：登录AC查看AP状态和日志，发现每个AP接入用户均在130个以上，日志中记录了大量AP频繁下线的信息。3.进一步验证：-检查交换机对应AP接口，发现接口频繁up/down。-持续ping指定AP，发现ping包有中断。-实地观察AP的LED指示灯，发现异常。4.诊断信息：-使用`displaydiagnostic-information`命令查看AP的诊断信息，发现AP运行时间仅为1分钟，表明AP已经重启。-查看`displayreboot-information`命令的输出，发现AP的重启类型为`Poweron-boot`，即上次重启是由于断电引起的。-检查交换机的trapbuffer，发现POE上/去电的情况频繁发生，约每6分钟一次。5.推测与验证：-推测AP超负荷运行导致功率超过15.4W，触发了交换机的过载保护机制，从而导致AP断电。-进入交换机隐藏视图，使用`o_cnt`命令统计各端口因过载保护掉电的次数，发现AP重启后该统计次数增加。",
+        "结论": "最终确认问题是由于AP在高负载情况下（用户数超过130个）超负荷运行，导致功率超过15.4W，触发了交换机的过载保护机制，POE供电中断，从而使AP频繁重启，影响了现场无线网络的正常使用。",
+        "解决办法": "1.优化线缆和部署：确保AP部署时使用超五类及以上线缆，长度控制在90M以内。2.关闭LLDP：在交换机上关闭LLDP协议，避免不必要的功率协商。```shellundoLLDPenable```3.设置最大功率：将交换机的POE端口最大功率设置为30W，以支持AP在高负载情况下的功率需求。```shellpoemax-power30000```通过以上措施，可以有效避免AP因过载保护导致的频繁重启问题，提升无线网络的稳定性和用户体验。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/5360",
+        "备注": ""
+    },
+    {
+        "序号": 470,
+        "问题现象": "：在某局点，面板AP的下行有线口为PC终端提供有线网络接入时，终端偶尔会出现无法上网的情况。重新获取IP地址后，终端可以恢复正常上网。",
+        "问题描述": "：PC通过网线连接面板AP的下行有线口上网，但有时会出现业务不通的问题。在业务不通时，检查发现PC获取的IP地址属于AP的管理段地址，而非业务段地址。重启AP后，问题可以复现。经过进一步分析，发现AP在重启时的bootware阶段，上行口和下行口都是up状态，并且不带VLAN。因此，PC终端在bootware阶段从AP的管理段获取了IP地址。AP重启完成后，接口上的VLAN配置生效，此时管理段地址无法访问业务网络，导致PC无法上网。拔插网线后，终端重新获取正确的业务段地址，问题得到解决。",
+        "结论": "：问题的根本原因是AP在重启时的bootware阶段，上行口和下行口都是up状态且不带VLAN，导致PC终端在bootware阶段获取了AP的管理段地址。当AP重启完成并开始应用VLAN配置后，管理段地址无法访问业务网络，从而导致终端无法上网。",
+        "解决办法": "：可以通过MAP文件下发配置，将AP的下行口在bootware阶段shutdown，待AP重启完成后再次undoshutdown，从而触发终端重新获取正确的业务段地址。这样可以避免PC终端在AP重启时获取到管理段地址，确保网络连接的稳定性。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/137366",
+        "备注": ""
+    },
+    {
+        "序号": 471,
+        "问题现象": "某局点新增的WA6620X无线接入点（AP）在AC（无线控制器）上一直显示“下载版本”状态，无法正常上线。",
+        "问题描述": "1.现场反馈：新添加的几个WA6620XAP状态一直停留在“下载版本”，无法上线。2.设备信息：-LSQM1WCMX20AC版本：R5475-已有老的WA6620XAP版本：R2475-新增的WA6620XAP版本：R2474P013.操作尝试：-查看AP日志，发现AP一直在尝试下载版本，但显示“写入镜像文件失败”。-尝试手动将对应的AP文件传到AP上，也无法设置为启动文件。",
+        "结论": "1.原因分析：新批次的WA6620XAP使用了新的FEM（前端模块）器件，需要特定的软件版本来支持。R2474P01及2476及以上版本中包含了针对新FEM器件的功率等参数设置，而这些设置在R2475版本中未合入。2.软件限制：由于软件层面的限制，新的这批WA6620XAP不允许使用或解压R2475版本，因此一直处于“下载版本”状态，无法正常上线。",
+        "解决办法": "1.临时解决：通过关闭版本校验的方式让新的这批AP上线。2.长期解决：后续更新AC和AP的软件版本至R2476或更高版本，以确保新FEM器件的参数设置被正确支持。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/226401",
+        "备注": ""
+    },
+    {
+        "序号": 472,
+        "问题现象": "在某局点中，部分终端在使用无线网络期间突然掉线。查看云简网络智能运维数据，发现终端掉线时802.1X重认证失败，掉线原因码为5030。",
+        "问题描述": "该局点使用AC型号为WX3520H，AP为WA6638，版本为5452P08。局点采用Windows自带客户端带证书进行远程802.1X认证，认证服务器为思科ISE。在故障时刻，终端没有完成与服务器的challenge响应交互流程，导致认证失败。进一步调查发现，终端在重认证时使用的用户名是电脑的默认系统名生成的值，而服务器侧策略只允许域名账号登录，因此服务器返回了Reject值，告知AC终端认证被拒绝。",
+        "结论": "故障原因是由于部分Win10电脑在初始设置时，默认选择了“用户或计算机身份验证”模式。在某些特殊情况下（如休眠后唤醒、开机等），这些电脑会尝试使用本机计算机证书进行身份验证，而AAA服务器只允许域名账号登录，因此认证失败，导致终端掉线。Win7电脑由于初始化设置步骤不同，规避了该问题。",
+        "解决办法": "需要调整电脑网卡的WiFi设置，将802.1X的设置从“用户或计算机身份验证”改为“用户身份验证”。具体步骤如下：1.打开“网络和共享中心”。2.点击当前连接的无线网络，选择“属性”。3.在“安全”选项卡中，点击“802.1X设置”。4.选择“用户身份验证”模式。5.保存设置。通过上述调整，可以确保终端在重认证时使用正确的用户证书，避免因使用默认系统名生成的值而导致认证失败和终端掉线的问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/206564",
+        "备注": ""
+    },
+    {
+        "序号": 473,
+        "问题现象": "：苹果手机（iPhone13Pro，iOS16.0）在IPv6单栈环境下无法访问外网，且WiFi图标无法正常点亮。故障手机可以ping通网关，但无法ping通有线PC，有线PC可以ping通故障手机。在IPv4单栈和IPv4/IPv6双栈环境下，苹果手机的WiFi图标可以正常点亮，跨三层ping测试也均能正常进行。",
+        "问题描述": "：设备版本：WX5540ER5457，WA6338AP。测试环境：实验室和现场办公环境，主要终端为苹果电脑和苹果手机，采用IPv6单栈网络配置。现场测试情况：两台苹果电脑使用正常，三台苹果手机使用不正常，表现在于无法ping通DNS服务器，导致无法访问外网；而工程师的WindowsPC在相同的网络环境下可以正常上网。",
+        "结论": "：问题与iOS16版本的苹果手机紧密相关，在IPv6单栈环境下，这些终端不发送ICMPv6EchoRequest报文，导致无法完成网络连通性测试，也无法访问外网。通过对比不同版本iOS的苹果手机，发现iOS15及以下版本的手机在相同环境下测试正常，进一步确认了问题的根源在于iOS16版本的手机。",
+        "解决办法": "：由于问题被确认为苹果终端软件版本（iOS16）导致，建议对于使用iOS16版本的苹果手机用户，考虑回退至iOS15或更低版本，直至苹果官方发布更新修复此问题。若无法回退系统版本，可暂时采用IPv4单栈或IPv4/IPv6双栈网络配置，以确保苹果手机能够正常访问外网。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/217633",
+        "备注": ""
+    },
+    {
+        "序号": 474,
+        "问题现象": "：在某局点进行本地Portal认证时，客户定制的Portal页面无法正常弹出，而是显示设备自带的默认登录页面。",
+        "问题描述": "：1.AP采用三层注册方式注册在ACWX3024E上，数据集中转发。2.客户按照我司要求定制了Portal页面，并上传至设备根目录下。3.进行Portal认证时，定制认证页面无法正常弹出，显示为设备自带的默认登录页面。4.接到报障后，首先检查了设备上的相关配置，发现配置并无问题，排除了配置问题。5.通过实验室测试发现，测试无问题的Portal页面压缩文件在现场可以正常弹出。6.对比正常和异常的Portal页面压缩文件，发现异常页面的文件夹结构不同。正常页面压缩文件中，页面所需的各种文件都在根目录下；而异常页面压缩文件的根目录下又有一个HTTP的文件夹，页面所需的各种文件在这个嵌套的HTTP子目录下。",
+        "结论": "：问题出在客户定制页面的文件夹结构上。异常页面压缩文件中，页面所需的各种文件被放置在了根目录下的HTTP子目录中，而不是直接放在根目录下，导致Portal认证无法正确加载指定的定制页面。",
+        "解决办法": "：1.将客户定制的Portal页面文件按照正常页面文件的结构重新压缩。2.确保页面所需的所有文件都直接放在压缩文件的根目录下。3.重新上传压缩文件至设备根目录。4.重新进行Portal认证测试，确认定制页面能否正常弹出。通过上述步骤，问题应能得到解决。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/19775",
+        "备注": ""
+    },
+    {
+        "序号": 475,
+        "问题现象": "配置了定时自动信道调整后，AP的信道调整时间不固定，且调整后的信道很快恢复为原信道。",
+        "问题描述": "用户在无线网络设备上配置了定时自动信道调整，设定时间为每天早上2点。然而，通过命令`displaywlanrrm-historyapall`查看AP的历史记录时，发现AP在下午4点37分进行了信道调整。尽管调整记录显示信道已改变，但实际查看AP的信道配置时，信道仍为原来的信道。这表明信道调整虽然发生，但并未持久生效。",
+        "结论": "信道调整失败的原因是AP配置了雷达信道，且在调整过程中检测到了雷达信号。雷达信道调整的优先级最高，因此AP在检测到雷达信号后会立即进行信道调整。然而，如果半小时后雷达信号消失，AP会自动恢复到原来的信道，导致用户看到的信道调整记录与实际信道不符。",
+        "解决办法": "1.调整AP的信道配置：将AP的信道配置为非雷达信道。常见的雷达信道包括48,52,56,60,64等。2.验证调整结果：在调整信道后，使用命令`displaywlanapname<AP名称>radio`查看AP的当前信道配置，确保信道已成功调整为非雷达信道。3.持续监控：定期检查AP的信道调整记录和当前信道配置，确保没有再次检测到雷达信号导致信道自动切换。建议与总结在进行信道调整时，务必仔细查看调整记录中的原因。如果调整记录显示信道调整是由于雷达信号检测引起的，应将AP的信道配置为非雷达信道，以避免不必要的信道切换。定期监控AP的信道配置和调整记录，可以确保网络的稳定性和性能。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/17353",
+        "备注": ""
+    },
+    {
+        "序号": 476,
+        "问题现象": "在某局点中，AC（型号WX3520X）上有多个AP组，每个组下有不同型号的AP（包括WA6620X、WA6320、WA5320X-E）。只有WA5320X-E型号的AP无法获取到map文件。",
+        "问题描述": "1.map文件检查：通过命令`<PTCS-OT-AC01>moreflash:/APmap.txt`检查了map文件的格式和内容，确认文件格式和内容都是正确的。2.AP组配置检查：检查了AP组的配置，发现所有配置都是正确的，包括VLAN配置和接口配置。3.版本检查：查阅了AC和AP的版本说明书，确认AC（版本9.1.053,ESS1053P03）和AP（版本7.1.064,Release2457）的版本是同步的。4.手动配置测试：将map文件中的配置手动应用到WA5320X-E型号的AP上，发现问题是由于WA5320X-E仅支持256个VLAN号，而当前map文件中配置的VLAN范围超出了这个限制。",
+        "结论": "WA5320X-E型号的AP无法获取map文件的原因是该型号的AP仅支持253个VLAN号（实际支持256个，但有3个保留VLAN），而当前map文件中配置的VLAN范围超出了这个限制，导致map文件下发失败。",
+        "解决办法": "1.创建单独的map文件：为WA5320X-E型号的AP创建一个单独的map文件，确保该文件中配置的VLAN范围不超过256个。2.下发map文件：将新创建的map文件下发到WA5320X-E型号的AP中。-命令示例：```plaintext<PTCS-OT-AC01>moreflash:/5320X.txtsystem-viewvlan228quitinterfaceGigabitEthernet1/0/1portlink-typetrunkporttrunkpermitvlan228quitwlanap-group109cjap-modelWA5320X-Emap-configurationflash:/5320X.txt```通过上述步骤，WA5320X-E型号的AP成功获取并应用了新的map文件。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/214025",
+        "备注": ""
+    },
+    {
+        "序号": 477,
+        "问题现象": "客户反馈，在配置了Remote-ap功能后，AC（无线控制器）掉线再上线时，AP（接入点）无法自动注册到AC，必须手动重启AP才能重新上线。然而，AP重启后正常工作几秒钟后又会掉线。此时无线网络仍可正常使用，部分终端设备可以在线。",
+        "问题描述": "1.拓扑结构：客户网络拓扑如图所示，具体细节未提供。2.配置检查：-在AC上配置了Remote-ap功能。-AP配置了G1/0/1接口为access口，并且关联到VLAN100。3.日志分析：-AC日志显示，AP与AC的CAPWAP隧道最初是up状态，AP成功注册上线。-30秒后，隧道状态变为down，原因是“Neighbordeadtimerexpired”（邻居死亡计时器超时）。-重启AP后，日志信息与之前相同，显示AP上线后30秒内掉线。",
+        "结论": "问题的原因在于AP的G1/0/1接口配置为access口且关联到VLAN100。当AP成功注册到AC后，AC会下发map文件，导致G1/0/1接口配置发生变化，从而引起链路不通，AP掉线。掉线后，由于Remote-ap功能的存在，终端设备仍可正常上网。但AP会因为配置变化而无法保持与AC的连接，形成一个循环：重启AP后上线，配置下发后又掉线。",
+        "解决办法": "1.删除AP上的portaccessvlan100命令：-在AP上删除`portaccessvlan100`命令，确保G1/0/1接口不会因为下发的map文件而改变配置。2.修改map文件：-在AC的map文件中，删除或修改G1/0/1接口的配置，使其不再将该接口设置为access口关联到VLAN100。3.修改接入交换机的配置：-确保接入交换机的配置与AP的配置一致，避免链路不通的问题。4.重启AP：-重启AP，使其重新获取DHCP地址并正常注册到AC。通过上述步骤，可以解决AP无法注册到AC的问题，确保网络的稳定运行。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/55538",
+        "备注": ""
+    },
+    {
+        "序号": 478,
+        "问题现象": "终端在漫游后偶发性获取VLANID为1的地址，该IP地址属于管理AP的地址池，导致终端无法上网。",
+        "问题描述": "1.组网及说明：传统组网中，终端网关和DHCP服务器位于核心交换机侧，采用本地转发模式。2.具体故障现象：终端在漫游到某个AP下时，偶尔会获取到VLANID为1的地址。而该AP下的其他终端地址获取正常。3.故障记录：-终端MAC地址：9a1f-e341-xxxx-AP名称：15D-6F-609-无线电ID：1-VLANID：1-SSID：xxxx-时间：2020年10月14日17:45:17-状态：在线，但无法上网",
+        "结论": "1.配置检查：终端获取地址错误通常与服务模板绑定的VLAN、AP调用的服务模板、MAP文件下发、DHCP服务器配置等有关。2.终端类型确认：排除特殊终端类型的干扰。3.漫游记录分析：终端从AP1漫游到AP2时，AP1和AP2调用的服务模板不同。AP1使用服务模板1（未绑定VLAN，使用默认VLAN1），AP2使用服务模板2（绑定VLAN3）。尽管SSID相同，终端在漫游过程中继承了AP1的VLAN1配置，导致问题发生。",
+        "解决办法": "1.删除服务模板1：删除未绑定VLAN的服务模板1，避免终端在漫游过程中继承错误的VLAN配置。2.建议：一般情况下，不建议不同的服务模板使用相同的SSID。如果现场需要服务模板下绑定多个VLAN，可以使用VLAN组（vlan-group）功能。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/130778",
+        "备注": ""
+    },
+    {
+        "序号": 479,
+        "问题现象": "某局点的一台AP在上电启动时，只有Ctrl+D进入Bootware基本段的提示信息，而没有Ctrl+B进入Bootware扩展段的提示信息，导致无法通过扩展段手动导入AP版本。",
+        "问题描述": "此现象的原因是AP的Bootware扩展段损坏或丢失。通常，Bootware扩展段损坏或丢失的原因是在AP进行Flash操作时（如升级版本）出现断电，导致Flash中的文件被破坏。因此，在进行设备升级或FITAP刚安装时（此时可能会从AC上更新版本），务必保持设备供电的稳定，避免断电情况的发生。",
+        "结论": "此类问题通常可以通过现场操作进行恢复，无需返厂维修。当Bootware基本段能够启动，而Bootware扩展段由于损坏、丢失等原因导致启动失败时，可以通过在基本段加载扩展段的方式来引导扩展段启动。",
+        "解决办法": "1.设备上电：当设备启动时，出现“Systemisstarting...”提示，迅速连续输入Ctrl+D进入Bootware基本段。2.修改波特率：-输入1，选择修改串口波特率。-为了加快上传速率，输入5，选择115200bps。-确认PC侧的终端软件波特率也同步修改为115200bps。3.返回主菜单：输入0，返回操作主菜单。4.下载Bootware文件：-输入3，选择下载Bootware文件。-使用超级终端的Xmodem协议发送Bootware文件到AP上。-如果AP支持FAT模式，可以找到相应的FAT版本的bwt文件；如果不支持FAT模式，则需要向售后工程师索要该AP的btw文件。5.升级Bootware：-下载完成后，按照提示操作，输入Y确认升级基本段和扩展段。-升级过程会显示进度，完成后显示“Done!”。6.恢复默认波特率：-再次进入修改波特率菜单，输入1将波特率恢复为默认的9600bps。-确认PC侧的终端软件波特率也同步修改为9600bps。7.重启设备：-输入0，返回主菜单。-再次输入0，重启设备。注意事项用于修复Bootware扩展段的Bootware文件需要与原Bootware版本保持一致，原Bootware版本在AP启动时会显示。如果设备启动过程中，输入“Ctrl+B”无法进入Bootware扩展段，并且输入“Ctrl+D”也无法进入Bootware基本段，说明设备Bootware基本段已损坏，需要RMA返厂维修。但WA2600系列除外，该系列的基本Bootware被破坏后也可现场恢复。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/22748",
+        "备注": ""
+    }
+]

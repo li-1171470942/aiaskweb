@@ -1,0 +1,182 @@
+[
+    {
+        "序号": 1040,
+        "问题现象": "某局点反馈在新增加的主备AC配置后，部分用户无法弹出Portal认证页面，提示向Portal服务器发送请求超时。",
+        "问题描述": "1.在服务器出口进行抓包分析，发现终端用户在主AC上线，但Portal服务器在进行Portal报文交互时，却向备AC发送了req_info报文。2.备AC上没有该用户的上线信息，因此回复了拒绝报文，导致用户无法正常弹出Portal页面。3.进一步查看IMC（IntelligentManagementCenter）配置，发现IMC上添加了两个Portal设备，并且这两个设备绑定了相同的IP地址组。4.由于同一IP地址组分配给不同设备使用，IMC无法准确判断与哪个设备通信，从而导致上述问题。",
+        "结论": "问题的根本原因是IMC上配置的两个Portal设备绑定了相同的IP地址组，导致IMC在处理Portal报文时无法准确识别主AC和备AC，从而向备AC发送了req_info报文，而备AC上没有用户信息，因此回复了拒绝报文。",
+        "解决办法": "1.为了确保主备AC的正常通信，可以在设备的PortalWeb服务器配置中添加重定向URL，携带对应的NAS-IP参数。2.具体配置方法是在设备的PortalWeb服务器配置中添加`url-parameternas-ipvalue10.212.30.150`，确保设备给终端重定向地址时会携带对应的NAS-IP。3.现场配置后再次测试，用户反馈正常，问题解决。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/124136",
+        "备注": ""
+    },
+    {
+        "序号": 1041,
+        "问题现象": "配置了`portaluser-logoffafter-client-offlineenable`命令后，当终端断开WiFi连接，AC（接入控制器）上仍显示该终端的Portal信息存在，未立即下线。",
+        "问题描述": "在无线网络中，`portaluser-logoffafter-client-offlineenable`命令用于开启无线Portal用户的自动下线功能，即当无线客户端断开连接后，Portal系统会自动将该用户下线。然而，终端侧关闭WiFi开关后，AC会缓存有一个客户端信息的cache表，这个表象主要用于支持终端设备在不同接入点之间的漫游功能。默认情况下，这个缓存表的存在时间为三分钟。因此，即使终端已经断开连接，AC也不会立即删除其客户端信息，Portal系统同样需要等待这个缓存表被删除后，才会同步清除Portal中的用户信息，导致Portal用户信息在终端断开连接后的一段时间内仍然显示在AC上。",
+        "结论": "`portaluser-logoffafter-client-offlineenable`功能的实现受到客户端Cache老化时间的影响，当终端断开WiFi连接时，Portal用户信息不会立即从AC上消失，而是会在客户端信息Cache老化时间结束后才被清除。这是因为AC需要保留一定的客户端信息以支持漫游功能，而Portal系统与AC的这个缓存机制是同步的。",
+        "解决办法": "根据实际网络需求调整客户端信息Cache的老化时间。可以通过配置`clientcacheaging-time`命令来更改老化时间，例如将其设置为100秒，以加速客户端信息的清除速度，进而使Portal用户信息更快地从AC上消失。配置命令如下：```配置客户端Cache老化时间为100秒。<Sysname>system-view[Sysname]wlanservice-templateservice1[Sysname-wlan-st-service1]clientcacheaging-time100```需要注意的是，此命令只能在无线服务模板处于关闭状态时进行配置。如果需要立即将客户端信息从AC上清除，可以将老化时间配置为0秒。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/169440",
+        "备注": ""
+    },
+    {
+        "序号": 1042,
+        "问题现象": "某学校无线校园网大规模使用了WA1208E无线AP，在教学楼和图书馆之间实现无线覆盖。无线网在有线网基础上部署，有线和无线网均采用802.1x认证。在实际使用中，客户端（笔记本）在不同AP间漫游时，无线网络连接中断，尽管客户端没有掉线提示，无线网卡状态显示“已连接上”。客户端需要重新进行802.1x认证才能恢复网络连接。",
+        "问题描述": "1.认证在AP上时：当笔记本在两个AP间移动时，由于认证的接入设备改变，客户端不能自动重新发起认证，导致认证和无线连接不断开的假连接现象。2.认证在E050上时：当笔记本从一个AP切换到另一个AP时，虽然认证设备未改变，但端口发生变化，依然需要重新认证。",
+        "结论": "问题的主要原因是客户端在漫游过程中，802.1x认证的接入设备或端口发生了改变，导致客户端无法自动重新认证，从而出现网络连接中断的现象。",
+        "解决办法": "1.调整组网结构：使用一台集中认证设备（如3928）进行统一认证，避免认证设备或端口的改变。-具体方案：-将所有WA1208EAP以及集中认证设备3928的E1/0/1端口划归同一VLAN。-在3928的E1/0/1端口上开启802.1x认证。-所有无线数据经E1/0/1认证后，由E1/0/2端口流回核心交换机6503。-实际测试效果：客户端在AP间移动时基本没有丢包，可平滑切换。2.对AP的管理：-可以在3928的E1/0/1端口对AP的MAC地址进行绑定，这样AP本身不需要进行802.1x认证。-也可以考虑只绑定少量AP，其他AP通过已绑定AP进行二次Telnet管理。3.用户数限制：-由于认证集中在一个设备上，接入用户数会受到3928性能的限制。-如果用户数较大，可以考虑使用性能更好的认证设备。引申这种集中认证的方法还可以解决有线和无线用户在同一个设备上认证时，属于不同域、采用不同计费策略的问题。通过集中认证，可以确保用户只能到唯一的一台设备上进行认证，从而避免接入用户逃避计费的情况。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/85637",
+        "备注": ""
+    },
+    {
+        "序号": 1043,
+        "问题现象": "某局点在使用分层AC（centralAC为WX5560H，localAC为WX2560H）进行Portal认证接入时，下联终端在配置完Portal认证后依然可以直接上网，没有弹出Portal页面。而手动在终端上输入Portal服务器地址时，Portal页面能够正常弹出。",
+        "问题描述": "1.配置检查：-在centralAC上配置了Portal认证，并且配置正确。-在localAC上没有配置任何Portal相关的命令，因此配置上不存在问题。2.调试信息：-收集了debugportalall信息，但没有发现与测试终端Portal相关的有用信息输出。3.设备进程检查：-在localAC上查看CPU进程，发现设备中存在Portal进程（portald和portsecd），即使之前已经删除了Portal相关的命令。",
+        "结论": "问题的原因在于localAC上存在Portal进程。即使localAC上没有配置任何Portal相关的命令，只要之前配置过Portal，设备的Portal进程就会一直存在，除非重启设备。这导致centralAC上的Portal认证配置不生效。",
+        "解决办法": "1.清空配置并重启localAC：-将localAC的配置清空，进行零配置重启。-重启后，重新配置IP地址等基础配置。2.避免配置Portal相关命令：-在localAC上不要配置任何Portal相关的命令，确保只有centralAC上配置Portal认证。3.后续注意事项：-如果之前在localAC上配置过Portal，需要清空配置并重启设备，以确保Portal进程被彻底清除。-在分层AC配置Portal认证时，务必确保localAC上没有Portal进程存在。通过上述步骤，可以确保centralAC上的Portal认证配置正常生效，终端在连接时会弹出Portal页面进行认证。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/18812",
+        "备注": ""
+    },
+    {
+        "序号": 1044,
+        "问题现象": "某局点突发无线业务中断，用户无法接入无线网络，且802.1x认证失败。",
+        "问题描述": "1.AC诊断信息：故障时，AC诊断显示对接802.1x认证的RADIUS服务器状态中，主认证服务器（端口1812）状态为“Active”，而主计费服务器（端口1813）状态为“Block”。2.AP历史连接记录：检查AP的历史连接记录，发现有AP重新上线的记录。3.AP报文统计：通过云简平台查看AP的出入方向报文统计，故障时入方向存在大量组播报文。4.现场抓包分析：AP入方向可以收到有线业务VLAN过来的组播报文。5.组播报文异常：进一步排查发现，某台AP出方向组播报文异常高，5分钟内有1000000pps的组播报文。经核实，该终端在故障期间进行了特殊测试操作，可能诱发了大量组播报文泛洪。",
+        "结论": "网络中突发的组播大流量冲击导致了无线业务中断和802.1x认证失败。具体原因是某终端在故障期间的特殊测试操作引发了大量组播报文泛洪，影响了无线网络的正常运行。",
+        "解决办法": "1.隔离有线业务：将有线业务与无线业务进行隔离，避免有线网络中的大流量组播对无线业务的冲击。2.接入交换机组播抑制：在接入交换机上配置组播抑制功能，限制组播报文的流量，防止突发组播大流量对网络的冲击。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/195656",
+        "备注": ""
+    },
+    {
+        "序号": 1045,
+        "问题现象": "在某局点的地铁环境中部署无线Mesh链路时，30个车载AP中只有一个AP能够成功与轨旁瘦AP建立Mesh链路，其余29个车载AP均无法建立链路。",
+        "问题描述": "通过在车载AP上收集debug信息发现，车载AP一直在发送Mesh信息，但轨旁AP没有回复相应的Mesh信息。进一步检查车载AP和轨旁AP的配置信息，发现两者在Mesh配置上的区别，特别是MeshID的大小写不一致。",
+        "结论": "问题的根本原因是车载AP和轨旁AP的MeshID配置不一致，且MeshID区分大小写。因此，只有当两端的MeshID完全匹配时，才能成功建立邻居关系。",
+        "解决办法": "修改轨旁AP的MeshID，使其与车载AP的MeshID一致（即全部小写）。具体操作步骤如下：1.登录轨旁AP的管理界面。2.进入无线Mesh配置页面。3.修改MeshID为“pis”。4.保存配置并重启AP。通过上述操作，问题得以解决，所有车载AP均能成功与轨旁AP建立Mesh链路。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/183008",
+        "备注": ""
+    },
+    {
+        "序号": 1046,
+        "问题现象": "：在某局点使用小贝WAC360无线控制器配置WAP722进行无线覆盖，并开启微信认证后，部分终端在点击公众号回复的链接后出现认证失败，无法正常上网，而其他终端则可以正常使用。",
+        "问题描述": "：1.终端已成功接入无线网络，但在点击微信公众号回复的链接后，显示认证失败，无法上网。2.通过AC命令行工具检查，确认问题终端的MAC地址和IP地址已正常出现在客户端列表中。3.检查portal用户和连接表，发现测试终端的MAC和IP未列出。4.通过开启debug日志，发现尽管重定向成功，但未发起portal的type1报文。5.问题多发于用户高峰期，且portal用户和连接表的最大数量限制为64个。",
+        "结论": "：小贝WAC360无线控制器的本地portal用户数量规格过小，最大仅支持64个用户，导致在用户高峰期部分终端因无法获得portal认证而出现认证失败，进而无法正常上网的问题。",
+        "解决办法": "：1.升级小贝AC至最新版本，确保版本说明书中表明本地portal用户数量规格已扩大。2.联系SOHO售后技术支持，请求提供一个临时版本以解决当前规格限制问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/6721",
+        "备注": ""
+    },
+    {
+        "序号": 1047,
+        "问题现象": "现场部署了一台WX3540H无线控制器，连接了一台WT1024-X的本体，分体的型号为WTU410H。上千台分体无法注册上线。",
+        "问题描述": "1.配置检查：通过`displaywlanapall`命令确认本体在线，且有足够的AP授权。2.网络检查：分体能够从DHCP服务器获取IP地址，且AC可以ping通分体，表明网络没有问题。3.模式检查：本体配置为直通模式（WTversion1），符合分体WTU410H的要求。4.Debug信息：开启`debuggingwlancapwapallall`后，发现分体发送的request报文和AC回复的response报文没有进一步的注册过程。5.版本差异：上线成功的分体版本为7.1.064,Release2215P01，而无法上线的分体版本为7.1.064,Release2120。",
+        "结论": "早期版本的分体AP（如7.1.064,Release2120）在注册过程中强制将协议报文与VLAN绑定，要求本体发送的报文都带有VLAN标签。而新版本的本体/分体之间的AP发现协议在初始实现时是不需要带VLAN标签的。因此，分体与本体之间的数据无法正常通信，导致分体无法完成注册流程。",
+        "解决办法": "1.检查配置：首先检查AC的配置，确保网络畅通、授权足够。2.版本确认：确认分体AP的出厂版本，如果版本较老（如7.1.064,Release2120），则需要进行版本更新。3.临时解决方案：降级AC至R5208P03（B64D016SP0803）或R5205P02（B64D016SP52）版本，待分体AP版本更新完成后，再升级至最终目标版本。4.批量格式化：如果需要快速解决问题，可以批量格式化分体AP的flash，重新尝试注册。具体方法可以在AC上批量执行格式化命令，或者通过其他管理工具进行批量操作。作者修订该案例在2019-03-31进行了修订。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/21982",
+        "备注": ""
+    },
+    {
+        "序号": 1048,
+        "问题现象": "某局点WX2560X-LI无线接入控制器（AC）在使用本地Portal结合LDAP认证时，用户反馈认证无法成功。",
+        "问题描述": "1.设备及版本信息：-现场AC型号：WX2560X-LI-版本：R5616-认证方式：本地Portal结合LDAP认证2.配置检查：-检查配置没有明显错误。-对比LDAP服务器下的`login-dn`和`search-base-dn`，均由客户提供且没有异常。-配置如下：```plaintextwlanservice-templateclientssidclient-vlan13portalenablemethoddirectportaldomainldapportalapplyweb-servernewptservice-templateenabledomainldapauthorization-attributeidle-cut151024authenticationportalldap-schemaldapauthorizationportalnoneaccountingportalnoneldap-schemaldapauthentication-serverldapldap-serverldaplogin-dncn=XX_802.1x,ou=服务帐号,ou=管理,dc=YY,dc=com,dc=cnsearch-base-dnou=用户,ou=MM有限公司,ou=NN中心,ou=KK有限公司,dc=YY,dc=com,dc=cnipXX.XX.239.33login-passwordcipher$c$3$4AEKDNR8s6sbDbzwhRYDABDXhvIqP11km5vug3wmOxejuser-parametersuser-name-attributesamaccountnameportalweb-servernewpturlhttp://XX.XX.13.1/portalcaptive-bypassiosoptimizeenableif-matchoriginal-urlhttp://captive.apple.com/hotspot-detect.htmluser-agentMozillatemp-passredirect-urlhttp://XX.XX.13.1/portalif-matchoriginal-urlhttp://www.apple.comuser-agentMozillatemp-passredirect-urlhttp://XX.XX.13.1/portal```3.调试信息：-通过`debugldap`发现报错信息：`PAMLDAP:Getresultmessageerrno=49Failedtoperformbindingoperationasadministrator.`-怀疑终端的密码可能存在问题。",
+        "结论": "问题的根本原因在于LDAP管理员账户的密码配置不正确，导致绑定操作失败。通过重新配置正确的密码后，认证问题得以解决。",
+        "解决办法": "1.检查配置：-确认LDAP路径和本地Portal配置没有明显错误。-对比`login-dn`和`search-base-dn`，确保路径正确无误。2.调试与分析：-使用`debugldap`命令查看详细的调试信息，定位问题。-分析报错信息，确认是否存在密码错误等问题。3.重新配置密码：-建议客户重新配置LDAP管理员账户的密码。-重新配置后，测试认证是否成功。4.验证：-确认配置更改后，用户能够成功通过本地Portal结合LDAP认证。通过上述步骤，问题得以解决。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/227473",
+        "备注": ""
+    },
+    {
+        "序号": 1049,
+        "问题现象": "在安装核心网vEPC3200的过程中，由于配置Docker容器属性时输入错误或其他原因中途退出配置过程，导致服务器的DPDK网卡被占用，重新创建Docker容器时网口消失。",
+        "问题描述": "在配置Docker容器属性的过程中，如果因输入错误或其他原因中途退出配置过程，可能会导致DPDK程序错误地占用了网口。这将使得在重新创建Docker容器时，原本可用的网口无法被正确识别和使用，从而影响vEPC3200的正常安装和运行。",
+        "结论": "服务器的DPDK网卡被占用，只能通过手动解绑的方式解决。",
+        "解决办法": "1.删除误绑定的DPDK网口名：-在H3Linux的`/root`目录下执行命令：`vim/etc/docker_epc/interface.conf`。-进入文本编辑器后，删除所有误绑定的DPDK网口名。-保存并退出vim编辑器。2.查询网口PCI信息：-在H3Linux的`/root`目录下执行命令：`./dpdk-devbind.py--status`。-查看输出信息，找到误绑定的DPDK网口的PCI地址。例如，误绑定的网口PCI地址可能是`0000:5f:00.0`。3.解绑误绑定的DPDK网口：-在H3Linux的`/root`目录下依次执行以下命令：-`./dpdk-devbind.py-u<PCIaddress>`：解绑误绑定的DPDK网口。-`./dpdk-devbind.py-bixgbe<PCIaddress>`：将网口重新绑定到内核驱动。-其中`<PCIaddress>`为误绑定的DPDK网口的PCI信息。通过以上步骤，可以手动解绑被DPDK程序占用的网口，使其恢复正常状态，以便重新创建Docker容器时能够正确识别和使用网口。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/117203",
+        "备注": ""
+    },
+    {
+        "序号": 1050,
+        "问题现象": "：某局点购买了一批WA4320i-XAP，并准备用H3CS5560EI交换机作为融合AC进行管理。但由于S5560EI不支持WA4320i-X，现场改用WX3510H作为AC，S5560EI作为网络核心交换机。使用时发现下连的WA4320i-XAP已经获取到IP地址，但始终无法注册上线，AC上显示AP状态为idle。",
+        "问题描述": "：1.链路检查：AP已成功获取IP地址，且从ACpingAP没有丢包，链路质量正常。2.AC配置检查：AC上的DHCP配置和AP配置均正确。3.debug信息检查：AP发送了CAPWAP发现请求，但没有收到AC的回应，且AC侧未收到该地址的CAPWAP信息。4.直接连接测试：将AP直接连接到AC的接口下测试，AP成功从V5升级到V7并正常上线。5.逐步排查：分别从网络中去掉S5560EI和POE交换机测试，发现当去掉S5560EI后AP能够正常上线，但一旦加入S5560EI，AP就无法上线。",
+        "结论": "：早期版本的S5560EI交换机在开启融合AC功能时，会终结CAPWAP隧道的报文。尽管现场最终没有使用S5560EI作为AC，但该功能仍然导致CAPWAP报文在S5560EI处被终结，从而WX3510H收不到AP发送的CAPWAP报文，导致AP无法注册上线。将S5560EI升级到最新版本后，问题得以解决。",
+        "解决办法": "：1.升级S5560EI：将S5560EI交换机升级到最新版本，以确保其不会终结CAPWAP隧道报文。2.网络测试：在网络中有融合AC时，若遇到AP注册不上的问题，可以尝试将融合AC从网络中去除测试，以排除融合AC将CAPWAP终结的可能性。3.配置检查：确认所有设备的配置正确，特别是DHCP配置和AP与AC之间的链路配置。通过以上步骤，可以有效解决AP无法注册上线的问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/22526",
+        "备注": ""
+    },
+    {
+        "序号": 1051,
+        "问题现象": "WA2620i-AGN设备在作为胖AP使用时，5G信号能够正常接收，但2.4G信号无法被设备或通过Inssider软件检测到。",
+        "问题描述": "1.设备配置:WA2620i-AGN设备配置为同时发射2.4G和5G信号。2.信号检测:通过Inssider软件查看，5G信号正常，但2.4G信号始终无法检测到。3.射频口状态:查看射频口的Beacon帧统计信息，2.4G射频口的BeaconIntCnt帧有正常增长，但BeaconErrCnt帧在重启后也有增加。4.初步怀疑:由于2.4G信号无法检测到且BeaconErrCnt帧增加，初步怀疑硬件可能存在故障。",
+        "结论": "根据上述现象和描述，设备的2.4G射频模块可能存在硬件故障，导致2.4G信号无法正常发射或被检测到。",
+        "解决办法": "1.返修处理:建议将设备送回厂家进行硬件检测和维修。2.备份数据:在返修前，建议备份设备上的所有重要配置和数据，以防丢失。3.替代方案:在设备维修期间，可以考虑使用其他支持2.4G的无线设备作为临时替代方案，以保证网络的正常运行。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/4680",
+        "备注": ""
+    },
+    {
+        "序号": 1052,
+        "问题现象": "AC无法连接到WBC560本地绿洲/私有云绿洲。",
+        "问题描述": "某局点反馈，本地绿洲平台上的5540H（IRF）设备版本为5426p02，绿洲上显示为离线状态。即使将IRF设备加入分组，其状态仍为未连接。同型号但版本不是最新的单台5540H设备可以正常连接到绿洲。进一步分析发现，5426p02版本的端口号已更改为443，而WBC560本地绿洲/私有云绿洲的端口号为19443。",
+        "结论": "问题产生的原因是5540H（IRF）设备版本5426p02与WBC560本地绿洲/私有云绿洲之间的端口号不匹配。设备版本为x5422及后续版本的5540H设备，其默认端口号已更改为443，而WBC560设备的端口号仍为19443。",
+        "解决办法": "通过在AC上使用`cloud-managementserverport`命令手动配置端口为443，以匹配WBC560本地绿洲/私有云绿洲的端口号。配置完成后，IRF设备成功注册到绿洲上，但只有主设备会显示为在线状态。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/94967",
+        "备注": ""
+    },
+    {
+        "序号": 1053,
+        "问题现象": "客户现场使用WX5004无线控制器和APWA2620i-agn部署无线网络后，安卓手机接入无线网络并通过portal认证后上网速度非常慢，甚至无法正常打开网页。而笔记本电脑、苹果手机和使用其他浏览器的安卓手机接入后均能正常访问资源。",
+        "问题描述": "1.测试环境：客户现场使用WX5004无线控制器和APWA2620i-agn部署的无线网络。2.测试结果：-笔记本电脑接入无线网络后，测试正常。-苹果手机接入无线网络后，测试正常。-安卓手机使用UC浏览器通过portal认证时，速度很慢，有时无法打开网页。-安卓手机使用其他浏览器认证后访问正常。-苹果手机使用相同版本的UC浏览器认证后访问正常。",
+        "结论": "问题定位为UC浏览器安卓版存在特定的问题，特别是其开启云端加速功能时，导致上网速度变慢甚至无法正常打开网页。",
+        "解决办法": "经过反复调整UC浏览器参数，最终发现关闭UC浏览器的云端加速功能可以解决问题。建议客户关闭UC浏览器的云端加速功能，以恢复正常上网速度。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/5861",
+        "备注": ""
+    },
+    {
+        "序号": 1054,
+        "问题现象": "在无线Portal认证过程中，手机端输入用户名并点击上线后，显示“设备拒绝请求”。",
+        "问题描述": "1.交互过程分析：-IMC（IntelligentManagementCenter）给设备发送了REQ-challenge报文请求。-设备回复了ACK-challenge报文，但报文中包含errorcode为1，表示设备拒绝请求。2.参数检查：-IMC给设备回复的REQ-challenge报文中，userip参数是错误的（userip参数地址为NAT之后的地址）。-通过分析HTTP抓包和设备重定向的debug日志发现：-设备给终端重定向的userip是私网IP，正确无误。-终端发给IMC的HTTP请求中携带的userip参数也是私网IP，没有问题。-但在IMC与设备交互的REQ-info报文中，携带的终端IP地址是NAT之后的地址，导致IMC获取的终端地址不正确。3.原因分析：-IMC通过终端发送的HTTP请求中的userip参数来确定终端的IP地址。-如果终端HTTP请求中没有携带userip参数，IMC将HTTP请求的源地址作为userip。-由于现场对业务VLAN进行了NAT地址转换，终端与IMC交互的地址变成了NAT之后的地址。-IMC将这个错误的地址填充到REQ-info报文中与设备交互，设备检查表项发现地址不合法，从而发送拒绝认证的报文。",
+        "结论": "问题的根本原因是NAT地址转换导致IMC获取的终端IP地址不正确。在NAT组网环境下，IMC只能通过设备配置的userip参数来获取终端的私网IP地址，否则会使用NAT之后的地址，导致认证失败。",
+        "解决办法": "在设备侧配置URL参数，指定userip的来源地址为私网IP。具体配置命令为：```url-parameteruseripsource-address```通过这一配置，IMC将能够正确获取终端的私网IP地址，从而避免认证失败的问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/93560",
+        "备注": ""
+    },
+    {
+        "序号": 1055,
+        "问题现象": "用户在使用无线网络时频繁收到计费下线报文，表现为第三方服务器上反复出现同一终端用户的上下线记录，上下线记录之间的间隔时间很短，且服务器日志提示该用户被相同IP或MAC地址挤下线。",
+        "问题描述": "无线AC旁挂交换机，与第三方服务器进行MAC加Portal认证。所有终端都会出现上述现象，排除了终端个例问题。进一步测试发现，当终端固定在一个位置，只关联一个AP时，不会频繁产生上下线日志；而当终端移动并漫游关联到其他AP时，问题出现。所有终端漫游关联的AP都属于同一模板和VLAN，设备版本为V7，且默认漫游功能正常。",
+        "结论": "问题的根本原因在于漫游过程中，终端关联不同的AP时，会携带不同的sessionID。认证服务器通过sessionID和MAC地址来标识终端用户。当终端漫游到新的AP时，新的sessionID会被发送到认证服务器，而第三方服务器没有配置允许同一MAC地址对应多个sessionID，因此导致了频繁的上下线记录。",
+        "解决办法": "建议第三方服务器管理员检查并修改服务器配置，允许同一MAC地址对应多个sessionID。经过确认和修改后，问题得以解决。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/61376",
+        "备注": ""
+    },
+    {
+        "序号": 1056,
+        "问题现象": "在WA5320E和WA5620i-ACNAP设备上，当配置上行2.5G端口与1G端口进行聚合时，聚合组状态全部显示为unselect状态，导致AP不能与外部网络通信。",
+        "问题描述": "在确保物理端口配置相同的情况下，聚合组内的端口（Smartrate-Ethernet1/0/1和GigabitEthernet1/0/2）均未被选中，聚合配置无法生效。查看聚合组详细状态显示，端口状态为Unselected。",
+        "结论": "问题的原因在于V7版本的AP设备默认开启了`port-isolate`配置，这影响了端口的聚合功能。`port-isolate`配置使得端口之间不能直接通信，导致聚合组内的端口无法被正确选中并正常工作。",
+        "解决办法": "1.去除物理端口下的`port-isolateenable`配置。2.重新检查聚合配置，确保端口被正确选中。3.验证AP是否可以正常与外部网络通信。示例命令```shell[ap1-Smartrate-Ethernet1/0/1]undoport-isolateenableportlink-aggregationgroup1[ap1-GigabitEthernet1/0/2]undoport-isolateenableportlink-aggregationgroup1```验证```shell[ap1]displaylink-aggregationverbose```验证结果聚合组内的端口状态应显示为Selected，且AP可以正常与外部网络通信。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/15782",
+        "备注": ""
+    },
+    {
+        "序号": 1057,
+        "问题现象": "终端设备在连接至H3C的WX系列AC（无线控制器）+FitAP（接入点）创建的SSID“h3c-ipv6”后，无法自动获取IPv6地址或获取IPv6地址及相关信息（如DNS服务器地址）不完整。",
+        "问题描述": "1.无状态自动配置获取IPv6地址：配置了AC和FitAP后，终端设备能够连接到SSID“h3c-ipv6”，但仅能获取IPv6地址，无法获取其他网络配置信息，如DNS服务器地址。2.无状态自动配置获取IPv6地址、有状态DHCPv6获取DNS等其他信息：配置了AC和FitAP，使终端在连接到SSID“h3c-ipv6”时，除了能获取IPv6地址外，还能通过有状态的DHCPv6服务获取DNS服务器地址等其他网络配置信息。3.有状态DHCPv6获取IPv6地址和DNS等其他信息：配置了AC和FitAP，使终端设备在连接到SSID“h3c-ipv6”时，完全通过有状态的DHCPv6服务获取IPv6地址、DNS服务器地址等所有网络配置信息。",
+        "结论": "通过不同的配置方法，可以实现无线终端设备在连接到H3C的WX系列AC+FitAP创建的“h3c-ipv6”网络时，获取IPv6地址以及DNS服务器地址等其他网络配置信息。具体而言，无状态自动配置仅能提供IPv6地址，而有状态的DHCPv6服务可以提供更全面的网络配置信息，包括IPv6地址和DNS服务器地址。",
+        "解决办法": "1.无状态自动配置获取IPv6地址：-在AC上配置VLAN接口，启用IPv6地址分配，但不启用DHCPv6服务。-验证终端设备连接后可以获取IPv6地址，并能ping通网关的IPv6地址。2.无状态自动配置获取IPv6地址、有状态DHCPv6获取DNS等其他信息：-在AC上配置VLAN接口，启用IPv6地址分配，并启用DHCPv6服务以提供DNS服务器地址等其他信息。-验证终端设备连接后可以获取IPv6地址和DNS服务器地址，并能ping通网关的IPv6地址。3.有状态DHCPv6获取IPv6地址和DNS等其他信息：-在AC上配置VLAN接口，启用有状态的DHCPv6服务，提供完整的网络配置信息。-验证终端设备连接后可以获取完整的IPv6地址和DNS服务器地址，并能ping通网关的IPv6地址。通过上述配置，可以确保无线终端设备在连接到H3C的WX系列AC+FitAP网络时，能够顺利获取所需的网络配置信息，从而正常访问网络资源。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/1944",
+        "备注": ""
+    },
+    {
+        "序号": 1058,
+        "问题现象": "客户现场使用S75EAC插卡与WA4320i-ACN无线控制器部署办公局域网，无线网络采用BYOD认证方式。内网用户首次接入需进行Portal认证，后续接入应使用MAC无感知认证。然而，终端第二次接入时仍然弹出Portal认证页面，无法直接访问内网资源。",
+        "问题描述": "1.设备侧检查：终端第二次接入时，设备上显示终端仍然在guestVLAN中，没有切换到内网VLAN。2.IMC平台检查：在IMC平台上查看，发现账户已经创建成功，表明问题出在设备侧。3.调试MAC认证和RADIUS报文：通过调试发现，设备上仅有MAC认证的报文，没有RADIUS认证报文。4.配置检查：检查设备的domain、RADIUS配置及调用关系，发现domain下的认证和授权配置错误，导致MAC认证失败，终端被迫进入guestVLAN进行Portal认证。",
+        "结论": "问题的根本原因在于设备的domain配置错误，导致MAC认证失败，终端无法正常进行无感知认证，而是被推送至Portal认证页面。",
+        "解决办法": "1.修改domain配置：将domain下的认证和授权方式从Portal改为lan-access。2.更新配置：```plaintext#domaindrcomauthenticationlan-accessradius-schemedrcomauthorizationlan-accessradius-schemedrcomaccountinglan-accessradius-schemedrcomaccess-limitdisablestateactiveidle-cutenable12000self-service-urldisable```3.重新认证：终端重新接入网络后，进行认证，确保MAC认证成功并能够正常访问内网资源。通过上述配置修改，问题得以解决，终端第二次接入时不再弹出Portal认证页面，实现了无感知认证。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/5963",
+        "备注": ""
+    },
+    {
+        "序号": 1059,
+        "问题现象": "终端设备在关联无线网络后，尝试访问任意IP地址时，均无法被重定向到认证页面。",
+        "问题描述": "现场环境为纯内网环境，未配置DNS服务器。设备配置了基于MAC地址的快速认证功能，并设置了用户上线后有一定免认证流量的阈值（1024000字节）。当用户访问的流量未达到该阈值时，设备不会触发Portal重定向。由于内网环境中的IP地址随意输入且不可达，导致用户流量始终无法达到阈值，从而无法触发Portal认证页面的重定向。",
+        "结论": "问题的根本原因在于设备配置了基于MAC地址的快速认证功能，并设置了较高的免认证流量阈值。在纯内网环境中，由于IP地址的可达性问题，用户流量始终无法达到该阈值，导致Portal重定向功能失效。",
+        "解决办法": "将无感知流量阈值改为0，以确保用户在访问任何IP地址时都能立即触发Portal重定向，从而顺利完成认证过程。具体配置命令如下：```bashportalmac-trigger-servermtsip192.168.200.201free-trafficthreshold0```",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/32890",
+        "备注": ""
+    }
+]

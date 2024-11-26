@@ -1,0 +1,47 @@
+[
+    {
+        "序号": 1520,
+        "问题现象": "无线终端下载速度较慢，客户使用体验较差。",
+        "问题描述": "1.终端关联信息：-协议：802.11ac-绑定带宽：20MHz-收发速率（Rx/Tx）：86.7M/57.8M-丢包率：0.00%-AP名称：606F-AP4-无线模式：802.11ac-信道带宽：20MHz-短GI支持情况：20MHz支持，40MHz和160/80+80MHz不支持-其他功能支持情况：STBCRX支持，STBCTX、LDPCRX、SUBeamformee、SUBeamformer、MUBeamformer不支持2.配置检查：-现场关闭了A-MPDU功能，该功能有助于提升信道利用率。-二层隔离配置未开启，导致空口非单播报文TxNUcastFrmCt增长较多。",
+        "结论": "1.终端绑定带宽为20MHz，导致下载速率较低，建议提升带宽至40MHz或80MHz。2.A-MPDU功能未开启，影响了信道利用率。3.空口非单播报文较多，建议开启二层隔离配置以减少广播包的影响。",
+        "解决办法": "1.调整带宽设置：-将终端的信道带宽从20MHz调整为40MHz或80MHz，以提高下载速率。2.开启A-MPDU功能：-在AP配置中开启A-MPDU功能，提升信道利用率和传输效率。3.配置二层隔离：-为所有业务VLAN配置二层隔离，减少空口非单播报文的数量，提高网络性能。优化后效果经过上述优化后，无线终端的上传和下载速度有明显提升。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/144436",
+        "备注": ""
+    },
+    {
+        "序号": 1521,
+        "问题现象": "终端设备在使用随机MAC地址通过WA4320+EPON组网后无法获取IP地址，而使用设备本身的MAC地址则可以正常获取IP地址。",
+        "问题描述": "在WA4320+EPON组网中，当终端设备使用随机MAC地址进行连接时，OLT设备会丢弃来自这些设备的DHCP请求报文，导致终端设备无法获取IP地址。通过抓包分析发现，无线设备侧的报文已经成功发送到内联口，但OLT设备因为源MAC地址为非标准MAC地址而丢弃了这些报文。",
+        "结论": "问题的根本原因在于OLT设备默认配置下对非标准MAC地址报文的处理模式为丢弃模式。非标准MAC地址指的是第一字节的第7比特位为1的MAC地址，例如02-10-94-00-00-02（16进制）。",
+        "解决办法": "1.修改OLT侧的非标准MAC地址报文处理模式：-进入系统视图：`system-view`-进入FTTH视图：`ftth`-配置非标准MAC地址报文的处理模式为单播或广播模式：`onuinvalid-addressmode{unicast|broadcast}`-缺省情况下，非标准MAC地址报文的处理模式为丢弃模式。2.配置限制和指导：-以下接口能正常转发非标准MAC地址报文，配置非标准MAC地址报文的处理模式对这些接口没有影响：-10G-EPON单板上的OLT端口。-切换到GE接口类型的EPON光接口。通过上述配置，可以确保终端设备使用随机MAC地址时也能正常获取IP地址。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/124241",
+        "备注": ""
+    },
+    {
+        "序号": 1522,
+        "问题现象": "无线Portal认证在输入网址后无法自动重定向到认证页面，但是通过手工输入认证页面的URL可以正常进入并完成认证。",
+        "问题描述": "在使用远程Portal认证功能时，设备型号为WX3540X，版本号为9.0.001，ESS配置为1046P01。用户在尝试访问互联网时，无法自动跳转到Portal认证页面，需要手动输入认证页面的URL才能完成认证过程。",
+        "结论": "通过分析发现，问题的原因在于缺少了必要的Portal免认证规则配置，特别是用于放行DNS服务器流量的规则。具体缺少的配置为：`portalfree-rule1destination-ipanyudp53``portalfree-rule2destination-ipanytcp53`这些规则是确保设备能够正常解析DNS请求，从而实现自动重定向到Portal认证页面的关键配置。",
+        "解决办法": "在设备的配置中添加上述两条Portal免认证规则，即：`portalfree-rule1destination-ipanyudp53``portalfree-rule2destination-ipanytcp53`添加后，设备能够正常解析DNS请求，用户在输入网址后可以自动重定向到Portal认证页面，并顺利完成认证过程。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/204596",
+        "备注": ""
+    },
+    {
+        "序号": 1523,
+        "问题现象": "设备频繁出现127.0.0.1登录失败的告警，每分钟大约有五六次提示。",
+        "问题描述": "设备内部模块间登录通常使用内部回环地址127.0.0.1。在设备配置了SmartMC功能后，管理设备每隔15秒发送一次SmartMC广播报文，询问网络中是否存在成员设备。管理设备收到成员设备的应答报文后，使用缺省用户名（admin）和密码（admin）与成员设备建立NETCONF会话，以获取成员设备的详细信息。如果SmartMC的用户名和密码与本地用户的用户名和密码不一致，会导致管理设备使用127.0.0.1登录失败。",
+        "结论": "设备频繁出现127.0.0.1登录失败的告警，是因为SmartMC功能的管理设备与成员设备之间的认证失败，具体原因是SmartMC配置的用户名和密码与本地用户配置的用户名和密码不一致。",
+        "解决办法": "1.排查用户名和密码是否一致：-检查SmartMC功能中配置的用户名和密码。-检查本地用户配置的用户名和密码。2.修改密码：-如果发现SmartMC的用户名和密码与本地用户的用户名和密码不一致，将本地用户的密码修改为SmartMC中配置的密码。例如，如果SmartMC配置如下：```smartmcusernameadminpasswordcipher$c$3$pDRGYMhp8BJj9izPGT4VKY1aIJnLUrrC```本地用户配置如下：```local-useradminclassmanagepasswordhash$h$6$V6Uy+TirqFRdSY1T$qJacuSnSjjmkpwNDh26x5Q9lWX7ZMOdTbzbCePWgia9KYeEszIlL1iMarsOZBroG9nR92BEAv6ZRGVi3aoNK+g==service-typesshtelnetterminalhttphttpsauthorization-attributeuser-rolenetwork-admin```则需要将本地用户的密码修改为SmartMC中配置的密码：```local-useradminclassmanagepasswordcipher$c$3$pDRGYMhp8BJj9izPGT4VKY1aIJnLUrrCservice-typesshtelnetterminalhttphttpsauthorization-attributeuser-rolenetwork-admin```通过以上步骤，可以解决设备频繁出现127.0.0.1登录失败告警的问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/101516",
+        "备注": ""
+    },
+    {
+        "序号": 1524,
+        "问题现象": "在某局点使用IMC下发无线EIA限速策略后，苹果终端（如iPhone和iPad）的上传速率超过设定的上行速率限制50%以上，而其他终端（如安卓和PC）的上传和下载速率均在设定范围内。",
+        "问题描述": "1.组网及说明：WX3510H(R5435P02)+IMC，AC旁挂核心交换机，采用本地转发模式。2.限速设置：使用IMC给Portal认证用户下发CAR限速，分别设定上行和下行速率限制。3.测试结果：-安卓和PC终端的上传和下载速率均在设定的上行和下行速率限制范围内。-苹果终端的下载速率在设定的下行速率限制范围内，但上传速率超过设定的上行速率限制50%以上。",
+        "结论": "1.IMC服务器日志分析：IMC服务器正常完成了限速下发。2.AC表项检查：苹果终端上登录的Portal用户的CAR限速处于active状态。3.静态限速测试：在服务模板上配置静态限速（client-rate-limit），发现苹果终端的下载速率符合设定要求，但上传速率仍然超高。4.原因分析：IMC下发的EIA限速策略中，默认的承诺突发尺寸（CBS）值较高。在测速开始阶段，上传速率出现突发值较高并达到CBS的最大限制值，随后速率逐渐下降并稳定在设定的承诺信息速率（CIR）范围内。由于测速网的测试过程较短（十几秒），前期的高突发速率导致整个测试过程的平均上传速率被拉高，从而显示的测试结果超过了实际限速值的50%。",
+        "解决办法": "1.使用speedText网页测试：使用speedText（*.*）网页对苹果终端重新进行测试，结果显示苹果终端的上行和下载速率均在设定的上传和下载限制速率范围内。2.认定测速功能正常：通过上述测试，确认测速功能正常生效，问题在于测速过程中突发速率的影响导致测试结果不准确。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/184318",
+        "备注": ""
+    }
+]

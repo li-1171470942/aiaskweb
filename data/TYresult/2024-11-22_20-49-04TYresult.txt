@@ -1,0 +1,182 @@
+[
+    {
+        "序号": 520,
+        "问题现象": "：在某局点，华为AP跨三层注册无法上线。",
+        "问题描述": "：跨三层注册需要在DHCP服务器下下发Option43属性。通过抓包发现，DHCP服务器已经发送了相应的报文，但AP始终没有回包。由于AP对接的是第三方设备，怀疑第三方厂商的Option43属性格式与华为设备不一致，导致AP无法识别该属性报文。",
+        "结论": "：经过调查和分析，确认问题是由第三方设备下发的Option43属性格式与华为设备要求的格式不一致导致的。华为设备支持三种Option43配置格式（子选项1、2、3或直接以十六进制格式），而第三方设备下发的格式不符合这些标准格式。",
+        "解决办法": "：在第三方设备上将下发的Option43属性格式修改为华为设备可识别的格式后，问题得到解决。具体配置格式如下：1.子选项1格式：```plaintextdhcpserveroption43sub-option1hexC0A86401```2.子选项2格式：```plaintextdhcpserveroption43sub-option2ip-address192.168.100.1```3.子选项3格式：```plaintextdhcpserveroption43sub-option3ascii192.168.100.1```4.直接十六进制格式：```plaintextdhcpserveroption43hex0104C0A86401//对应于子选项1的格式dhcpserveroption43hex0204C0A86401//对应于子选项2的格式dhcpserveroption43hex030D3139322E3136382E3130302E31//对应于子选项3的格式```参考链接：[华为设备作为DHCP服务器配置Option43给AP](https://forum.huawei.com/enterprise/en/huawei-device-as-a-dhcp-server-to-configure-option-43-to-ap/thread/456075-869)发表日期：2021-01-26用户反馈：该案例对用户有帮助。用户评价：1若您有关于案例的建议，请反馈：建议反馈",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/141239",
+        "备注": ""
+    },
+    {
+        "序号": 521,
+        "问题现象": "某局点全部AP无法获取IP地址并注册上线。",
+        "问题描述": "1.现场组网：WX3540X-olt-onu-WA6522H-HI，AC作为DHCP服务器。2.告警信息：无。3.反馈信息：全部AP无法获取地址，无法注册上线。将AP替换为PC后，PC能够正常获取地址。4.初步分析：通过在AC上做debugdhcp，发现AP不回dhcpoffer报文，没有发dhcprequest。5.进一步排查：在POE交换机上抓包，确认dhcpoffer报文到达POE交换机，但AP没有发送dhcprequest报文，且抓包结果未发现异常。6.关键发现：更改PC模式，抓取带VLAN标签的报文后，发现在AP上行的POE交换机上，dhcpoffer报文带有VLAN标签，而AP使用VLAN1获取地址注册上线，因此AP无法处理带有VLAN标签的dhcpoffer报文。",
+        "结论": "问题出在第三方POE交换机上，该交换机在回dhcpoffer报文时错误地加上了VLAN标签，导致AP无法处理并注册上线。",
+        "解决办法": "1.排查第三方交换机问题：确认交换机的DHCP处理配置，确保dhcpoffer报文不带VLAN标签。2.配置修正：在交换机上进行配置调整，使得dhcpoffer报文的VLAN标签处理正常。3.验证：调整后重新测试AP获取IP地址和注册上线的情况，确认问题解决。通过上述步骤，AP能够正常获取IP地址并注册上线。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/221563",
+        "备注": ""
+    },
+    {
+        "序号": 522,
+        "问题现象": "：在ACWEB页面上修改AP配置时，页面会卡住，需要等待2-3分钟才能进行操作。",
+        "问题描述": "：现场环境：在内网中登录设备。其他功能：使用web页面的其他功能没有卡顿现象。命令行操作：通过设备命令行进行操作时也无任何卡顿。网络延迟：ping包延时非常小。具体操作：在无线配置--AP管理--AP--修改AP配置时遇到卡顿问题。",
+        "结论": "：配置中包含了从vlan1到4094的所有VLAN，AC设备在处理涉及VLAN的web界面时，需要在下拉框中列出所有存在的VLAN，这导致了页面加载时间较长，从而出现卡顿现象。",
+        "解决办法": "：删除不必要的VLAN配置，以减少web页面加载时的逻辑筛选时间，从而加快页面响应速度。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/116798",
+        "备注": ""
+    },
+    {
+        "序号": 523,
+        "问题现象": "某局点AC上频繁出现“Beaconframesenderror”警告日志，具体日志内容如下：日志1:-时间：2020-03-2610:53:51-事件类型：Beaconframesenderror-警告数量：139-行动：Generate-级别：Critical-AP：WA5320X-无线射频：1日志2:-时间：2020-03-2610:50:50-事件类型：Beaconframesenderror-警告数量：44-行动：Recover-级别：Critical-AP：313VAWA5320XX.X.208.215-无线射频：1",
+        "问题描述": "在某局点的AC上，频繁出现“Beaconframesenderror”警告日志，客户对此表示担忧，担心这些警告可能会影响正常的业务运行。根据日志分析，Beacon帧发送失败主要与以下因素有关：空口繁忙外界干扰高发送报文数量多",
+        "结论": "Beacon帧发送失败是一种常见的无线网络问题，通常与空口质量、外界干扰和报文发送量有关。AC上的警告日志记录了连续20个Beacon帧发送失败的情况。如果该问题在短时间内能够自动恢复，通常不会对业务产生显著影响。然而，频繁的Beacon帧发送失败可能会导致无线客户端连接不稳定，甚至断开连接。",
+        "解决办法": "1.及时关注AP空口质量：-检查AP所在环境的无线干扰情况，确保没有其他无线设备或信号源对AP造成干扰。-使用无线网络分析工具（如Wireshark、AirMagnet等）监测空口的繁忙程度和干扰水平。2.排查非无线干扰因素：-检查AP的硬件和软件状态，确保没有故障或异常。-检查AP的配置，确保没有不合理的设置导致空口繁忙。3.优化无线报文传输：-调整AP的信道和功率设置，避免与其他无线设备产生冲突。-如果可能，增加更多的AP以分散无线流量，减轻单个AP的负担。4.监控和记录：-持续监控AP的运行状态和日志，记录Beacon帧发送失败的频率和持续时间。-如果问题频繁且无法自动恢复，及时联系技术支持进行进一步诊断和处理。通过上述方法，可以有效减少Beacon帧发送失败的情况，确保无线网络的稳定性和业务的正常运行。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/105327",
+        "备注": ""
+    },
+    {
+        "序号": 524,
+        "问题现象": "某局点ACPING包丢包，无线用户频繁上下线。",
+        "问题描述": "1.网络拓扑：-一台汇聚交换机，接入六台接入交换机，汇聚接口自动协商。-汇聚交换机上联光纤直接到中心机房，中间无路由设备。-其中6台接入交换机，有2台强制速率100M后，其他自动协商。-一台接入交换机带大约20个左右的AP。2.具体问题：-测试时发现AP信号时有时无，查看交换机AP时上线时下线。-AC上PING上线的AP出现丢包，查看无线链路及汇聚交换接入的光信号都正常。-汇聚交换机PING接入交换网关不丢包，PING下管理VLAN地址不丢包。",
+        "结论": "无线用户频繁掉线和AC上PING在线的AP丢包可能是由以下几种原因引起的：1.STA的无线网卡故障：无线网卡可能存在硬件问题或驱动问题。2.AP未安装天线：AP设备未正确安装天线，导致信号不稳定。3.信道冲突：多个AP使用相同的信道，导致干扰和信号不稳定。4.AC上对AP的无线信号功率设置过低：AP的发射功率设置不当，影响信号覆盖。5.其他无线设备干扰：如微波炉等设备产生的干扰，影响AP信号。6.用户频繁发生漫游：用户终端在多个AP之间频繁切换，导致连接不稳定。7.AP关联了过多用户数或者流量过大：AP的负载过高，导致性能下降和用户掉线。8.用户终端进入休眠模式：终端在无数据流量时自动进入休眠状态，断开无线连接。9.AP发生掉线或者重启：AP设备本身的故障或配置问题导致频繁掉线或重启。",
+        "解决办法": "1.检查STA的无线网卡：-使用其他无线网卡测试，排除STA无线网卡故障。-如果无线用户正常接入并稳定在线，说明原STA的无线网卡故障，请更换新的无线网卡。2.检查AP是否安装天线：-目测检查AP设备是否安装了天线。-如果未安装天线，请安装天线；如果已安装天线，继续检查其他原因。3.检查信道冲突：-使用NetStumbler软件扫描信道，找出干扰较少的信道。-例如将AP的无线信道从信道11更改为信道1。4.检查AP的无线信号功率设置：-在设备上使用命令`diswlanapnameap_nameverbose`查询指定射频上当前实际的信道和功率值。-确认`ConfiguredPower(dBm)`是否设置合理，调整功率值以优化信号覆盖。5.检查其他无线设备干扰：-目测检查当前环境中是否存在其他无线设备，如微波炉等。-关闭这些设备后再尝试连接无线网络，排除干扰。6.检查用户漫游情况：-执行命令`[WX5540E-AC]diswlanclientroam-in/out/track`查看用户关联的APid。-如果频繁发生漫游，需要进行网络优化，重新调整AP发射功率或降低漫游主动性。7.检查AP的用户数和流量：-执行命令`diswlanapnameap_nameverbose`查看AP射频口的当前关联用户个数`RunningClientsCount`。-TelnetAP查看当前AP上行口的流量。-如果关联用户数过多或流量过大，限制用户数或优化流量管理。8.检查用户终端是否进入休眠模式：-检查用户终端的设置，防止其在无数据流量时自动进入休眠状态。-修改AP的beacon帧周期，建议设置为100ms。9.检查AP是否发生掉线或重启：-在AC查看日志信息，确认是否有AP掉线或重启记录。-使用命令`diswlanapnameap_nameverbose`查看AP的运行时间`UpTime`。-如果AP发生掉线或重启，查明原因并进行相应处理。10.收集信息并联系技术支持：-如果上述步骤均未解决问题，收集设备的配置文件、日志信息、告警信息。-拨打400-800-0504，协同定位处理。通过以上步骤，可以逐步排查并解决ACPING包丢包和无线用户频繁上下线的问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/16771",
+        "备注": ""
+    },
+    {
+        "序号": 525,
+        "问题现象": "：某局点无线用户反馈上网体验不佳，存在丢包现象。即使在空口质量良好的情况下（空口低于30），丢包现象仍然存在。",
+        "问题描述": "：该局点采用的是典型的AC-FitAP组网模式，使用的是2.4G频段的WA2610iAP设备。经过常规优化后，空口偶发性增高时丢包可以接受，但空口质量良好时丢包依旧存在。通过AC与终端互ping测试，确认丢包问题主要发生在AC到终端之间的传输路径上。进一步排查有线侧，发现AC与AP之间的通信存在偶发性的大延时，丢包率约为1%。在AP的上行口发现流量较大，且存在较多的overruns报文，单播报文每秒约为2000多，overruns报文数量持续增加。尽管AP上行口的广播报文不多，关联AP也不多，但单播报文量异常。通过抓包分析，发现AP上行口存在较多AC发给其他AP的报文，即使这些AP不属于同一个接入交换机下。即使确认抓包无误，重新抓包后问题仍然存在。检查AC的ARP和MAC表项未发现问题，但在核心设备上发现偶发性学不到个别AP的MAC地址，且受影响的AP不固定。进一步调查发现，核心设备的MAC表项已满，导致无法学习到所有AP的MAC地址。",
+        "结论": "：核心设备的MAC表项已满，导致无法正确学习到所有AP的MAC地址。当核心设备学习不到AP的MAC地址时，AC发往AP的单播报文被错误地认定为未知单播并在网络中泛洪，增加了AP上行口的流量负担。由于AP上行口流量过大，AP处理不过来，最终导致AC到AP之间的偶发性丢包问题，进而影响了无线用户的上网体验。",
+        "解决办法": "：更换核心设备，以支持更大的MAC表项容量，确保所有AP的MAC地址都能被正确学习。更换核心设备后，问题得到解决，无线用户的上网体验恢复正常。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/108478",
+        "备注": ""
+    },
+    {
+        "序号": 526,
+        "问题现象": "某局点绿洲平台上显示AC设备（型号：WX5540H，版本：5272）离线，但实际上设备可以正常使用。",
+        "问题描述": "1.网络连通性测试：-AC设备可以正常解析互联网地址，如`www.baidu.com`和`oasis.h3c.com`。-通过`telnet`测试，绿洲平台的IP地址（139.217.27.153:443和139.217.27.11880）端口都是通的。-防火墙已放行绿洲平台的相关地址及端口号。2.隧道建立检查：-通过`debuggingcloud-managementall`命令查看隧道建立过程，发现设备通过云平台认证，但显示为非法设备。3.序列号核对：-绿洲平台显示的设备序列号与AC设备实际的序列号不一致。-绿洲平台显示序列号：210235A1XXXXXX000003-AC设备实际序列号：210235A1XXXXXX0000094.绿洲平台操作日志：-设备曾在线，但因客户误操作导致设备掉线。-IRF组网环境下，主AC设备显示在线，备AC设备显示离线。-客户在绿洲平台上只添加了主AC设备，而没有同时添加备AC设备。",
+        "结论": "绿洲平台显示AC设备离线的原因是IRF组网环境下的主备切换后，备AC设备未在绿洲平台上添加。由于主AC设备掉线，备AC设备未能在平台上显示在线状态，从而导致平台显示设备离线，但实际设备可以正常使用。",
+        "解决办法": "1.添加设备时勾选IRF选项：-在绿洲平台添加设备时，需要勾选IRF选项，确保所有IRF成员设备都添加至同一分组。2.全部IRF成员设备添加至同一分组：-先添加IRF主设备，再添加备设备，确保该分组仅包含IRF成员设备。3.验证主备切换后的在线状态：-在主备切换后，检查绿洲平台上的设备在线状态，确保所有成员设备都显示在线。通过上述步骤，可以确保在IRF组网环境下，绿洲平台能够正确显示所有AC设备的在线状态。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/101821",
+        "备注": ""
+    },
+    {
+        "序号": 527,
+        "问题现象": "某新开局点的AC设备上配置了两个SSID，其中CMCC-EDU可以正常认证，但CMCC-WEB在认证过程中提示“系统繁忙请稍后”，无法成功认证。将测试账号拿到其他地方测试，可以正常认证成功。",
+        "问题描述": "在认证过程中，抓取的debug信息显示，当认证报文走到type=2时，AC返回errcode=3。进一步收集的debug信息表明，Radius服务器的key配置错误，导致认证失败。",
+        "结论": "问题的原因在于AC和Radius服务器之间的key配置不一致，导致认证报文在type=2阶段出现错误码3，进而无法完成Portal认证。",
+        "解决办法": "1.修改AC和Radius服务器两边的key，确保它们一致。2.确认AC与第三方服务器对接时，两边的配置（尤其是key、nas-ip等参数）正确无误。3.重新进行认证测试，确认问题是否解决。其他建议在配置AC与第三方服务器对接时，务必仔细核对所有相关参数，确保配置的一致性和准确性。定期检查和维护配置，以防止因配置错误导致的认证问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/8504",
+        "备注": ""
+    },
+    {
+        "序号": 528,
+        "问题现象": "WX5500X设备与核心交换机对接时，光口无法正常up。",
+        "问题描述": "设备信息：WX5500X，版本5463P01。故障现象：光口连接核心交换机后，状态始终为down。尝试操作：1.尝试使用`shutdown`和`undoshutdown`命令恢复，但无效。2.尝试强制设置双工速率，但无效。3.尝试切换10G和40G光口，但无效。4.AC设备之间互联的光口可以正常up，SW设备之间互联的光口也可以正常up。",
+        "结论": "经过排查，发现现场使用的光模块型号不在WX5500X的光模块支持列表中，这是导致光口无法up的主要原因。",
+        "解决办法": "更换光模块：根据WX5500X的安装指导，更换为符合要求的光模块型号。确认光模块支持情况：参考H3C官方文档，确保使用的光模块型号与设备兼容。检查收发光状态：使用`distransceiverdiagnosisinterface`命令确认接口的收发光状态是否正常，如果异常，可以进一步检查光模块真伪或进行光纤替换测试。参考文档WX5500X安装指导：https://www.h3c.com/cn/d202302/1785077300050.htm#Toc124952581发表时间2023-05-15评价该案例对您是否有帮助？有用无用若您有关于案例的建议，请反馈：建议反馈",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/218719",
+        "备注": ""
+    },
+    {
+        "序号": 529,
+        "问题现象": "在某局点启用WIPS（WirelessIntrusionPreventionSystem）反制功能后，现场配置了信任MAC地址的合法AP被错误地识别为非法AP，并被反制。",
+        "问题描述": "1.WIPS配置：-配置了两条AP分类规则：-`ap-classificationrule1ssidnotequalH3CWiFi`：将SSID不等于\"H3CWiFi\"的AP识别为非法AP，严重级别为100。-`ap-classificationrule2ssidequalH3CWiFi`：将SSID等于\"H3CWiFi\"的AP识别为非法AP，严重级别为100。-配置了信任MAC地址列表，包含多个合法AP的MAC地址。-启用了非法OUI分类规则：`invalid-oui-classifyillegal`，该规则优先级高于信任MAC地址。2.反制记录：-在AC上查看反制记录，发现多个信任MAC地址的AP被识别为非法AP，并处于活跃状态。",
+        "结论": "问题的根本原因在于配置了`invalid-oui-classifyillegal`规则，该规则将所有未导入的OUI（OrganizationallyUniqueIdentifier）的设备识别为非法设备，且优先级高于信任MAC地址配置。因此，即使合法AP的MAC地址在信任MAC地址列表中，由于其OUI未被导入，仍然被识别为非法AP。",
+        "解决办法": "1.删除非法OUI分类规则：-在AC上执行命令：`undoclassificationpolicytestinvalid-oui-classifyillegal`，删除非法OUI分类规则。2.验证配置：-重新检查WIPS配置，确保信任MAC地址列表中的AP不再被误识别为非法AP。3.导入信任OUI列表（可选）：-如果确实需要使用非法OUI分类规则，可以导入信任的OUI列表，确保合法AP的OUI被识别为信任OUI。通过上述步骤，合法AP将能够正常工作，而非法AP则会被正确识别和反制。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/211946",
+        "备注": ""
+    },
+    {
+        "序号": 530,
+        "问题现象": "在某局点的网络中，WAP722S无线接入点（AP）采用二层注册方式连接至MSG360-10P无线控制器，但个别AP无法成功注册上线。",
+        "问题描述": "1.首次注册掉电闪断：在首次注册过程中，出现问题的AP经历了掉电闪断。2.日志打印信息：通过串口登录AP后，发现如下日志打印信息：```ExceptionNumber:10ExceptionName:ReservedinstructionexceptionExceptionInstruction:0x84000000ExceptionStackBase:0x875fb628BootWareRunAddress:0x87a00000...```3.版本差异：成功注册的AP的BootWare版本为“Version7.07”，而无法注册的AP的BootWare版本为“Version1.05”。",
+        "结论": "问题的根源在于首次注册过程中AP的掉电闪断，导致AP的Flash中残留了一些特殊数据，这些数据在常规格式化过程中无法被清除。因此，AP无法自动升级BootWare，从而导致注册失败。",
+        "解决办法": "1.手动升级BootWare：将问题AP的BootWare版本手动升级至V7。2.格式化Flash：格式化AP的Flash存储。3.导入新版本：将AP的软件版本手动升级至对应的V7版本。4.重新注册：将AP重新插到接入交换机的接口上，AP应能正常注册并上线。通过上述步骤，可以解决个别WAP722SAP无法注册MSG360-10P的问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/98324",
+        "备注": ""
+    },
+    {
+        "序号": 531,
+        "问题现象": "：某局点使用WX3540H作为AC，WA5320作为AP。配置完成后，AP能够正常上线，但很快掉线，AC上日志提示邻居超时。",
+        "问题描述": "：AC上日志显示：`%Oct2910:34:36:4382020FHSU-AC3540-01CWS/4/CWSAPDOWN:CAPWAPtunneltoAPWA5320-01wentdown.Reason:Neighbordeadtimerexpired.``%Oct2910:34:36:4412020FHSU-AC3540-01APMGR/6/APMGRAPOFFLINE:APFHSU-JR-WA5320-01wentoffline.StatechangedtoIdle.`",
+        "结论": "：问题的原因在于下发的MAP文件配置中，将VLAN1从Trunk端口的允许通过列表中移除。由于AP上的intvlan1虚接口需要通过VLAN1进行通信，不允许VLAN1通过导致该虚接口down掉，进而引起AP掉线。",
+        "解决办法": "：修改MAP文件配置，删除`undoporttrunkpermitvlan1`命令，允许VLAN1通过Trunk端口。具体配置如下：```plaintextsystem-viewvlan2801quitvlan21descriptionOAquitinterfaceGigabitEthernet1/0/1portlink-typetrunkporttrunkpermitvlan212801undoporttrunkpermitvlan1```删除最后一行`undoporttrunkpermitvlan1`后，问题得到解决。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/132013",
+        "备注": ""
+    },
+    {
+        "序号": 532,
+        "问题现象": "在张润大楼和集创大楼间进行无线漫游测试时，使用同一组AC纳管的不同位置AP。测试终端从集创大楼SSID：ZEKU-OFFICE漫游到张润大楼同一SSID时，终端无法获取新的IP地址，导致无法访问网络。在AC上查询显示，该终端仍保留集创大楼的IP地址。",
+        "问题描述": "组网环境：张润大楼和集创大楼均覆盖无线网络，AP由同一组AC管理，AC两台做堆叠。测试终端：MAC地址为XXXX-25EC-8560。漫游过程：-11:33，终端从集创大楼的AP（SH-JC-5F-11）漫游到同一栋楼内的另一AP（SH-JC-5F-11），在线时间8分钟。-11:41，终端从集创大楼的AP（SH-JC-5F-11）漫游到张润大楼的AP（SH-ZR-1F-04），但此时终端无法获取新的IP地址，仍显示集创大楼的IP地址。-终端需连接其他SSID，再重连SSID：ZEKU-OFFICE才能正常使用网络。",
+        "结论": "漫游记录与日志对应：根据日志和漫游记录，终端的漫游过程记录与实际操作时间点一致，AC未能正确感知终端下线，导致终端表项未老化。客户端未主动下线：由于终端在漫游过程中未主动下线，AC未收到终端的下线报文，因此认为终端始终在线。尽管两地相距较远，但由于客户端空闲时间未达到3600秒，AC未检测到终端下线，从而未清掉缓存。VLAN和IP地址未变化：终端在漫游过程中，VLAN和IP地址未发生变化，导致新位置的业务VLAN与终端的VLAN不匹配，造成网络不通。",
+        "解决办法": "1.关闭三层漫游特性：-命令：`clientcacheaging-time0`-说明：关闭三层漫游特性后，终端在从AP1漫游到AP2时，会重新获取VLAN信息，从而避免因VLAN不匹配导致的网络不通问题。2.修改客户端空闲时间：-命令：`clientidle-timeout<timeout>`（在AP视图或AP组视图下配置）-说明：将客户端空闲时间设置为一个更短的值（如2000秒），以确保在终端长时间无报文交互时，AP能够及时与终端断开连接，从而清掉终端的缓存表项，使其在重新连接时能够获取正确的VLAN和IP地址。-配置示例：-AP视图：`<sysname>system-view[sysname]wlanapap1modelWA6320[sysname-wlan-ap-ap1]clientidle-timeout2000`-AP组视图：`<Sysname>system-view[Sysname]wlanap-groupgroup1[Sysname-wlan-ap-group-group1]clientidle-timeout2000`通过上述方法之一，可以解决终端在三层漫游过程中无法获取正确VLAN和IP地址的问题，确保漫游后的网络访问正常。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/192046",
+        "备注": ""
+    },
+    {
+        "序号": 533,
+        "问题现象": "在某局点，为了将大量v7版本的AP降级到v5版本，通过命令打开了v5版本的WX3024E的CAPWAP隧道。然而，在AP降级成功后，尝试关闭AC的CAPWAP隧道时失败。关闭命令执行后，设备重启，但CAPWAP隧道仍然开启，并继续响应CAPWAP报文。",
+        "问题描述": "客户在操作过程中，使用了以下命令来关闭CAPWAP隧道：```[3024E-hidecmd]fpl-diagdrvcapwapset0```然而，重启设备后，CAPWAP隧道并未关闭，设备仍能响应CAPWAP报文。通过实验室复现，发现操作步骤和命令本身没有问题。进一步检查客户的操作记录，发现命令前多了一个空格，怀疑这是导致关闭失败的原因。",
+        "结论": "问题的原因在于客户在输入关闭CAPWAP隧道的命令时，命令前多了一个空格。这个额外的空格导致命令无法正确执行，从而使得CAPWAP隧道未能关闭。在严格遵守研发提供的操作步骤和命令格式后，问题得以解决。",
+        "解决办法": "1.确保命令格式正确：关闭CAPWAP隧道的命令前不应有多余的空格。2.重新执行关闭命令：让客户严格按照以下命令格式重新操作：```[3024E-hidecmd]fpl-diagdrvcapwapset0```3.保存配置并重启设备：执行命令后，保存配置并重启设备：```[3024E-hidecmd]save<3024E>reboot```通过以上步骤，CAPWAP隧道成功关闭，问题得到解决。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/9085",
+        "备注": ""
+    },
+    {
+        "序号": 534,
+        "问题现象": "无线终端（如安卓设备）接入无线网络后，无法自动弹出portal页面。只有当用户手动打开浏览器或手动输入IP或域名时，才能弹出portal页面并进行登录。",
+        "问题描述": "1.组网及说明：-组网结构为：STA云AP或STAAPAC。-无线终端（安卓设备）接入网络后，会发出大量的探测报文，包括探测微软服务和谷歌服务的报文。-这些探测报文理论上可以触发portal重定向动作。2.告警信息：-无明显告警信息。3.日志分析：-在设备（云AP或AC）上启用`debugportalall`后，日志显示一些访问HTTPS的流量匹配到`Rule1-Permit`。-具体日志示例如下：```[Outbound]permitthepacketontheoutbound{MatchRes=[Rule1-Permit]}.IfName=WLAN-BSS1/0/3,PortName=WLAN-BSS1/0/3,Vlan=1,DstMAC=725e-3250-4ca6,SrcIP=XX.X.223.165,DstIP=192.168.1.8,L4Protocol=6,SrcPort=443,DstPort=54776,VrfIndex=0```4.FreeRule配置：-配置了多个`free-rule`，其中一些规则放行了特定的域名和IP地址。-配置示例如下：```portalfree-rule501destinationip114.114.114.114255.255.255.255portalfree-rule502destinationipanyudp53portalfree-rule503destinationipanytcp53portalfree-rule504destinationipanytcp5223portalfree-rule520destinationoasisauth.h3c.comportalfree-rule521destinationshort.weixin.qq.comportalfree-rule522destinationmp.weixin.qq.comportalfree-rule523destinationlong.weixin.qq.comportalfree-rule524destinationdns.weixin.qq.comportalfree-rule525destinationminorshort.weixin.qq.comportalfree-rule526destinationextshort.weixin.qq.comportalfree-rule527destinationszshort.weixin.qq.comportalfree-rule528destinationszlong.weixin.qq.comportalfree-rule529destinationszextshort.weixin.qq.comportalfree-rule530destinationisdspeed.qq.comportalfree-rule531destination*.*portalfree-rule532destinationwifi.weixin.qq.comportalfree-rule533destination*.*portalfree-rule534destination*.*portalfree-rule535destination*.*portalfree-rule536destination*.*portalfree-rule537destination*.*portalfree-rule538destination*.*portalfree-rule539destination*.*portalfree-rule540destination*.*portalfree-rule541destination*.*portalfree-rule542destination*.*portalfree-rule543destination*.*portalfree-rule544destination..*portalfree-rule545destinationscontent-lax3-2.*.*portalfree-rule546destinationscontent-hkg3-1.*.*portalfree-rule547destination..*portalfree-rule548destination..*portalfree-rule549destination*.*portalfree-rule550destination*.*portalfree-rule551destination*.*portalfree-rule552destination*.*portalfree-rule553destination*.*portalfree-rule554destination*.*```5.SafeRedirect配置：-启用了`portalsafe-redirect`功能，配置了多种用户代理（User-Agent）。-配置示例如下：```portalsafe-redirectenableportalsafe-redirectmethodgetpostportalsafe-redirectuser-agentAndroidportalsafe-redirectuser-agentCFNetworkportalsafe-redirectuser-agentCaptiveNetworkSupportportalsafe-redirectuser-agentChromeportalsafe-redirectuser-agentFirefoxportalsafe-redirectuser-agentMicroMessengerportalsafe-redirectuser-agentMicrosoftNCSIportalsafe-redirectuser-agentMosillaportalsafe-redirectuser-agentSafariportalsafe-redirectuser-agentWeChatportalsafe-redirectuser-agentandroidportalsafe-redirectuser-agentiPhoneportalsafe-redirectuser-agentmicromessenger```",
+        "结论": "通过日志分析，发现无线终端（安卓设备）在接入网络后发出的探测流量匹配到了`free-rule`中的某些规则，特别是`*.*`这样的通配符规则，导致这些流量被放通，未能触发portal重定向。因此，安卓设备无法自动弹出portal页面。",
+        "解决办法": "1.删除多余的`free-rule`：-删除不必要的`free-rule`，特别是那些使用通配符`*.*`的规则。-例如：```noportalfree-rule531noportalfree-rule533noportalfree-rule534noportalfree-rule544noportalfree-rule547noportalfree-rule548```2.验证配置：-删除多余规则后，重新检查`free-rule`配置，确保只有必要的流量被放通。-使用`displayportaldnsfree-rule-host`命令查看域名和IP的对应关系，确保没有误配置。3.测试效果：-重新接入无线网络，测试无线终端（安卓设备）是否能够自动弹出portal页面。-确认问题已解决。通过上述步骤，问题得以解决，终端设备在接入WIFI后能够自动弹出portal页面。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/226218",
+        "备注": ""
+    },
+    {
+        "序号": 535,
+        "问题现象": "中国移动WLAN用户在使用各省个性化的二级Portal服务时，遇到跨省漫游和国际漫游用户的认证问题，导致部分业务无法正常使用。",
+        "问题描述": "1.架构问题：-中国移动WLAN用户认证平台采用集团和省两级架构，其中集团一级Portal和Radius服务器集中部署，省二级Portal和Radius服务器各自集中部署。-山东、广东等省份已完全弃用集团的一级Portal（除国际漫游业务外），由省内二级Portal负责所有WLAN业务的Portal页面推送。2.多域需求：-省内PortalServer需要区分外省漫游用户和本省用户，并分别上送一级和二级Radius进行认证。-本省用户账号加wlan-moni-jituan后缀，认证时去掉后缀；外省漫游用户和国际漫游用户账号不加后缀，认证时保留后缀。3.配置问题：-AC设备需要支持多域功能，根据用户名@后缀域匹配认证域。-需要配置AC设备的Portal服务器、认证域和RADIUS服务器，确保不同类型的用户能够正确地被认证和计费。",
+        "结论": "中国移动WLAN二级Portal和多域应用的实现需要AC设备支持多域功能，并通过配置Portal服务器、认证域和RADIUS服务器来确保不同类型的用户（本省用户、外省漫游用户、国际漫游用户）能够正确地进行认证和计费。具体配置包括强制重定向、用户名@后缀域匹配、全局缺省认证域等。",
+        "解决办法": "1.强制重定向到二级Portal服务器：-配置AC设备的Portal服务器，使其默认重定向到省内二级Portal服务器。-命令示例：```plaintextportalservercmccipXXurlhttp://XX/wlan/index.phpserver-typecmccportalserversshandongipXXurlhttp://XX:8001/showlogin.doserver-typecmccportalfree-rule0sourcewlan-ssidCMCC-AUTOdestinationanyportaldevice-idXXinterfaceVlan-interface1101descriptionGateWayofCMCCandCMCC_AUTOipaddressXXvrrpvrid2virtual-ip10.198.0.1vrrpvrid2priority120portalserversshandongmethoddirectportalnas-typewirelessportalbackup-group1portalnas-ipXXXaccess-userdetecttypearpretransmit3interval50```2.配置用户名@后缀域和缺省认证域：-配置省内AAA认证域，使用特定的@后缀名进行匹配。-配置集团AAA认证域，作为缺省认证域。-命令示例：```plaintextdomainwlan-moni-jituanauthenticationportalradius-schemewlan-shengneiauthorizationportalradius-schemewlan-shengneiaccountingportalradius-schemewlan-shengneiaccess-limitdisablestateactiveidle-cutenable15self-service-urldisabledomainwlan-jituanauthenticationportalradius-schemewlan-jituanauthorizationportalradius-schemeXXaccountingportalradius-schemeXXaccess-limitdisablestateactiveidle-cutenable15self-service-urldisable```3.配置省内和集团RADIUS：-配置省内RADIUS服务器，认证时去掉账号后缀。-配置集团RADIUS服务器，认证时保留账号后缀。-命令示例：```plaintextradiusschemewlan-shengneiserver-typeextendedprimaryauthenticationXXprimaryaccountingXXkeyauthenticationcipher$c$3$nH3DI7gxrRRbVjEB+lUxm5n90btzjijwJrrZkeyaccountingcipher$c$3$Bg3tVMVBgSR2Xw26GtPZ1VzGRzLcbqyU7cQiuser-name-formatwithout-domainnas-ipXXretrystop-accounting10radiusschemewlan-jituanserver-typeextendedprimaryauthenticationXXprimaryaccounting221.176.1.1381646keyauthenticationcipher$c$3$PwfsSd1eBsbCMOKsxroZcZi9g34g6us87gXtkeyaccountingcipher$c$3$nMF7zBCyKiJ9/Ix/szEDM48AJiDFiLIUjh2iuser-name-formatkeep-originalnas-ipXXretrystop-accounting10```4.指定全局缺省认证域：-配置全局缺省认证域，确保当用户名@后缀域不存在或无法匹配时，能够正确地进行认证。-命令示例：```plaintextdomaindefaultenablewlan-jituandomainif-unknownwlan-jituan```5.域优先级说明：-AC设备对认证用户的域选择有优先级顺序，具体如下：1.全局根据SSID和AP热点指定使用的Portal认证域。2.三层接口下强制Portal认证域。3.用户名携带的“@后缀名”匹配域。4.全局domaindefault。-如果指定的域在AC全局没有定义，则走全局domainif-unknown配置；如果domainif-unknown没有配置，则认证失败。-命令示例：```plaintextdomainif-unknownwlan-jituan```通过以上配置，AC设备能够正确地处理不同类型的用户认证请求，确保中国移动WLAN业务的正常运行。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/2351",
+        "备注": ""
+    },
+    {
+        "序号": 536,
+        "问题现象": "：某局点使用WX2560H结合云简网络进行固定账号的Portal认证时，现场不定时出现无法弹出正常的Portal页面。",
+        "问题描述": "：1.报错URL不是云简网络的标准URL（http://oasisauth.h3c.com/portal/protocol），这表明现场可能存在多个Portal认证服务。2.检查现场配置后发现，确实存在两个服务模板都使能了Portal认证，并且都使用了相同的VLAN（VLAN103）。3.当终端设备首次接入SSID1并完成Portal认证后，若切换到SSID2，由于AC上仍保留该终端的Portal表项且VLAN和IP地址未变，导致无法弹出Portal页面，进而无法在SSID2上进行认证。",
+        "结论": "：现场配置了两个使能Portal认证的服务模板，并且使用了相同的VLAN，导致用户在切换SSID后无法重新进行Portal认证。这是因为AC上保留了用户已认证的表项，使得用户在新的SSID上无法重新认证。",
+        "解决办法": "：1.在AC上配置命令`portaluser-logoffssid-switchenable`，开启无线Portal用户SSID切换后的强制下线功能。2.该命令的作用是：当用户从一个SSID切换到另一个SSID时，设备会强制用户下线并自动删除用户信息，从而允许用户在新SSID上重新进行Portal认证。3.配置该命令后，故障现象消失，用户可以正常在不同SSID之间切换并完成Portal认证。希望这个总结对您有帮助。如果您有任何其他问题或需要进一步的解释，请随时告诉我。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/139937",
+        "备注": ""
+    },
+    {
+        "序号": 537,
+        "问题现象": "某局点使用H3CWX2560X设备进行dot1x认证时，终端设备在输入用户名和密码后无法成功加入网络。",
+        "问题描述": "组网方式：AC旁挂核心交换机，核心交换机下联接入交换机，接入交换机下联AP。认证模式：本地转发，dot1x中继方式。配置检查：-服务模板配置正常。-AC到RADIUS服务器网络可达。-NAS-IP配置正确。-配置命令如下：```plaintextwlanservice-template110ssidXXXvlan110clientforwarding-locationapvlan110akm-modedot1xpreshared-keypass-phrasecipherXXXcipher-suiteccmpsecurityiersnclient-securityauthentication-modedot1xdot1xdomainXXXservice-templateenabledot1xauthentication-methodeapradius-schemeXXXprimaryauthenticationX.X.X.XprimaryaccountingX.X.X.XkeyauthenticationcipherXXXkeyaccountingcipherXXXuser-name-formatwithout-domainnas-ipX.X.X.X```调试信息：-在AC向RADIUS服务器发送认证请求报文后，服务器立即回复了拒绝报文。-调试命令输出：```plaintextDec1720:22:32:3142021H3CRADIUS/7/PACKET:User-Name=\"TEST_WF01\"Service-Type=Framed-UserFramed-Protocol=PPPNAS-Identifier=\"H3C\"NAS-Port=16777326NAS-Port-Type=Wireless-802.11NAS-Port-Calling-Station-Called-Station-H3c-Nas-Startup-Timestamp=1638624964Acct-Session-H3c-User-Vlan-Id=110EAP-Message=0x0201000e01544553545f57463031Message-Authenticator=0x00000000000000000000000000000000Framed-MTU=1450H3c-Ip-Host-Addr=\"0.0.0.0da:7d:72:ef:b8:64\"NAS-IP-Address=X.X.X.XH3c-Product-*Dec1720:22:32:3212021H3CRADIUS/7/PACKET:EAP-Message=0x04010004Message-Authenticator=0x4d960095e1ca189a001dbf1240b18ad0*Dec1720:22:32:3212021H3CRADIUS/7/PACKET:0365002c75c0bdcf4bc5a87381d65b2db5f272614f060401000450124d960095e1ca189a001dbf1240b18ad0```",
+        "结论": "问题的根本原因在于RADIUS服务器侧的配置或状态存在问题，导致服务器在接收到AC的认证请求后立即回复了拒绝报文。",
+        "解决办法": "联系服务器侧排查：建议现场联系RADIUS服务器侧进行详细排查，确认服务器配置是否正确，以及服务器状态是否正常。使用备服务器：后续现场反馈使用备用RADIUS服务器后，认证成功，问题得到解决。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/187676",
+        "备注": ""
+    },
+    {
+        "序号": 538,
+        "问题现象": "1台WA2620X-AGNP设备在启动后，停留在“Systemisstarting...”状态，无法继续正常启动。",
+        "问题描述": "该设备在升级过程中由于误操作，将B71版本的`wa2600_fit.bin`文件错误地升级到了设备的FLASH内。根据归档ID号KMS-20434的说明，WA2620X-AGNP设备不支持B71版本的固件。这一误操作导致了设备的基本段和扩展段的BootRom全部损坏，从而引发了上述启动故障。",
+        "结论": "误升级不兼容的固件版本（B71）到WA2620X-AGNP设备的FLASH内，导致BootRom损坏，设备无法正常启动。",
+        "解决办法": "1.进入Bootshim菜单：使用超级终端连接设备，启动设备后，按`Ctrl+S`进入Bootshim菜单。2.进入命令行：在Bootshim菜单中，按`Ctrl+A`进入命令行模式，输入密码`H3C-OM`。3.切换波特率并传输文件：输入命令`xmodebed00000`，将超级终端的波特率切换至115200，然后传输文件`btwapwa2600lsq4240v1.22.bin`。4.重启并升级基本段：文件传输完成后，重启设备，按`Ctrl+D`进入基本段升级模式，通过串口升级基本段程序，选择文件`btwapwa2600lsq4240v1.22.bin`。5.升级扩展段程序：基本段升级完成后，再次重启设备，按`Ctrl+B`进入扩展段菜单，按`Ctrl+F`格式化文件系统。6.格式化后重新下载固件：格式化完成后，重新下载B96版本的固件文件，成功后设备即可恢复正常启动和使用。附件`btwapwa2600lsq4240v1.22.bin``cn5010BtmV1.25.app`发布与修订信息该案例最初发表于2012-06-04。作者在2019-06-09对此案例进行了修订。您的评价该案例对您是否有帮助：有用/无用若您有关于案例的建议，请反馈：建议反馈希望以上总结能帮助您更好地理解并解决WA2620X-AGNP设备因误升级导致的BootRom损坏问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/745",
+        "备注": ""
+    },
+    {
+        "序号": 539,
+        "问题现象": "现场需要在WX2580X设备上配置Portal认证，但没有远端服务器，因此希望使用本地Portal认证功能。",
+        "问题描述": "咨询WX2580X设备的本地Portal认证功能支持的最大用户数量。",
+        "结论": "WX2580X设备的本地Portal认证最多支持配置8192个用户。",
+        "解决办法": "在WX2580X设备上配置本地Portal认证时，确保用户数量不超过8192个。如果用户数量超过这个上限，建议考虑使用远端服务器进行Portal认证。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/227804",
+        "备注": ""
+    }
+]

@@ -1,0 +1,182 @@
+[
+    {
+        "序号": 720,
+        "问题现象": "在某局点，XX服务器连接无线网络后，无法使用SADP协议搜索到连接在同一无线网络下的AVG小车。",
+        "问题描述": "正常情况下，XX服务器能够通过SADP协议管理AVG小车。但在现场配置无线网络后，XX服务器平台无法搜索到AVG小车。通过查看无线网络配置，发现AP组（wuxain）配置中有一条命令`rropanti-bmcdefault-actiondeny`，该命令拒绝AP向Radio接口发送网络中的广播和组播报文。",
+        "结论": "该问题的原因是由于配置了`rropanti-bmcdefault-actiondeny`命令，导致AP无法向Radio接口发送广播和组播报文。SADP协议依赖于链路层多播和UDP多播进行设备发现，因此该命令阻止了SADP协议的正常工作。",
+        "解决办法": "删除`rropanti-bmcdefault-actiondeny`配置命令，允许AP向Radio接口发送广播和组播报文。删除该配置后，问题得到解决，XX服务器能够正常搜索到AVG小车。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/218592",
+        "备注": ""
+    },
+    {
+        "序号": 721,
+        "问题现象": "某局点使用WX3510HAC设备对接绿洲平台时，AC设备无法正常注册到绿洲平台，且两条绿洲隧道（cmtunnel和cloud）建立异常。",
+        "问题描述": "1.公网链路检查：AC设备能够正常ping通公网地址，并解析出绿洲平台的域名，表明公网链路没有问题。2.隧道状态检查：-`cmtunnel`已经成功建立，状态为`Established`。-`cloud`隧道的状态为`Idle`，且`cloudserver`的IP地址显示为`N/A`，怀疑可能是域名解析问题。3.配置固定域名地址：尝试配置固定的域名地址后，隧道仍然不能正常建立。4.防火墙检查：现场公网出口为一台深信服的防火墙，查看防火墙上的URL日志发现有`lvzhoudev.h3c.com`域名的拒绝记录，怀疑防火墙拒绝了绿洲平台的流量。",
+        "结论": "问题的根本原因是深信服防火墙拒绝了绿洲平台的流量，导致AC设备无法通过`lvzhoudev.h3c.com`域名与绿洲平台正常交互，进而无法成功建立`cloud`隧道和注册到绿洲平台。",
+        "解决办法": "1.放通防火墙规则：在深信服防火墙上放通`http://lvzhoudev.h3c.com`域名的流量。2.重新检查隧道状态：放通防火墙规则后，重新检查AC设备的隧道状态，确认`cloud`隧道是否正常建立。3.AC注册：确认隧道建立成功后，AC设备成功注册到绿洲平台。备注在处理AC注册到绿洲平台的问题时，首先应检查设备到公网的链路是否正常，绿洲平台域名能否正常解析。其次，查看`cmtunnel`和`cloud`两条隧道的状态，尝试配置固定域名地址。注意，绿洲平台的实现机制和域名可能有所更新，建议参考最新的《绿洲上线及认证业务开局指导书V2.1》进行操作。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/16985",
+        "备注": ""
+    },
+    {
+        "序号": 722,
+        "问题现象": "在AC双链路主备切换后，终端设备在备AC上无法完成Portal认证。尽管设备能够弹出Portal页面，但在用户输入账号密码后，会出现“向设备发送请求超时”的提示。",
+        "问题描述": "1.组网及说明：-主AC：10.254.150.221-备AC：10.254.150.220-对接IMC（IdentityManagementCenter），现场开局，进行主备倒换测试Portal认证。2.具体问题：-主备倒换后，终端设备在备AC上无法成功认证。-设备能够弹出Portal页面，但用户输入账号密码后，提示“向设备发送请求超时”。",
+        "结论": "1.过程分析：-通过ACdebug查看，发现仅有重定向报文，理论上重定向后终端Portal弹窗，终端输入账号密码后，Portal服务器应该向AC发送req_info报文。-协调业软二线排查服务器日志，发现服务器收到的https请求是由主AC（10.254.150.221）发送的，而非备AC（10.254.150.220）。2.问题原因：-备AC在Portal重定向时未携带nasip参数，导致Portal服务器仍然向主AC发送请求，而非备AC。",
+        "解决办法": "1.配置修改：-在备AC的PortalWeb服务器配置下（`portalweb-server1`），添加`url-parameternasipvalue10.254.150.220`，确保Portal重定向时携带备AC的IP地址。2.注意事项：-备AC的Portal认证手动输入URL无法成功认证，必须通过终端自动弹出的Portal认证页面才能携带nasip参数。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/225972",
+        "备注": ""
+    },
+    {
+        "序号": 723,
+        "问题现象": "某局点使用AC型号WX3520h，版本R5433P03，对接第三方服务器进行1x认证。当终端手动删除合规软件后，重新获取IP地址时，服务器不再回复计费报文，导致终端无法获取正常的x.71地址（合规通过地址），而只能获取y.7地址（合规不通过地址）。",
+        "问题描述": "客户的第三方服务器具有安全合规检测功能，终端在通过合规检查后会获取x.71地址（属于vlan103），合规检查不通过时会获取y.7地址（属于vlan112）。当终端手动删除合规软件后，服务器踢终端下线，终端重新获取地址时，AC仍回复account-start报文中的IP地址为x.71，而实际上终端已经获得了y.7地址。因此，第二次COA（ChangeofAuthorization）请求时，请求的地址仍为x.71，AC回复“没有此会话”，导致终端无法重新通过合规检查获取正常的x.71地址。",
+        "结论": "问题的根本原因是AC在处理终端重新认证时，没有及时更新终端的IP地址信息，导致account-start报文中的IP地址与终端实际获得的IP地址不一致。这使得后续的COA请求无法正确匹配到会话，从而导致计费报文无法正常回复。",
+        "解决办法": "在无线服务模板下，开启IPv4地址变化客户端的重新计费功能，使AC能够及时更新终端的IP地址信息，并正确处理后续的COA请求。具体配置命令如下：```plaintextsystem-view[Sysname]wlanservice-templateservice1[Sysname-wlan-st-service1]client-securityaccounting-restarttriggeripv4```",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/172291",
+        "备注": ""
+    },
+    {
+        "序号": 724,
+        "问题现象": "无法将5台WA5320XS-LIAP从FIT模式转换为Cloud模式。",
+        "问题描述": "1.组网及背景：5台WA5320XS-LIAP原本以FIT模式连接到AC运行。2.转换过程：尝试将AP从FIT模式转换为Cloud模式，但在上传wa5300_oasis.ipe文件时，因AP内部Flash空间不足导致上传失败。3.链路质量：AP与FTP服务器之间的链路质量较差，上传文件过程中AP在文件传输达到50%左右时发生重启。4.重启后问题：AP重启后无法加载Bootware操作界面，也无法通过Telnet进行操作，且该局点不通公网，无法通过云简连接获取版本并切换为Cloud模式。",
+        "结论": "1.Flash空间不足：WA5320XS-LIAP的内部Flash空间不足以直接上传和解压wa5300_oasis.ipe文件。2.保护性重启：AP在FIT模式下超过10分钟未在AC上线时会进行保护性重启，导致版本上传中断。3.无法进入Bootware：该款AP没有Console口，无法通过常规方法进入Bootware界面进行版本转换。",
+        "解决办法": "1.获取IP地址：确保故障AP可以通过DHCPServer获取IP地址。2.从AC下载FIT版本：使AP和AC可达，让AP从AC下载FIT版本，确保AP能正确加载到Bootware操作界面。3.关闭保护性重启：配置命令关闭保护性重启，避免AP在上传过程中因超时而重启。4.使用更大Flash空间的AP解压文件：-总部工程师下载相同版本的wa5300_oasis.ipe文件，并使用Flash空间更大的WA5530AP进行boot-loader解压，得到两个bin文件。-将这两个bin文件导出并压缩后发给现场工程师。5.上传bin文件：删除现场WA5320XS-LIAP的wa5300_oasis.ipe文件，上传两个bin文件，并通过MD5校验确保文件无误。6.执行转换命令：-在WA5320XS-LIAP上执行命令`[AP]ap-modecloud`，选择“y”后AP会自动重启并加载Cloud模式。-注意：WA5320XS-LIAP没有Console口，因此必须在FIT模式下运行R2446P08及以上版本，确保合入了`[AP]ap-modecloud`命令，才能顺利进行版本转换。通过以上步骤，最终成功将WA5320XS-LIAP从FIT模式转换为Cloud模式。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/222396",
+        "备注": ""
+    },
+    {
+        "序号": 725,
+        "问题现象": "某局点使用WA4320-TS无线接入设备注册AC时，设备无法获取IP地址，导致AP无法成功注册到无线控制器上。",
+        "问题描述": "1.设备配置检查：无线AP的模式设置为瘦模式，VLAN1接口的DHCP配置为默认，且DHCP服务器配置无误。2.调试信息收集：在无线AP上启用`debugdhcp`，显示AP正在正常发送DHCP发现报文。3.交换机抓包：接入交换机（5130S-52P-EI）可以接收到AP发送的DHCP发现报文。4.DHCP服务器调试：DHCP服务器记录显示接收到DHCP发现报文并正常响应了DHCPOffer报文。5.链路检查：交换机使用的百兆光模块正常识别，而无线AP使用的百兆光模块无法正常识别，导致接口未能正常up。",
+        "结论": "问题出现在无线AP使用的百兆光模块上，由于出厂版本的限制，AP的接口未能正常up，但仍然能发送广播报文（如DHCP发现报文），这导致了AP无法获取到DHCP服务器分配的IP地址，进而无法注册到无线控制器。",
+        "解决办法": "1.版本升级：将无线控制器的AP版本导入到该AP上，升级AP的软件版本。2.验证结果：升级后，AP接口可以正常up，并且能够成功获取IP地址，从而实现注册到无线控制器。建议反馈在处理类似问题时，应仔细检查每一个细节，不能仅凭终端能够发送广播报文就断定链路或转发没有问题。特别是对于硬件模块的识别状态和接口状态，应进行详细排查。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/128131",
+        "备注": ""
+    },
+    {
+        "序号": 726,
+        "问题现象": "某局点在配置S5560X-30C-EI（融合AC）的MACPortal认证后，终端设备无法获取IP地址。",
+        "问题描述": "1.组网环境：融合AC通常使用本地转发模式，新版本已默认实现本地转发功能。2.问题复现：去掉Portal认证后，终端可以正常获取IP地址。这表明问题出在Portal认证的配置上。3.配置分析：-服务模板中配置了MAC认证和Portal认证。-`client-securityignore-authentication`命令被启用，该命令适用于802.1X认证和通过RADIUS服务器进行的远程MAC地址认证+Portal认证的用户。-由于该命令忽略了MAC认证的结果，导致设备无法正确进入guest-vlan，从而终端设备无法获取IP地址。",
+        "结论": "问题的根本原因是由于配置了`client-securityignore-authentication`命令，导致设备在MAC认证失败时忽略了认证结果，无法正确进入guest-vlan，进而影响了终端设备的IP地址获取。根据MACPortal认证的原理，MAC认证失败后应进入guest-vlan进行Portal认证，而该命令破坏了这一流程。",
+        "解决办法": "1.删除`client-securityignore-authentication`命令：```shell[H3C-wlan-st-1]undoclient-securityignore-authentication```2.注意融合AC新版本默认做了本地转发：-执行命令提示不支持正常的操作：```shell[H3C-wlan-st-1]undoservice-templateenable[H3C-wlan-st-1]clientforwarding-locationapTheoperationisnotsupported.```3.理解MACPortal认证的实现过程：-用户的业务VLAN开启MAC认证和guest-vlan功能。-用户第一次上线时进行MAC认证，如果认证失败则进入guest-vlan。-在guest-vlan中进行Portal认证，认证成功后设备会触发用户重关联。-重关联时进行MAC认证，如果此时MAC认证通过，用户可以无感知地访问网络资源。通过上述步骤，终端设备可以正常获取IP地址并进行Portal认证。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/122625",
+        "备注": ""
+    },
+    {
+        "序号": 727,
+        "问题现象": "在高速公路信息化建设中，除了常规的路况监控和测速外，视频互动会议、故障处理和应急通信、道路维护通信以及其他多媒体应用的需求日益增加。然而，高速公路的特殊环境（如行车速度快、公路里程长、特殊路段多）给无线网络的覆盖带来了挑战。",
+        "问题描述": "1.高带宽需求：高速公路维护和执法活动中，需要大量数据传输，如视频会议、远程医疗指导、故障录入系统等。2.部署成本高：如果按照普通终端接入的标准实现全覆盖，投入成本会很高。3.特殊路段覆盖：高速公路的不同路段（如收费站、匝道、隧道、高架段等）对无线网络的覆盖要求不同，需要特别关注。4.信号稳定性：高速公路上的无线信号需要保证高稳定性，尤其是在紧急情况下。",
+        "结论": "采用MLSP（Multi-LinkSinglePath）技术和CPE（CustomerPremisesEquipment）设备可以有效解决高速公路无线网络覆盖的问题。MLSP技术通过在路旁部署多个AP（AccessPoint）并在车上安装车载MR（MobileRouter）设备，实现高带宽和高稳定性的数据传输。CPE设备则可以提升终端的信号能力，适合单体终端设备的通信需求。",
+        "解决办法": "1.MLSP技术部署：-路旁AP部署：采用2.4G频段，选择合适增益的定向天线，部署在路的一侧或两侧。AP间的距离一般为1km~2km。-车载MR安装：在车体前部和后部相向安装两个天线，采用功分方式确保与多个路旁AP建立连接，一条为主链路，其他为备份链路。-设备规范：确保相关馈线、支架、数据线、电源线等工程附件规范部署。2.CPE终端接入：-应用场景：适合单体终端设备通信，如故障信息采集、采访报道、救援辅助等。-设备配置：结合CPE设备进行无线接入，提升终端信号能力，保证使用效果。3.特殊路段覆盖：-高速收费站：部署多个AP，提供工作人员网络接入服务、信息回传备份链路、PDA应用等。-匝道区域：尽量靠近匝道部署AP，保证信号优质覆盖，减少拥堵和事故风险。-公路隧道：在隧道内单独部署AP，重点保障应急通信和远程数据交互的需求。-公路高架段：重点关注高架段的安全性和应急保障，合理部署AP以确保信号覆盖。4.勘测准备：-工具准备：参照《无线覆盖不同类型场景勘测指导方案(1)-学校》篇章第二部分内容，准备常用的勘测工具。-现场评估：根据实际场景灵活调整部署方案，确保覆盖效果和成本效益。通过上述方案，可以有效提升高速公路无线网络的覆盖质量和稳定性，满足不同业务需求，同时降低部署成本。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/2381",
+        "备注": ""
+    },
+    {
+        "序号": 728,
+        "问题现象": "肖楚五段粉丝：0人，关注：21人",
+        "问题描述": "用户需要了解如何为WCG380系列设备上的ACG组件进行License绑定过程，并获取设备信息以便在H3CLicense管理平台申请激活码。",
+        "结论": "用户可以通过登录设备的Web页面获取设备信息，然后在H3CLicense管理平台的激活申请流程中绑定ACG组件的软件S/N码。",
+        "解决办法": "1.获取设备信息：-登录WCG380系列设备的Web页面。-导航至[主页/系统信息]页面，获取设备的详细信息。2.绑定License：-访问H3CLicense管理平台的官网。-在激活申请的第二步中，选择“绑定硬件设备”。-输入从设备Web页面获取的ACG组件的软件S/N码。3.提交申请：-完成其他必要的激活申请步骤。-提交申请以获取激活码。4.激活License：-使用获取到的激活码在设备上完成License激活。若上述解决方法对您有帮助，请评价为“有用”。若您有关于案例的建议，请提供反馈。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/227531",
+        "备注": ""
+    },
+    {
+        "序号": 729,
+        "问题现象": "终端在跨无线控制器（AC）漫游后，虽然连接的是相同的SSID，但无法上网。",
+        "问题描述": "在组网环境中，两台无线控制器（AC）释放相同的SSID，但两端SSID对应的VLAN分配不同。当终端从一个AC漫游到另一个AC时，由于SSID配置一致，终端无法感知到后台VLAN的变更，因此不会主动更新其IP地址，导致终端无法正常访问网络。",
+        "结论": "终端在跨AC漫游时，由于VLAN配置不一致，导致终端的网络连接中断，无法上网。",
+        "解决办法": "1.调整组网配置：尽量避免在不同AC上使用相同的SSID但分配不同的VLAN。确保同一SSID在所有AC上对应相同的VLAN配置。2.使用VLANPool技术：通过VLANPool技术实现跨AC漫游时VLAN分配的一致性，确保终端在漫游过程中不会因为VLAN变化而失去网络连接，从而保证终端的上网体验。以上总结希望能帮助您更好地理解该问题及其解决方案。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/55356",
+        "备注": ""
+    },
+    {
+        "序号": 730,
+        "问题现象": "在某局点部署MSG360-40设备并上线云简网络后，使用SSID\"guest\"配置短信认证时，终端设备提示“由于商户的网络配置原因，导致连网失败，请联系商户进行修复”。手动输入认证URL`http://oasisauth.h3c.com`后，终端设备依然弹出相同的错误界面。",
+        "问题描述": "1.认证提示错误：终端设备在尝试通过SSID\"guest\"连接云简网络并进行短信认证时，收到错误提示“由于商户的网络配置原因，导致连网失败，请联系商户进行修复”。2.手动输入URL无效：手动输入认证URL`http://oasisauth.h3c.com`后，终端设备仍然弹出相同的错误界面。3.配置检查：在AC（接入控制器）上检查配置，发现缺少`portalhost-checkenable`配置。添加该配置后，问题依旧存在。4.终端与AC通信问题：使用终端设备尝试pingAC，发现无法ping通。",
+        "结论": "问题的根本原因在于终端设备无法获取到AC的地址并与其通信。尽管AC侧的主要认证配置已经检查并修正，但终端与AC之间的通信问题仍未解决。最终，通过在AC上添加一个业务地址，确保终端设备能够与AC正常通信，问题得以解决。",
+        "解决办法": "1.检查AC配置：确保AC上已启用`portalhost-checkenable`配置。2.添加业务地址：在AC上创建一个业务地址，确保终端设备能够获取到AC的地址并与其通信。3.验证通信：使用终端设备pingAC，确认通信正常。4.重新尝试认证：终端设备重新尝试连接SSID\"guest\"并进行短信认证，确保认证过程顺利。通过上述步骤，终端设备成功完成短信认证，问题得到彻底解决。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/205200",
+        "备注": ""
+    },
+    {
+        "序号": 731,
+        "问题现象": "终端用户在某局点使用AC（接入控制器）配合绿洲短信认证时，认证界面输入短信验证码后点击认证按钮，界面无任何响应。",
+        "问题描述": "该局点的AC采用旁挂模式，使用V7版本的AC与绿洲短信认证系统配合。在终端用户输入短信验证码并点击认证按钮后，认证界面没有响应，导致用户无法完成认证过程。",
+        "结论": "经过分析，发现绿洲认证过程中，AC需要与终端进行通信。然而，现场AC的业务段配置为二层透传，而网关侧做了隔离，导致AC的管理地址跨三层无法与终端通信，从而引发认证无响应的问题。",
+        "解决办法": "在网关侧解除对AC管理地址的隔离限制后，终端与AC之间的通信恢复正常，用户输入短信验证码后点击认证按钮能够成功完成认证过程。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/59861",
+        "备注": ""
+    },
+    {
+        "序号": 732,
+        "问题现象": "某局点在使用本地Portal认证时，希望对认证页面进行自定义，具体需求是删除页面中的“第三方账号登录”选项。",
+        "问题描述": "该局点使用本地Portal认证，认证页面中包含“第三方账号登录”选项，需要删除该选项以满足特定需求。涉及的页面文件为`logon.htm`，该文件需要进行修改以实现自定义需求。",
+        "结论": "通过修改`logon.htm`文件并重新上传到AC设备，可以成功删除“第三方账号登录”选项。此外，页面上的QQ和邮箱登录元素也可以通过同样的方法删除。",
+        "解决办法": "1.备份原有文件：首先将原有的`logon.htm`文件备份，以防修改后出现问题。2.找到并修改`logon.htm`文件：-将压缩文件存至本地，找到并用浏览器打开`logon.htm`文件。-使用浏览器的开发人员工具（通常通过F12键打开），找到“第三方账号登录”选项的页面元素信息，并记住该信息。-使用记事本或其他文本编辑软件打开`logon.htm`文件，找到并删除上一步记住的页面元素信息，确保保存修改后的文件。3.替换原有文件：-用修改后的`logon.htm`文件替换原有的`logon.htm`文件。-重新打开认证页面，确认“第三方账号登录”选项已成功删除。4.上传修改后的文件：-将修改后的页面文件压缩为`abc.zip`，并上传到AC设备。-重新执行以下命令以应用修改后的页面文件：```shell[AC–portal-local-websvr-http]default-logon-pageabc.zip[AC–portal-local-websvr-https]default-logon-pageabc.zip```5.注意事项：-文件大小限制：总zip包不能超过500K，单页面文件不能超过50K。-文件内容限制：页面元素只能包含HTML、JS、CSS和图片之类的静态内容。-其他注意事项：参考H3C无线控制器产品配置指导中的1.5.1自定义认证页面文件部分。建议反馈若您在操作过程中遇到任何问题或有其他建议，请反馈给作者，以便进一步优化和改进。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/199156",
+        "备注": ""
+    },
+    {
+        "序号": 733,
+        "问题现象": "在某局点使用MSG360-10（V7）设备进行短信认证时，认证失败。终端设备在尝试连接时报错，显示认证不通过并被下线。",
+        "问题描述": "1.组网及说明：AP跨公网三层注册到AC，AP采用本地转发模式。2.Portal配置：Portal配置在AC上，由于公网封了80端口，改为使用8099端口。3.测试情况：在AC服务模板下启用Portal时，集中转发模式下测试正常，但改为本地转发模式后，重定向不成功。4.日志信息：-客户端上线日志：`%May1513:59:42:5772018pufa-acSTAMGR/6/STAMGRCLIENTONLINE:Client102a-b3d6-6038wentonlinefromBSS60da-839d-2cc2withSSIDtestrenzhengonAP60da-839d-2cc0.StatechangedtoRun.`-客户端IP变更日志：`*May1513:59:42:5772018pufa-acSTAMGR/6/STAMGRCLIENTSNOOPING:DetectedclientIPchange:ClientMAC:102a-b3d6-6038,IP:192.168.10.60,-NA-,-NA-,-NA-,Username:-NA-,APname:60da-839d-2cc0,RadioID:1,Channelnumber:149,SSID:testrenzheng,BSSID:60da-839d-2cc2.`-Portal事件日志：`*May1513:59:42:5782018pufa-acPORTAL/7/EVENT:Receivedclient(102a-b3d6-6038)onlineevent.`-接口未启用Portal日志：`*May1513:59:42:5792018pufa-acPORTAL/7/EVENT:Theinterfaceisnotenableportalforonlineevent.ifname:WLAN-BSS1/0/251,MAC:102a-b3d6-6038`-客户端下线日志：`%May1514:02:16:8862018pufa-acSTAMGR/6/STAMGRCLIENTOFFLINE:Client102a-b3d6-6038wentofflinefromBSS60da-839d-2cc2withSSIDtestrenzhengonAP60da-839d-2cc0.StatechangedtoUnauth.Reason:ReceiveddeauthenticationmessageinRunstate:reasoncode=3`",
+        "结论": "尽管绿洲开局指导书中提到只有微信连Wi-Fi需要放通`oasisauth.h3c.com`，但在实际的本地转发模式下，即使是短信认证，也需要配置放通`oasisauth.h3c.com`。这是因为绿洲指导书主要针对集中转发模式，而在本地转发模式下，认证过程中的某些流量需要通过特定的规则放通，以确保认证流程的正常进行。",
+        "解决办法": "在AC的配置中添加Portal免费规则，具体命令如下：```portalfree-ruleXXdestinationoasisauth.h3c.com```通过配置上述免费规则，放通`oasisauth.h3c.com`的流量，确保短信认证过程中的必要通信能够顺利进行。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/28541",
+        "备注": ""
+    },
+    {
+        "序号": 734,
+        "问题现象": "某局点在尝试将WAP712C-LI无线接入点（AP）从Fit模式转换为Oasis模式时，格式化后切换失败。",
+        "问题描述": "1.设备信息：-现场AP的型号：WAP712C-LI-Bootware版本：Version7.142.操作步骤：-进入扩展Bootware菜单，选择格式化文件系统（Ctrl+F）-格式化成功后，再次进入扩展Bootware菜单-选择更改AP模式（Ctrl+Y），选择Oasis模式-系统提示“flash:/wa4300h-oasis.binimagedoesnotexist”，切换失败3.分析过程：-确认Bootware版本是否配套，发现云AP模式下需要BTW7.17版本-按照如下步骤升级Bootware：1.进入扩展Bootware菜单，选择Bootware操作菜单（7）2.选择通过以太网更新Bootware（4）3.配置以太网参数，下载文件名设置为`wa4300h-oasis.bin`，实际文件名为`apwtu430_v7.17.btw`4.更新基本Bootware和扩展Bootware成功-升级Bootware后，再次尝试切换模式：1.进入以太网子菜单，下载Oasis模式的固件文件`wa4300h-oasis.bin`2.保存文件到flash3.重启设备，再次尝试切换模式-但现场反馈操作后设备仍无法进入系统",
+        "结论": "问题的根本原因在于现场配置的文件名错误。现场配置的文件名为`wa4300s-oasis.bin`，而正确的文件名应为`wa4300h-oasis.bin`。",
+        "解决办法": "1.确认文件名：-检查并确认要下载的Oasis模式固件文件名应为`wa4300h-oasis.bin`2.重新下载固件：-进入以太网子菜单，配置正确的文件名和服务器IP地址-下载并保存`wa4300h-oasis.bin`到flash3.切换模式：-重新进入扩展Bootware菜单，选择更改AP模式（Ctrl+Y）-选择Oasis模式（1）-按照提示等待操作完成，成功切换后重启设备4.验证结果：-重启后设备成功进入Oasis模式操作记录日期：2019-08-29反馈：更改文件名后，转换OasisMode成功评价是否有帮助：有用您的评价：1建议反馈：无通过上述步骤，现场问题得以解决，AP成功转换为Oasis模式。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/71460",
+        "备注": ""
+    },
+    {
+        "序号": 735,
+        "问题现象": "：某医院九楼特定地点，使用WA2620-AGNAP时，2.4G空口占用率非常高，用户体验差。更换为WA2620EAP后，空口占用率正常，用户体验有所改善。",
+        "问题描述": "：1.位置与环境：-故障AP安装在医院九楼丁字走廊交叉点的天花板内。-水平长走廊为神经科病房，竖短走廊为更衣室及杂物间，周围没有明显的干扰物。-AP周围在一米范围内有四个天线，三个天线在半米范围内，有两个靠近安装口，另外两个被管道遮挡。2.测试与观察：-登录AC发现，WA2620EAP只开启5G，2.4G未使用。-开启2.4G后，空口占用率正常在个位数，但噪底比正常值高10db。-更换为WA2620-AGNAP后，2.4G空口占用率表现不正常，噪底较高。-通过频谱仪测量，电信天线信号未落入WIFI带内，不对WIFI构成干扰。-联通天线信号中心频点2.454G，带宽20M，强度为-64dBm，落入WIFI带内，对2.4G所有信道均有干扰。3.流量测试：-通过两个STA之间的流量测试，WA2620E的最低流量为10M，而WA2620-AGN的最低流量仅为0.5M。-当天线与AP设备间隔1.5m以上时，两台设备在不同信道的流量和空口占用率均恢复正常，空口占用率在个位数，流量达到40M。",
+        "结论": "：1.干扰源：联通天线发射的信号落在WIFI2.4G频段内，导致2.4G空口占用率高，用户体验差。2.设备差异：WA2626-AGN和WA2620E在相同干扰环境下表现不同，WA2620E的抗干扰能力较强。3.距离影响：增加AP与干扰天线的距离（至少1.5m以上）可以显著改善2.4G空口占用率和用户体验。",
+        "解决办法": "：1.拉大距离：将AP与联通天线之间的距离拉大到2m以上，以减少干扰。2.部署注意：在AP安装部署时，特别注意与周围天线的距离，避免近距离安装。3.沟通协调：与医院负责人沟通，实施上述方案，确保网络性能和用户体验。通过以上措施，成功解决了某医院2.4G频段的干扰问题，提升了网络性能和用户体验。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/3471",
+        "备注": ""
+    },
+    {
+        "序号": 736,
+        "问题现象": "在H3CV7设备上配置802.1X本地EAP中继认证加密后，终端设备无法通过认证。",
+        "问题描述": "配置完成后，在RADIUS服务器状态中查看到错误提示“thespecifiedprocessdoesnotexist”。进一步通过查看RADIUS日志文件`/var/log/radius/radius.log`发现以下报错信息：```WedJan1914:49:412022:Error:Failedbindingtoauthaddress*port1812boundtoserverdefault:AddressalreadyinuseWedJan1914:49:412022:Error://etc/raddb/sites-enabled/default[59]:Errorbindingtoportfor0.0.0.0port1812```日志提示1812端口已经被占用，导致本地RADIUS服务无法启动。",
+        "结论": "问题的原因是本地1812端口已经被其他RADIUS相关服务占用，导致本地RADIUS服务无法绑定到该端口，从而无法正常启动和进行认证。",
+        "解决办法": "1.通过`displayudp`命令查看占用1812端口的进程及相关配置。2.清除或修改占用1812端口的配置，确保该端口可用。3.重新启动本地RADIUS服务，确保`radiusd`进程能够成功激活。4.验证终端设备是否能够通过802.1X认证。通过上述步骤，可以解决因端口占用导致的RADIUS服务无法启动的问题，从而恢复终端设备的认证功能。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/196508",
+        "备注": ""
+    },
+    {
+        "序号": 737,
+        "问题现象": "某局点购买了两台WX5510E的设备，版本号为Version5.20,Release2609P58，配置了双机热备和漫游组功能。配置完成后，无线终端在AP1和AP2之间移动时，不会发生漫游。",
+        "问题描述": "1.双机热备配置：主AC（192.168.119.253）和备AC（192.168.119.252）均配置了双机热备功能，使用VLAN20进行热备通信。2.漫游组配置：主AC和备AC均配置了漫游组，确保终端在两台AC的AP之间可以正常漫游。3.服务模板和DHCP配置：主AC和备AC的服务模板和DHCP配置一致。4.WLANRRM配置差异：在检查WLANRRM配置时，发现主AC和备AC的配置存在差异，特别是频谱导航（bandnavigation）的配置不一致。",
+        "结论": "终端在AP1和AP2之间不发生漫游的原因是主AC和备AC的WLANRRM配置不一致，特别是频谱导航（bandnavigation）的配置存在差异。这导致了终端在漫游过程中无法正常切换AP。",
+        "解决办法": "1.同步WLANRRM配置：将主AC和备AC的WLANRRM配置修改为一致，特别是频谱导航（bandnavigation）的配置。-主AC：```plaintextwlanrrmdot11amandatory-rate61224dot11asupported-rate918364854dot11bmandatory-rate125.511dot11gmandatory-rate5.511dot11gsupported-rate121824364854dot11gdisabled-rate1269band-navigationenable```-备AC：```plaintextwlanrrmdot11amandatory-rate61224dot11asupported-rate918364854dot11bmandatory-rate125.511dot11gmandatory-rate5.511dot11gsupported-rate121824364854dot11gdisabled-rate1269band-navigationenable```2.确认终端漫游行为：确保终端能够主动发起漫游请求，并且漫游请求未被设备拒绝。3.重新测试漫游：修改配置后，重新测试无线终端在AP1和AP2之间的漫游，确保漫游正常。最终结果通过同步主AC和备AC的WLANRRM配置，特别是频谱导航（bandnavigation）的配置，终端在AP1和AP2之间成功实现了漫游。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/20852",
+        "备注": ""
+    },
+    {
+        "序号": 738,
+        "问题现象": "某局点反馈，无线终端在通过IMC进行MAC地址认证后，虽然认证成功，但IMC上显示的终端IP地址错误。具体表现为终端应分配到192.168.36.X的IP地址，但在IMC上显示的IP地址为208.236.233.216。",
+        "问题描述": "1.设备版本信息：-ACG1000-A版本：IMW110-R6603-ACGmanager版本：SACG7.0D0301-WX3540E版本：CMW520-R3709P33-IMC-PLAT版本：7.1_E0303P06-IMC-EIA版本：7.1_E0302P07-IMC-WSM版本：7.1_E03032.初步分析：-现场工程师怀疑是认证完成后AC在短时间内未能获取到终端的IP地址，需要有一个缓冲时间。-缺省情况下，计费延时功能处于关闭状态，设备在用户认证成功后会立即向计费服务器发起计费请求，若此时未能获取到用户的IP地址，计费服务器将记录错误的IP地址。-建议开启计费延时功能、dhcpSnooping以及arpsnooping功能，以学习终端的网络地址。3.进一步分析：-开启相关功能后，问题依旧存在。-通过开启debug信息，发现AC在未获取到终端IP地址（0.0.0.0）的情况下，直接上报了一个随机的网络地址（208.233.255.232），导致IMC显示地址错误。-研发分析代码后发现，问题出在AC上报IP地址时，某个字段未进行置0操作，导致上报随机的网络地址。",
+        "结论": "该版本的AC设备存在MAC认证IP地址上报错误的问题，导致用户认证成功后，IMC上显示的IP地址不正确。",
+        "解决办法": "1.升级版本：-升级AC设备的版本到CMW520-R2509P34，以解决MAC认证IP地址上报错误的问题。2.配置建议：-建议开启计费延时功能，确保设备在获取到用户的IP地址之后再向计费服务器发送计费请求。-同时开启dhcpSnooping和arpsnooping功能，帮助设备准确学习终端的网络地址。日期2015-04-30发表2019-06-12修订作者樊昊评价该案例对您是否有帮助：有用/无用您的评价：1若您有关于案例的建议，请反馈：建议反馈",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/4057",
+        "备注": ""
+    },
+    {
+        "序号": 739,
+        "问题现象": "在某局点的本地转发组网环境下，无线终端关联无线网络后，打开网页时不需要重定向进行Portal认证，可以直接上网，Portal认证功能不生效。",
+        "问题描述": "1.配置检查：-检查Portal相关配置，发现配置正常。-尝试将相同的Portal配置下发到集中转发服务模板下，Portal功能正常。-通过命令`displayportaluserall`查看发现Portal在线用户数为0。2.Portal服务状态检查：-在AC上通过命令`displayportalserver`查看Portal服务状态，状态为UP，说明配置和功能使能没有问题。3.Portal免认证规则检查：-检查Portal免认证规则（`portalfree-rule`），删除所有免认证规则，只保留到DNS服务器和Portal服务器的规则，测试后仍无法重定向，直接可以上外网。4.Portal规则检查：-怀疑AC上之前配置过Portal逃生配置，导致本地转发下AP放通所有规则，无需Portal认证。-登录到AP上通过命令`displayportalruleall`查看当前下发到AP上的Portal规则，发现除了DNS和IMC地址permit，其他所有源地址到目的的80和443端口是redirect，其他端口deny。说明Portal规则配置没有问题。-重启AP让AC重新下发Portal规则配置，问题依然存在。5.网络连通性检查：-怀疑AP到Portal服务器不通或无法解析PortalURL地址为Portal服务器地址，导致AP认为到服务器不通从而逃生。-登录到AP上配置DNS地址，测试发现能ping通DNS和Portal服务器IP地址，说明AP解析PortalURL和到Portal服务器的连通性没有问题。6.复现问题并收集调试信息：-尝试复现问题，连接无线后访问网页，在AC和AP上收集调试信息，发现没有重定向的debug打印，说明Portal功能确实没有生效。7.最终配置检查：-再次检查配置，发现服务模板下配置的业务VLANID与本地转发指定的VLANID不一致。-实际业务VLAN为XX1，使能本地转发的VLAN为XX2，而AP视图下的服务模板没有配置VLANID，导致实际业务VLAN为XX1，且为集中转发。-服务模板下的Portal认证只能使能在一种转发方式下，不能同时使能在集中转发和本地转发下。-当服务模板下配置了本地转发命令（`clientforwarding-locationap`）后，Portal只能使能在本地转发业务下。",
+        "结论": "问题的根本原因是服务模板下配置的业务VLANID与本地转发指定的VLANID不一致。实际业务VLAN为集中转发，并且未使能Portal认证功能。",
+        "解决办法": "1.修改本地转发VLAN配置为实际业务VLAN：```plaintextwlanservice-template1ssidXXXvlanXX1clientforwarding-locationapvlanXX1portalenablemethoddirectportaldomainxxxportalbas-ipX.X.X.Xportalapplyweb-serverportalservice-templateenable```2.删除本地转发指定VLAN配置：```plaintextwlanservice-template1ssidXXXvlanXX1clientforwarding-locationapportalenablemethoddirectportaldomainxxxportalbas-ipX.X.X.Xportalapplyweb-serverportalservice-templateenable```通过上述修改，确保业务VLAN与本地转发VLAN一致，并且Portal认证功能只在本地转发业务下使能，从而解决Portal认证不生效的问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/100728",
+        "备注": ""
+    }
+]

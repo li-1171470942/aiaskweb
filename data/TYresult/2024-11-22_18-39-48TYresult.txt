@@ -1,0 +1,182 @@
+[
+    {
+        "序号": 60,
+        "问题现象": "用户在使用WX系列AC进行本地认证时，希望通过UserProfile（用户配置文件）来实现不同场景下的用户接入控制，如限制用户只能通过指定的SSID或特定的AP接入网络。",
+        "问题描述": "在实际应用中，用户可能需要临时为来宾建立账户，并且希望来宾用户只能在特定的SSID或AP上登录，以保证网络的安全性和管理的灵活性。然而，由于不同的认证方式（802.1X本地认证、Portal本地认证、MAC地址本地认证）和不同的配置层级（用户组、本地用户、ISP域），如何正确地配置UserProfile以达到上述目的，成为了一个需要解决的问题。",
+        "结论": "通过在UserProfile中配置允许接入的SSID或AP组，可以有效地实现基于SSID和AP的用户接入控制。不同的认证方式（802.1X本地认证、Portal本地认证、MAC地址本地认证）和配置层级（用户组、本地用户、ISP域）都可以利用UserProfile来实现这一功能，但需要注意配置的优先级，即本地用户视图下的配置优先级高于用户组视图下的配置。",
+        "解决办法": "1.基于SSID的用户接入控制：-配置本地用户的授权属性：1.进入系统视图。2.创建或选择一个UserProfile。3.在UserProfile中配置允许接入的SSID。4.启用UserProfile。5.进入本地用户视图，配置用户名和密码。6.指定UserProfile，并设置服务类型为LAN访问。-配置本地用户组的授权属性：1.进入系统视图。2.创建或选择一个UserProfile。3.在UserProfile中配置允许接入的SSID。4.启用UserProfile。5.进入本地用户组视图，配置用户组。6.指定UserProfile。7.进入本地用户视图，配置用户名和密码，并指定用户组和服务类型。-配置ISP域的授权属性：1.进入系统视图。2.创建或选择一个UserProfile。3.在UserProfile中配置允许接入的SSID。4.启用UserProfile。5.进入ISP域视图，配置系统域。6.指定UserProfile。7.进入本地用户视图，配置用户名和密码，并设置服务类型为LAN访问。2.基于AP的用户接入控制：-配置本地用户的授权属性：1.进入系统视图。2.创建或选择一个AP组，并指定AP。3.创建或选择一个UserProfile。4.在UserProfile中配置允许接入的AP组。5.启用UserProfile。6.进入本地用户视图，配置用户名和密码。7.指定UserProfile，并设置服务类型为LAN访问。-配置本地用户组的授权属性：1.进入系统视图。2.创建或选择一个AP组，并指定AP。3.创建或选择一个UserProfile。4.在UserProfile中配置允许接入的AP组。5.启用UserProfile。6.进入本地用户组视图，配置用户组。7.指定UserProfile。8.进入本地用户视图，配置用户名和密码，并指定用户组和服务类型。-配置ISP域的授权属性：1.进入系统视图。2.创建或选择一个AP组，并指定AP。3.创建或选择一个UserProfile。4.在UserProfile中配置允许接入的AP组。5.启用UserProfile。6.进入ISP域视图，配置系统域。7.指定UserProfile。8.进入本地用户视图，配置用户名和密码，并设置服务类型为LAN访问。以上配置方法适用于802.1X本地认证、Portal本地认证和MAC地址本地认证。根据不同的应用场景，可以选择不同的认证方式和用户接入控制策略。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/830",
+        "备注": ""
+    },
+    {
+        "序号": 61,
+        "问题现象": "设备型号：WX2560X设备运行约半个月后，内存使用率异常增长，导致设备卡死。重启设备可以暂时解决问题，但重启后问题依旧存在。",
+        "问题描述": "1.内存使用情况：-设备内存总量为1974696KB。-当前已使用内存为1752472KB。-空闲内存为222240KB。-缓存占用内存为1223634KB。-缓存/缓冲区占用后剩余空闲内存为580224KB。-交换分区未使用。2.进程内存占用情况：-通过`displayprocessmemory`命令查看，未发现明显的内存泄露或异常占用的进程。-`telnetd`、`login`、`comsh`等进程占用内存较多，但未达到异常水平。3.配置检查：-发现设备上有关于PMM（报文监控管理）的相关配置：-`pmmenable`：开启报文监控管理功能。-`pmmsource-interfaceVlan-interface5`：配置向服务器发送报文的源接口。-`pmmaudit-formatjc`：配置报文审计格式类型。",
+        "结论": "经过分析，确认是PMM相关的配置导致了内存使用率异常增长。具体原因可能是PMM功能在长时间运行后，内存管理出现了问题，导致内存逐渐被占用而无法释放。",
+        "解决办法": "1.临时解决：-删除PMM的相关配置命令：```bash<H3C>system-view[H3C]undopmmenable[H3C]undopmmsource-interfaceVlan-interface5[H3C]undopmmaudit-formatjc[H3C]quit```-或者通过以下命令关闭一个定时器来暂时规避问题，但重启后会失效，需要重新执行：```bash<H3C>bash$sups|greppmmd17386?115864S/sbin/pmmd32260?3192Sgreppmmdgdb-p17386(gdb)callPMMWANCloseGetWanTimer()$2=-1(gdb)quitexitexit```2.长期解决：-如果需要长期使用PMM功能，建议联系设备厂商或技术支持，获取官方的修复补丁或更新固件，以解决内存管理问题。希望以上总结对您有所帮助。如果您有任何其他问题或需要进一步的帮助，请随时联系。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/225509",
+        "备注": ""
+    },
+    {
+        "序号": 62,
+        "问题现象": "终端设备在与WX2560X无线控制器关联后，能够正常重定向到Portal认证页面，但在输入用户名和密码进行认证时，Web界面没有反应，且终端设备与服务器之间的连通性正常。",
+        "问题描述": "1.配置检查：现场反馈设备的诊断信息，通过检查配置发现现场的Portalfree规则没有放通到Portal服务器的规则。此外，现场配置的Portalweb-server类型为cmcc，而Portal服务器是默认配置，设备默认的Portal服务器类型为iMC。2.初步解决：现场放通到Portal服务器的free规则，并将Portal服务器类型改为cmcc后，故障仍然存在。3.进一步排查：在设备上收集debug信息，发现设备在重定向成功后，没有收到Type=req_info(9)的报文，怀疑是服务器没有发送或者设备丢弃了该报文。现场服务器侧抓包显示重定向报文正常，但服务器没有向BAS设备发送认证请求报文。4.厂商配合：联系锐捷厂商进行排查，但锐捷厂商配合不积极，未给出具体原因。5.本地认证测试：现场将认证方式改为本地Portal认证，但仍然使用第三方RADIUS服务器，此时认证正常。",
+        "结论": "问题最终定位为锐捷Portal服务器的问题。锐捷服务器在接收到终端设备的重定向请求后，没有向BAS设备发送认证请求报文，导致认证过程无法完成。",
+        "解决办法": "1.建议更换服务器：由于锐捷服务器未给出具体解决方案，建议现场更换Portal服务器进行测试。2.启用本地Portal认证：现场将认证方式改为本地Portal认证，使用第三方RADIUS服务器进行认证授权，最终认证成功。3.配置注意事项：如果对接第三方服务器，需要在设备上将Portal服务器类型配置为cmcc；如果对接iMC服务器，则不需要配置，设备默认即为iMC类型。总结通过多次排查和测试，最终确定问题是出在锐捷Portal服务器上，建议在遇到类似问题时，可以尝试更换Portal服务器或启用本地Portal认证以解决问题。同时，确保设备配置与所使用的Portal服务器类型一致，以便顺利进行认证。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/199055",
+        "备注": ""
+    },
+    {
+        "序号": 63,
+        "问题现象": "在配置ComwareV7平台无线控制器WX2540H时，尝试安装用于注册AP的license，但安装过程失败，显示错误信息“Failed.Invalidactivationfile”。",
+        "问题描述": "1.前期准备：通过授权函信息，按照正常流程在官网激活并获取了license安装文件。2.设备匹配：确认授权函信息与设备型号匹配，且设备信息及上传的设备did文件均正常。3.文件传输：尝试通过不同的第三方FTP/TFTP软件上传license文件，并且更换了电脑，但问题依然存在。4.命令配置：检查操作日志，确认安装配置命令正确无误。5.文件检查：对比正常文件内容，发现被窜改的ak文件中多了一个“CR”回车符。6.邮箱信息：获取ak文件时使用的邮箱为hotmail邮箱。",
+        "结论": "问题的原因在于下载license文件过程中，文件被第三方软件或浏览器窜改，导致文件内容不正确，安装失败。具体表现为在ak文件中多了一个“CR”回车符。",
+        "解决办法": "1.联系供应商：由于已激活license并下载过ak文件，无法重新提交设备信息获取新的ak文件，只能填写工作联络单，联系供应链获取正常的ak文件。2.重新安装：获取到正确的ak文件后，重新上传并安装到设备上。3.避免窜改：建议在下载和上传license文件时，使用官方推荐的软件和浏览器，确保文件传输过程中不被窜改。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/18930",
+        "备注": ""
+    },
+    {
+        "序号": 64,
+        "问题现象": "在WA4320H面板AP上开启“optionclientfast-forwardingenable”功能后，下挂的无线设备（例如图中的PC2）与有线设备（例如图中的PC3）之间无法互相ping通，但PC2可以与同一网段内的其他无线设备（如PC1）及路由器、AC之间互相访问。",
+        "问题描述": "1.组网情况：组网为常规组网，AC旁挂交换机，本地转发。2.具体问题：开启“optionclientfast-forwardingenable”功能后，无线与有线设备之间的二层通信中断，表现为互ping不通。3.初步分析：经检查，无线和有线终端都能学习到对方的ARP信息，但是AP没有学习到有线口的ARP信息，且在开启快转功能后，流量只向上行接口转发，不会向下行接口广播。4.进一步测试：将有线和无线终端划分到不同的网段后，发现PC2与PC3能够互相ping通，进一步证实了快转功能导致的问题。",
+        "结论": "1.快转功能的影响：在AP上开启“optionclientfast-forwardingenable”功能后，所有流量不做任何处理直接向上行接口转发，导致二层网络内的无线与有线设备无法实现互访。2.功能设计目的：此功能旨在提高转发性能，减少AP对报文的处理，适用于测试环境。因此，除了基本的流量转发外，其他基于流量的应用业务如无线定位、本地转发隔离、限速、终端地址学习、Portal认证等均不会生效。",
+        "解决办法": "1.调整组网结构：如果下挂的有线终端不支持三层组网，可以将有线终端上移到上行交换机下，以绕过AP的快转限制。2.关闭快转功能：直接关闭“optionclientfast-forwardingenable”功能，恢复AP的正常流量处理机制，以实现无线与有线终端之间的二层通信。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/117210",
+        "备注": ""
+    },
+    {
+        "序号": 65,
+        "问题现象": "在使用Wireshark抓包工具时，面对大量的网络报文，如何高效地筛选出感兴趣的特定报文，以提高问题分析和解决效率。",
+        "问题描述": "Wireshark是一个强大的网络协议分析工具，但在实际使用过程中，对于初学者或不熟悉特定协议的人来说，如何正确地编写过滤规则以筛选出特定类型的报文，可能会遇到困难。一些误导性的提示可能会导致用户输入错误的过滤规则，从而无法有效筛选报文。",
+        "结论": "通过掌握Wireshark的规则过滤机制，可以显著提高网络报文分析的效率和准确性。即使不完全熟悉所有协议的名称和结构，也可以通过利用报文的详细内容来找到正确的过滤参数。",
+        "解决办法": "1.了解过滤器的基本结构-Wireshark的过滤器主要由“逻辑判断”、“协议名称”和“具体输入值”三部分组成。-常用的逻辑判断符号包括：`==`（等于）、`&&`（与）、`||`（或）、`!`（非）。2.利用报文的详细内容-在抓取到的报文中，通过右击详细的报文内容行，选择“作为过滤器应用”或“准备作为过滤器”，可以自动生成过滤规则。-例如，对于一个ARP报文，右击某一行内容选择“作为过滤器应用”后，过滤器会自动填充为`eth.addr==ff:ff:ff:ff:ff:ff`，这表示筛选出所有MAC地址为全F（广播地址）的报文。3.实践和积累-通过不断实践，利用报文的详细内容来生成过滤规则，可以快速提升对报文结构的理解和举一反三的能力。-例如，通过上述方法，可以轻松学会如何筛选特定IP地址的报文`ip.addr==192.168.0.1`，或特定MAC地址的报文`eth.addr==00:11:22:33:44:55`。4.注意事项-输入过滤规则时，注意颜色变化：绿色表示输入正确，红色表示输入错误，黄色可能表示输入不完整。-不需要死记硬背所有协议名称和过滤规则，通过报文的详细内容和右击菜单，可以找到大多数需要的过滤参数。通过上述方法，即使是初学者也可以高效地使用Wireshark进行网络报文分析，提高问题处理效率和理解深度。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/102595",
+        "备注": ""
+    },
+    {
+        "序号": 66,
+        "问题现象": "某局点部分手机终端在尝试接入配置了PSK加密的无线网络时，提示密码错误，但用户确认输入的密码无误。",
+        "问题描述": "该局点使用了WX3520H和5439P03设备，配置了本地转发加PSK的服务模板。具体配置命令如下：```plaintextwlanservice-template1ssidXXXXvlan1clientassociation-locationapclientforwarding-locationapvlan99client-securityauthentication-locationapakmmodepskpreshared-keypass-phrasecipher$c$3$FiQW7Cs0ioUujvlVpo51P+xOSrsE0Fk8qSl7nmgcipher-suiteccmpsecurity-iersnsecurity-iewpaenableftenable```在上述配置中，服务模板同时使能了快速漫游（FT）功能和本地认证功能。",
+        "结论": "通过查看命令手册，发现若服务模板使能了FT功能，则`security-ie`可以配置也可以不配置，但若配置则必须为RSN，且认证方式不能配置为本地认证。这意味着`ftenable`与本地认证的功能互斥，两者同时配置会导致认证信息丢失和密钥协商失败，从而引发部分手机终端无法接入无线网络的问题。",
+        "解决办法": "1.删除`ftenable`的配置：移除快速漫游功能，使服务模板仅使用本地认证。2.去掉`security-iewpa`并将认证点改为AC：保留快速漫游功能，但去掉WPA安全模式，并将认证点改为AC（即`client-securityauthentication-locationac`）。上述两种方法均可解决部分手机终端无法接入的问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/169320",
+        "备注": ""
+    },
+    {
+        "序号": 67,
+        "问题现象": "使用LA4320设备通过SIM卡将移动通信无线信号转换为WiFi信号时，无线客户端连接AP测速仅有3MB/S，而该SIM卡在手机上测速可达到10MB/S。",
+        "问题描述": "1.网络制式支持：LA4320支持多种网络制式，包括TDD-LTE、FDD-LTE、WCDMA、CDMA2000、TD-SCDMA和GSM/GPRS。不同制式的最大下行和上行流量标准不同。2.当前网络连接：通过`displaycellular-ethernet1/0/1all`命令查看，当前SIM卡连接的是LTE网络。3.信号强度：检查当前信号强度，包括RSSI、RSRQ、RSRP和SNR等参数，显示均在正常范围内。4.TCPMSS值：尝试修改TCPMSS值为1024，以减少数据包的大小，但效果不明显。5.WLAN干扰：检查WLAN空口信号，确认没有明显干扰，进行了WLAN网络优化，但测速结果仍不理想。",
+        "结论": "经过上述分析，LA4320测速3MB/S的原因包括：报文头损耗空口转换效率2.4G频段的干扰这些因素共同导致了测速结果为3MB/S，属于正常速率范围。",
+        "解决办法": "1.确认网络制式：确保SIM卡连接的是LTE网络，可以使用`displaycellular-ethernet1/0/1all`命令查看当前连接的网络制式。2.检查信号强度：使用`displaycellular-ethernet1/0/1all`命令查看RSSI、RSRQ、RSRP和SNR等参数，确保信号强度在正常范围内。如果信号过低，建议接外置天线。3.优化TCPMSS值：尝试修改TCPMSS值为1024，以减少数据包的大小，提高传输效率。4.排查WLAN干扰：检查WLAN空口信号，确认没有干扰，并进行必要的WLAN网络优化。5.接受正常速率：如果以上步骤均正常，但测速结果仍为3MB/S，可以接受这一速率，因为这是由于报文头损耗、空口转换效率和2.4G频段干扰等综合因素导致的正常现象。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/74703",
+        "备注": ""
+    },
+    {
+        "序号": 68,
+        "问题现象": "在WX5004设备（Version5.20,Release2509P41）上，使用带源地址的方式从内部网络ping公网地址不通，而直接从WX5004设备ping公网网关、DNS等地址能正常通信。",
+        "问题描述": "用户在WX5004设备上配置了NAT功能，目的是实现内部私有地址到公网地址的转换。当用户尝试通过指定内部私有IP地址（如1.1.1.1）ping一个公网IP地址时，发现无法接收到回应。通过启用`debugnatpacket`命令查看日志，日志显示设备已经进行了NAT转换，并且收到了来自公网的回应报文。但是，ping命令显示100%的包丢失率，表明没有成功接收到回应报文。",
+        "结论": "设备WX5004不支持使用带本地源地址的方式Ping外网地址来测试NAT功能。日志中的信息表明NAT功能配置正确，且设备能够正常进行NAT转换和接收回应报文。问题在于测试方法不适用于该设备的NAT功能验证。",
+        "解决办法": "1.更换测试方法：不在WX5004设备上使用带源地址的方式Ping公网地址，而是在内网终端上进行测试。2.验证NAT功能：在内网终端上使用私有IP地址ping公网地址，以验证NAT功能是否正常工作。3.参考日志信息：根据`debugnatpacket`的日志信息，确认NAT转换过程无误，且设备能够正确处理和转发回应报文。通过上述步骤，可以确认NAT功能在WX5004设备上已经正确配置并生效。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/5049",
+        "备注": ""
+    },
+    {
+        "序号": 69,
+        "问题现象": "某局点使用v7portal结合LDAP进行认证，终端设备可以成功接入无线服务并获取到IP地址，且能够弹出portal认证页面，但在提交用户名和密码后提示认证失败。",
+        "问题描述": "终端设备在提交认证信息后，无线控制器（AC）的LDAP日志中显示错误代码49，提示“Getresultmessageerrno=49”和“Failedtoperformbindingoperationasuser”。通过抓包分析，发现具体的LDAP错误代码为52e，表示“密码或凭据无效”。",
+        "结论": "认证失败的原因在于LDAP服务器上配置的用户名和密码不正确，导致无线控制器无法成功进行LDAP绑定操作。",
+        "解决办法": "1.检查LDAP服务器上配置的用户名和密码是否正确。2.再次确认终端设备输入的用户名和密码是否与LDAP服务器配置一致。3.确认后重新尝试认证，故障得以解除。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/168222",
+        "备注": ""
+    },
+    {
+        "序号": 70,
+        "问题现象": "某局点使用无线网络时，无线终端（主要是Win10PC）频繁掉线。终端接入无线网络后，大约一分钟左右断开连接。掉线终端分布不均匀，各个AP下都存在频繁掉线的情况。",
+        "问题描述": "1.终端掉线原因码：在AC上查看终端掉线原因，原因码为1025，表示终端在运行状态下收到了去认证消息，表明终端为主动离线。2.掉线终端分布：掉线终端随机分配在各个AP下，各个服务模板都有掉线的情况，判断与空口环境关系不大。3.DHCP通信异常：终端上线后，收集终端所在AP上的驱动debug，发现终端获取地址后，不断向DHCP服务器发送单播报文，但具体报文内容未知。",
+        "结论": "1.DHCP服务器变更：确认该局点最近DHCP服务器从单机变为主备DHCP服务器，怀疑问题可能与主备DHCP服务器未同步有关。2.地址冲突：怀疑终端存在地址冲突，向DHCP服务器发送Decline报文，但主备DHCP服务器可能因配置或其他原因未同步，导致终端频繁掉线。3.问题解决：现场取消主备DHCP服务器后，终端频繁掉线问题解除。",
+        "解决办法": "1.确认DHCP服务器配置：与客户确认DHCP服务器的配置情况，特别是主备DHCP服务器是否同步。2.排查终端掉线规律：检查终端掉线是否有规律，是否出现在某个AP下或集中在某个服务模板下。3.查看掉线原因码：-使用命令`[WX5540E-v7-probe]displaysysteminternalwlanclienthistory-recordmac-addressxxxx-xxxx-xxxx`查看终端掉线记录。-使用命令`[WX5540E-v7-probe]displaysysteminternalwlanclienthistory-recordhelpreason-code1025`查看掉线原因码的具体含义。4.收集debug信息：-在AC和AP上同时收集以下debug信息：-`debugwlanclientevent`-`debugwlanclienterror`-`debugwlanclientmacx-x-x`-在AP的probe视图下开启以下debug（根据AP的Radio数量开启相应的命令）：-`debuggingar5drv1packetallmacXXXX-XXXX-XXXXverbose`-`debuggingar5drv2packetallmacXXXX-XXXX-XXXXverbose`-`debuggingar5drv3packetallmacXXXX-XXXX-XXXXverbose`-在AP的系统视图下开启`info-centerenable`。-在AP的用户视图下开启`tm`和`td`。5.终端网卡抓包：在掉线终端的网卡上开启Wireshark抓包，收集AP、AC的诊断信息，并联系400进行分析。6.关闭debug命令：-在AP的Probe视图下关闭所有开启的debug命令：-`undodebuggingar5drv1all`-`undodebuggingar5drv2all`-`undodebuggingar5drv3all`-在AP的用户视图下关闭AP上开启的其他debug命令：-输入`uda`，然后输入`utm`和`utd`。7.验证debug关闭：使用以下命令验证是否关闭了Probe视图中的debug：-`[AP-Probe]displaydebuggingar5drv1radio`-`[AP-Probe]displaydebuggingar5drv2radio`-`[AP-Probe]displaydebuggingar5drv3radio`建议1.后续掉线问题排查：后续遇到类似掉线问题时，可按照上述步骤进行排查，特别是确认DHCP服务器的配置和同步情况。2.终端网卡抓包：建议在终端网卡上抓包，分析具体报文，以便更准确地定位问题。日期2022-12-05发表，2022-12-30修订。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/215624",
+        "备注": ""
+    },
+    {
+        "序号": 71,
+        "问题现象": "现场使用我司AC控制器与华为的NCE服务器对接802.1x认证时，华为服务器无法识别终端设备的DHCP_OPTION字段，导致无法根据终端的操作系统分配不同的地址段。",
+        "问题描述": "客户需求是通过NCE服务器识别终端设备是电脑还是苹果或安卓设备，并根据不同的平台分配不同的地址段。但在终端认证过程中，虽然计费报文携带了DHCP_OPTION字段，但华为NCE服务器无法识别这些字段，导致无法实现客户的需求。",
+        "结论": "问题在于我司AC控制器发送的DHCPOPTION字段格式不符合华为NCE服务器的识别标准。通过配置AC控制器的RADIUS属性转换功能，可以将H3C的DHCPOPTION字段转换为华为NCE服务器能够识别的格式，从而解决问题。",
+        "解决办法": "1.全局视图配置：配置一个华为的属性名，指定vendorid和code。```[WX5510E]radiusattributeextendedhw-dhcp-optionvendor2011code158typeoctets```2.进入RADIUS视图：```[WX5510E-radius-aa]```3.使能属性转换开关：```[WX5510E-radius-aa]attributetranslate```4.配置属性转换功能：```[WX5510E-radius-aa]attributeconvertH3C-DHCP-Optiontohw-dhcp-optionsent```5.配置属性格式：```[WX5510E-radius-aa]include-attributeh3c-dhcp-optionformatformat2```效果验证：配置调整后，终端服务器可以成功识别出终端设备的操作系统，并根据不同的平台分配不同的地址段。最终结果通过上述配置调整，成功解决了华为NCE服务器无法识别终端设备DHCP_OPTION字段的问题，满足了客户的需求。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/204816",
+        "备注": ""
+    },
+    {
+        "序号": 72,
+        "问题现象": "在网络维护过程中，面对大量数据包（从几MB到几GB不等），使用Wireshark等抓包工具时，难以快速定位和识别特定类型的报文，尤其是在涉及复杂网络协议（如Wi-Fi802.11）的情况下。",
+        "问题描述": "Wireshark工具自带了一些通用协议的着色方案，例如浅绿色代表HTTP协议，蓝色代表DNS协议。虽然这些默认着色方案有助于快速区分不同类型的报文，但在特定领域（如Wi-Fi802.11）中，这些默认规则可能不够全面或不够个性化，导致关键报文被遗漏或难以发现。",
+        "结论": "为了提高Wireshark的使用效率，特别是针对特定领域的网络分析，可以自定义着色规则。通过调整颜色方案，可以更加直观地识别和分析特定类型的报文，从而快速找到网络问题的蛛丝马迹。",
+        "解决办法": "1.自定义着色规则：-打开Wireshark，进入菜单栏，找到“查看”（View）选项。-选择“着色规则”（ColoringRules），这里会列出默认的着色规则。-点击“新建”（New）按钮，创建自定义的着色规则。-选择你感兴趣的协议类型（如Wi-Fi802.11），并设置相应的颜色。-例如，可以将涉及无线相关的报文（如Beacon帧、Association请求/响应帧等）设置为特定的颜色，以便快速识别。2.常见Wi-Fi协议报文的着色规则：-Management帧：`wlan.fc.typeeq0`-Control帧：`wlan.fc.typeeq1`-Data帧：`wlan.fc.typeeq2`-Association请求：`wlan.fc.type_subtypeeq0x00`-Association响应：`wlan.fc.type_subtypeeq0x01`-Reassociation请求：`wlan.fc.type_subtypeeq0x02`-Reassociation响应：`wlan.fc.type_subtypeeq0x03`-Probe请求：`wlan.fc.type_subtypeeq0x04`-Probe响应：`wlan.fc.type_subtypeeq0x05`-Beacon帧：`wlan.fc.type_subtypeeq0x08`-Disassociate帧：`wlan.fc.type_subtypeeq0x0A`-Authentication帧：`wlan.fc.type_subtypeeq0x0B`-Deauthentication帧：`wlan.fc.type_subtypeeq0x0C`-Action帧：`wlan.fc.type_subtypeeq0x0D`-BlockACK请求：`wlan.fc.type_subtypeeq0x18`-BlockACK：`wlan.fc.type_subtypeeq0x19`-PowerSavePoll：`wlan.fc.type_subtypeeq0x1A`-RequesttoSend(RTS)：`wlan.fc.type_subtypeeq0x1B`-CleartoSend(CTS)：`wlan.fc.type_subtypeeq0x1C`-ACK：`wlan.fc.type_subtypeeq0x1D`-ContentionFreePeriodEnd：`wlan.fc.type_subtypeeq0x1E`-NULLData：`wlan.fc.type_subtypeeq0x24`-QoSData：`wlan.fc.type_subtypeeq0x28`-NullQoSData：`wlan.fc.type_subtypeeq0x2C`3.使用对话着色功能：-在着色规则下方，有一个“对话着色”（ConversationColoring）按钮。-选中某个报文，点击“对话着色”按钮，Wireshark会自动将与该报文相关的所有源目的IP地址的报文进行颜色分类。-这一功能特别适用于快速查找和分析特定IP地址之间的交互报文。4.实际操作建议：-根据个人偏好和分析需求，选择合适的颜色。-尝试不同的着色方案，找到最适合自己工作场景的配置。-定期回顾和调整着色规则，以适应新的网络环境和分析需求。通过以上方法，可以显著提高使用Wireshark进行网络分析的效率和准确性。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/103082",
+        "备注": ""
+    },
+    {
+        "序号": 73,
+        "问题现象": "在某大型园区办公网中，使用无线控制器WX5540E配置多种款型AP进行无线覆盖，以WPA+TKIP、WPA2+CCMP混合加密PSK认证方式接入无线网络。用户在某些时间段频繁出现终端关联失败的问题，尝试多次关联才可成功，甚至一直无法关联。此现象在所有区域均出现，不分具体场景和AP型号。",
+        "问题描述": "1.终端关联失败：用户终端在尝试连接无线网络时，多次关联失败，甚至无法成功连接。2.排查过程：-排除了信号覆盖问题、干扰问题、接入用户数限制问题、误配置问题、个别终端问题等常见原因。-新增不加密SSID，终端尝试关联正常，表明问题与加密方式有关。3.抓包分析：-通过空口抓包发现，终端被AP踢掉，AP发送deauth报文，强制终端下线。-报文中reasoncode为1，表示“未指定原因”。4.调试信息：-在AC上打开debug调试信息，采集终端关联失败的详细信息。-调试信息显示AC上的PSK认证用户已达到上限，超过设备规格（4K）。-具体调试信息如下：```InspurACMasterWMAC/6/WMACCLIENTGOESOFFLINE:Clientfcdb-b30b-945ddisconnectedfromWLANInspur-L.Reasoncodeis1.InspurAC_MasterPORTSEC/7/Error:port-securityPSKuseruptolimits```",
+        "结论": "问题的根本原因是无线控制器WX5540E的PSK认证用户规格限制为4K，而该局点当前在线用户数已超过4K。因此，部分终端在尝试关联时被AC拒绝，导致关联失败。",
+        "解决办法": "1.启用端口安全：```shell[AC]port-securityenable```2.配置无线端口安全，使用MAC-and-PSK认证：```shell[AC]interfacewlan-ess2[AC-WLAN-ESS2]port-securityport-modemac-and-psk[AC-WLAN-ESS2]port-securitytx-key-type11key[AC-WLAN-ESS2]port-securitypreshared-keypass-phrase12345678[AC-WLAN-ESS2]quit```3.创建服务模板2（加密类型服务模板），配置SSID为mactest，并将WLAN-ESS2接口绑定到服务模板2：```shell[AC]wlanservice-template2crypto[AC-wlan-st-2]ssidmactest[AC-wlan-st-2]bindwlan-ess2[AC-wlan-st-2]cipher-suiteccmp[AC-wlan-st-2]security-iersn[AC-wlan-st-2]service-templateenable[AC-wlan-st-2]quit```4.创建AP1的模板，名称为ap1，型号名称选择WA3628i-AGN，并配置AP1的序列号：```shell[AC]wlanapap1modelWA3628i-AGN[AC-wlan-ap-ap1]serial-id210235A29G007C000020```5.将服务模板2绑定到AP1的radio1口：```shell[AC-wlan-ap-ap1]radio1typedot11an[AC-wlan-ap-ap1-radio-1]service-template2[AC-wlan-ap-ap1-radio-1]radioenable[AC-wlan-ap-ap1-radio-1]quit[AC-wlan-ap-ap1]quit```6.添加认证域cams，并配置为“none”：```shell[AC]domaincams[AC-isp-cams]authenticationnone[AC-isp-cams]authorizationnone[AC-isp-cams]accountingnone[AC-isp-cams]quit```7.指定MAC认证域为cams：```shell[AC]mac-authenticationdomaincams```通过上述配置，使用MAC-and-PSK认证方式可以扩展PSK认证用户规格，解决用户关联失败的问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/7561",
+        "备注": ""
+    },
+    {
+        "序号": 74,
+        "问题现象": "终端设备无法搜索到5G信号。",
+        "问题描述": "某局点的终端设备无法搜索到5G信号，经核对发现无线接入方面的配置没有问题。通过现场测试软件和修改设备配置测试，发现设备只能选择36～140频段的信道，这与中国的5G频段标准不符。进一步检查配置后，发现AC（无线控制器）上配置的国家码为CH，而根据ISO3166标准，CH代表瑞士，而非中国。中国的国家码应为CN。由于配置了错误的国家码，导致设备按照瑞士的5G频段标准工作，因此终端设备无法搜索到符合中国标准的5G信号。",
+        "结论": "错误配置了AC上的国家码（CH代表瑞士，而非中国），导致设备按照瑞士的5G频段标准工作，从而无法搜索到中国的5G信号。",
+        "解决办法": "使用`country`命令将AC上的国家码修改为CN，使设备按照中国的5G频段标准工作，问题得到解决。配置国家码时，需要注意CN代表中国，CH代表瑞士。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/20928",
+        "备注": ""
+    },
+    {
+        "序号": 75,
+        "问题现象": "某运营商局点WLAN网络用户投诉量大增，主要问题包括终端接入协商速率低、下载速度慢、无线上网不稳定及客户端频繁掉线。",
+        "问题描述": "1.现场复现与初步信息收集：H3C工程师到达现场，通过连接问题AP并使用命令`displaywlanclientmac-address5cac-4c91-8140verbos`收集终端关联信息，发现终端RSSI值为34，但协商速率仅为5.5Mbps。进一步在AP隐藏模式下通过`displayar5drv1clientallstatus`查看终端的信号强度及AP发送报文的协商速率，发现多集中在5.5、6.5、11、13等低速率集上。2.报文发送情况分析：在AP隐藏模式下使用`displayar5drv1statistics`查看AP空口报文发送情况，发现发送失败报文数量高达174个，占总发送报文数的近50%。针对MAC地址为5c:ac:4c:91:81:40的终端，AP向其发送的报文成功率仅为53.5%（182/340）。3.设备底噪与空口利用率异常：使用`displayar5drv1calibration`和`displayar5drv1channelbusy`命令检查设备底噪及空口利用率情况，发现故障设备底噪降低到-112左右，远低于正常值-95。同时，该楼层区域存在多家运营商的AP设备，均采用室分方式部署，天线未入室，导致信号干扰严重，但AP的空口利用率较低，尤其是Rx方向。4.配置分析：在AC及AP上查看配置信息，未发现明显异常，但在AC上发现配置了名为`sky.txt`的脚本文件，内容为`#wlanoptionchannel-reuse5#`。该特性用于信道复用，通过调整AP设备对信道空闲检测的判断级别，忽略信号强度低于信道重用级别的所有报文影响，以提高AP的发送能力。启用该功能后，虽然底噪和空口利用率有所降低，但可能导致空口冲突和干扰，进而影响报文发送成功率。",
+        "结论": "问题的根本原因是AC设备上启用了信道复用功能（`wlanoptionchannel-reuse5`），导致AP空口冲突及干扰严重，最终使得AP与终端之间的协商速率偏低，影响了用户的上网体验。",
+        "解决办法": "1.删除信道复用脚本：在AC上AP视图下删除`map`脚本文件`sky.txt`。2.重启AP设备：重启相应的AP设备，以使配置更改生效。3.验证功能是否删除：通过telnet到AP上，在隐藏模式下使用`displaywlanoption`命令查看AP上是否还启用信道复用功能，确保该特性已被关闭。通过以上步骤，可以有效解决AP与终端之间协商速率低的问题，提升用户的上网体验。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/2408",
+        "备注": ""
+    },
+    {
+        "序号": 76,
+        "问题现象": "部分终端设备无法获取到DHCP分配的IP地址，导致无法正常上网。故障终端随机分布在各个服务模板下，没有明显的规律性。",
+        "问题描述": "组网情况：AC（无线控制器）旁挂在核心交换机上，AC作为DHCPRelay，而DHCPServer由一台电脑担任，并直接连接到交换机。在故障期间，发现部分终端设备无法获取到IP地址。",
+        "结论": "通过现场排查和抓包分析，最终定位到问题出在第三方的上网行为管理设备上。该设备拦截了DHCP请求报文（使用67号端口）和响应报文（使用68号端口），导致部分终端无法正常获取到IP地址。",
+        "解决办法": "1.将上网行为管理设备的67号（DHCP请求报文）和68号（DHCP响应报文）端口放通。2.重新测试，确保所有终端设备都能正常获取到IP地址并上网。通过上述措施，问题得以解决，所有终端设备恢复正常。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/48824",
+        "备注": ""
+    },
+    {
+        "序号": 77,
+        "问题现象": "配置802.1X认证后，PC终端无法认证成功，但手机用户终端可以认证成功。",
+        "问题描述": "在进行802.1X认证配置后，PC终端在尝试连接无线网络时始终无法成功通过认证。通过AC设备的`debugradius`和`debugportal`命令进行分析，发现认证失败的报文代码为03，表示AAA向BAS发送了认证拒绝响应。进一步查看iMCRADIUS服务器的日志，发现错误信息为“证书未导入”（`E63510:Certificatenotimported.`）。此外，日志还显示EAPTLS认证过程中SSL读取数据失败（`EapTlsAuth.procHshakeData:nodataforSSLreadreturned-1`），怀疑证书存在问题。",
+        "结论": "问题的根本原因在于iMCRADIUS服务器上的认证证书已过期，导致PC终端无法通过802.1X认证。手机终端可以不选择证书认证，因此能够成功上线到AC。",
+        "解决办法": "1.重新获取证书：进入iMC管理界面，按照以下路径导航到证书配置页面：【用户】|【接入策略管理】|【业务参数配置】|【证书配置】|【服务器证书】。2.安装证书：参考相关案例（如：https://zhiliao.h3c.com/Theme/details/123542），重新获取并安装新的认证证书。3.验证认证：安装证书后，重新进行802.1X认证测试，确认PC终端能够成功上线并获取IP地址。通过上述步骤，PC终端的802.1X认证问题得以解决，最终能够成功连接到无线网络。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/183058",
+        "备注": ""
+    },
+    {
+        "序号": 78,
+        "问题现象": "在V7平台无线控制器中使用管制符命令筛选AP名字时，如果AP名字过长并跨行显示，则无法正确筛选到相应的AP信息。即使输入AP的完整名字或部分名字，筛选结果依然为空。",
+        "问题描述": "1.配置中AC可以显示AP完整名字：在配置界面中，AC可以正确显示AP的完整名字，即使名字很长。2.displaywlanapall命令显示AP完整名字：使用`displaywlanapall`命令可以显示所有AP的完整信息，但当AP名字过长时，会自动换行显示。3.使用管制符筛选AP名字时显示不全：使用`displaywlanapall|include<AP名字>`命令时，如果AP名字超过固定列宽并跨行显示，管制符无法正确匹配AP名字，导致筛选不到任何信息。",
+        "结论": "该问题是由V7平台无线控制器的设计限制导致的。具体来说，`displaywlanapall`命令在显示AP信息时，每个属性的列宽是固定的，当AP名字过长时会自动换行显示。然而，管制符命令`|include`是基于行过滤的，而不是基于每个属性完整的值进行过滤，因此无法匹配跨行显示的AP名字。",
+        "解决办法": "1.不使用管制符命令：如果需要查看特定AP的详细信息，建议直接使用`displaywlanap<AP名字>`命令，而不是通过`|include`进行筛选。2.手动查找：在使用`displaywlanapall`命令显示所有AP信息后，手动查找需要的AP名字。3.缩短AP名字：如果条件允许，可以考虑缩短AP的名字，使其不超过固定列宽，从而避免跨行显示的问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/8269",
+        "备注": ""
+    },
+    {
+        "序号": 79,
+        "问题现象": "某局点无线插卡周期性出现CPU利用率告警，CPU使用率高达90%。该局点在线AP数量众多，关联无线终端数量上万。",
+        "问题描述": "通过查看详细进程的CPU占用率，发现以下进程占用率较高：转发进程（LWPS）：36%Agent进程（AGNT）：20%信息处理中心（INFO）：4%Trap进程（TRAP）：3%具体进程的CPU占用率如下：VIDL：12%LWPS：36%AGNT：20%TRAP：3%DT1X：1%IACT：1%其他进程占用率较低",
+        "结论": "高CPU利用率主要是由转发进程和Agent进程占用率较高引起的。在线AP数量众多和关联的无线终端数量庞大进一步加剧了这一问题。",
+        "解决办法": "1.调整转发方式：将集中转发方式变成本地转发方式，以减少AC的转发流量。2.开启二层隔离：部分无线终端VLAN开启二层隔离，减少PC间互访。3.优化Agent进程：设置设备轮询时间为最大值，以降低Agent进程的CPU占用率。4.关闭SNMPTrap上报：关闭设备上的SNMPTrap信息主动上报网管平台，减少不必要的CPU负担。5.升级设备：鉴于现场在线AP数量众多，关联无线终端数量庞大，建议部署更高性能的插卡设备。以上措施有助于降低CPU利用率，提升系统性能和稳定性。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/15672",
+        "备注": ""
+    }
+]

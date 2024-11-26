@@ -1,0 +1,182 @@
+[
+    {
+        "序号": 1060,
+        "问题现象": "某局点进行普通Portal认证时，在无感知认证的有效时间内，用户仍需要重新输入用户名和密码进行认证，导致用户体验不佳。",
+        "问题描述": "在该局点的网络配置中，Portal认证使用了EIA（企业级认证系统），并且启用了无感知认证功能。然而，在无感知认证有效时间内，用户再次访问网络时，AC（接入控制器）会发出MAC查询报文，但服务器回应“未绑定”，导致无感知认证失败。经进一步检查，发现Portal配置为三层Portal（`portalenablemethodlayer3`），这种配置方式导致服务器无法学习到终端设备的MAC地址，因此无感知认证无法正常工作。",
+        "结论": "三层Portal配置方式不支持无感知认证，因为服务器无法正确学习到终端设备的MAC地址，从而导致在无感知认证有效时间内，服务器无法识别已认证的终端设备，需要用户重新输入用户名和密码进行认证。",
+        "解决办法": "将Portal认证方式修改为直接Portal（`portalenablemethoddirect`），这样服务器可以正确学习到终端设备的MAC地址，无感知认证功能恢复正常。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/102906",
+        "备注": ""
+    },
+    {
+        "序号": 1061,
+        "问题现象": ":某商场配置了不加密的无线服务，部分终端无法关联或需要经过多次反复尝试才能正常连接。",
+        "问题描述": ":1.检查DHCP问题：已排除。2.重启射频口和AP：问题依旧存在。3.还原WLANRRM配置：问题依旧存在。4.分析debugwlanmacall中的ERROR信息：-`WMAC/7/ERROR:FailedtonotifyPSauthresultforclient54e4-3a5c-71b3toWROAM`-`WMAC/7/ERROR:NotifyPStostartauthfailed,disconnectit`-这些错误信息表明通知漫游模块认证失败，导致客户端被断开连接。5.displaywlanclient显示：用户数已接近AC的最大接入用户量规格。",
+        "结论": ":该问题的根本原因是AC上的clientcache已达到最大容量。尽管displaywlanclient显示当前在线用户数未达到1536，但由于商场环境人员流动频繁，新用户不断上线，老用户不断下线，导致clientcache占用接近最大值1536。当cache满时，新用户无法成功上线。",
+        "解决办法": ":1.扩容AC：通过将部分AP切换到另一台AC上，将最大接入用户数扩大一倍，问题得到有效解决。2.负载分担：在客户不扩容的情况下，利用现有的两台WX3024EAC进行负载分担，可以显著缓解问题，相当于将最大用户数扩大了一倍。具体步骤1.检查当前用户数：使用`displaywlanclient`命令查看当前在线用户数，确认是否接近最大接入用户量规格。2.分析debug信息：通过`debugwlanmacall`命令获取详细的错误信息，确认是否与clientcache相关。3.优化clientcache：如果确定是clientcache满导致的问题，可以考虑增加AC的数量或进行负载分担，以扩大最大接入用户数。4.实施负载分担：将部分AP切换到另一台AC上，确保两台AC均衡分担用户负载。建议反馈如果发现问题仍然存在，建议进一步检查AC的配置和性能，确保没有其他潜在问题影响clientcache的管理。同时，考虑升级AC的硬件或软件版本，以获得更好的性能和稳定性。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/4646",
+        "备注": ""
+    },
+    {
+        "序号": 1062,
+        "问题现象": "在MSG360-20N设备的WEB界面中无法显示硬盘盒子中的文本内容，之前是正常的。客户反馈在设备重启后出现了这一问题。即使将设备断电并重新插拔硬盘，问题仍然存在。",
+        "问题描述": "1.设备识别情况：通过观察指示灯，发现设备已经成功识别到了硬盘，指示灯显示为绿色常亮。2.网络配置问题：检查设备的配置，发现修改了与NAS设备的IP地址以及设备的VLAN接口编号。具体配置如下：-`wlandualosip-address192.168.100.254255.255.252.0`-`interfaceVlan-interface2ipaddress192.168.100.1255.255.252.0`-`interfaceGigabitEthernet1/0/9portlink-modebridgeportlink-typetrunkporttrunkpermitvlanall`3.通信问题：由于9口（内联口）用于内部连接NAS设备，修改后的配置导致发出的报文带上VLAN2的tag，NAS设备无法接收带VLANtag的数据，从而导致硬盘信息无法在WEB界面显示。",
+        "结论": "问题的根本原因是修改了9口（内联口）的VLAN配置，导致NAS设备无法正确接收和处理带VLANtag的数据包，从而无法识别硬盘信息。",
+        "解决办法": "1.修改9口的PVID：将9口的PVID修改为VLAN2，以确保发出的数据包不带VLANtag。2.具体配置命令：-`interfaceGigabitEthernet1/0/9`-`porttrunkpvidvlan2`3.验证：修改配置后，重新启动设备，检查WEB界面是否能够正常显示硬盘信息。通过上述步骤，问题得到了解决。在进行类似配置修改时，需要注意内联口的VLAN设置，确保与NAS设备的通信正常。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/22416",
+        "备注": ""
+    },
+    {
+        "序号": 1063,
+        "问题现象": "某局点的无线问题表现为：使用型号为WX3510H的无线控制器（版本R5109P06）和WA4320-ACN的无线AP时，2.4G频段在商场区域（干扰较大）连接无线网络后，ping包时断时续，空口利用率达到80%左右，延迟较高，各种上网业务体验较差，带宽测速低于1Mbps。而在干扰较小的停车场，2.4G频段的空口利用率仅为20%左右，带宽测速平均为30Mbps。",
+        "问题描述": "1.设备信息：无线控制器型号为WX3510H，版本为R5109P06；无线AP型号为WA4320-ACN。2.网络环境：商场区域2.4G频段存在较大干扰，附近有其他厂家的AP，且这些AP与本局点的AP距离约为七八米，信道设置为1,6,11。3.测试结果：-V7版本的AP在商场区域的2.4G频段空口利用率高达80%，带宽测速低于1Mbps。-V5版本的AP在商场区域的2.4G频段空口利用率降至50%左右，带宽测速基本达到10Mbps。",
+        "结论": "1.干扰分析：V7版本的AP在商场区域的2.4G频段空口利用率较高，主要是因为该区域存在大量同频干扰，影响了网络性能。2.版本差异：V5版本的AP在切换后表现更好，可能是因为V5版本的AP没有进行复杂的优化，而是采用了自动选择信道和较低的功率设置，从而减少了同频干扰，只产生了邻频干扰。3.优化建议：为了确保问题的准确性和优化的有效性，在对比不同版本的AP空口利用率时，无线网络环境必须保持一致，同时优化措施也需要相同。",
+        "解决办法": "1.信道调整：将V7版本的AP信道设置为自动选择信道，以减少同频干扰。2.功率调整：适当降低V7版本的AP发射功率，以减少对附近其他AP的干扰。3.优化配置：确保V5和V7版本的AP在相同的无线网络环境下进行测试，并采用相同的优化配置。4.持续监控：在实施上述优化措施后，持续监控空口利用率和网络性能，确保问题得到有效解决。通过上述措施，可以有效降低商场区域2.4G频段的空口利用率，提高网络性能和用户体验。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/16800",
+        "备注": ""
+    },
+    {
+        "序号": 1064,
+        "问题现象": "在综合办公区进行无线覆盖时，会面临多个挑战，包括不同的建筑材质、多样的用户终端、复杂的内部格局以及较高的用户密度。这些问题可能导致信号覆盖不全、信号强度不足、同频干扰严重以及美观性受损。",
+        "问题描述": "1.建筑材质多样：综合办公区的墙体材质包括木质、玻璃、石膏板、砖墙和混凝土等，不同的材质对无线信号的衰减程度不同，影响信号覆盖效果。2.用户终端多样：办公区域内主要使用笔记本和台式机，但随着移动互联网的普及，智能手机和平板电脑的使用也日益增多，需要同时考虑这些设备的接入需求。3.内部格局复杂：办公区内部可能存在封闭、半封闭和开放三种区域，不同区域的布局和功能需求各异，需要灵活设计覆盖方案。4.用户密度较高：办公区通常用户密度较高，特别是在会议室、大厅和领导办公室等关键区域，需要确保信号的稳定性和容量。5.美观性要求：办公环境对美观要求较高，AP的安装方式和位置需要充分考虑，以避免影响整体装饰效果。",
+        "结论": "综合办公区的无线覆盖方案需要根据具体场景进行灵活设计，充分考虑建筑材质、用户终端、内部格局和用户密度等因素，确保信号覆盖良好、容量充足且美观性不受影响。",
+        "解决办法": "1.评估建筑材质：在装修初期进行勘测时，评估不同材质对信号的衰减程度，合理选择AP的安装位置和方式，必要时采用信号功分延伸或美化天线入室等方法。2.考虑用户终端：根据办公区内的终端类型（笔记本、台式机、智能手机、平板电脑等），合理分配频段资源，建议使用双频AP以满足不同终端的需求。3.灵活设计覆盖方案：-一楼大厅：确保信号良好，尽量避免三维空间信号可见，重点覆盖接待前台和宾客等候休息区。-会议室：建议独立覆盖，每个会议室独立布放AP，根据实际情况灵活调整。-重要人物办公室：建议独立布放AP，如果墙体材质为玻璃或石膏板等轻质材料，可以考虑在办公室外统一覆盖。-大范围扇形格局：采用功分信号延伸或X分方案，确保信号覆盖的充分性和连续性，避免信号盲区。-直线型格局：根据隔断材质和用户密度，规律性选择AP部署点，建议多选择拐角位置或交叉区域，以保证经济性和覆盖效果。-单面分布且办公室独立：建议采用美化天线或插座式AP进行信号入室覆盖，避免在走廊部署AP，减少楼层间信号串扰。-玻璃或轻质材料隔断的较封闭办公环境：采用交叉布点方式，确保信号良好无盲区，满足用户带宽需求，同时合理分配频点，保证信号质量。4.资源准备：勘测人员需要准备常用的勘测工具，具体参考《无线覆盖不同类型场景勘测指导方案(1)-学校》篇章第二部分内容。5.美观性考虑：在AP安装方式和位置的选择上，充分考虑办公环境的美观要求，尽量选择隐蔽且不影响装饰效果的安装位置。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/1714",
+        "备注": ""
+    },
+    {
+        "序号": 1065,
+        "问题现象": "终端设备连接到无线网络的SSID后，在自动弹出的认证页面上显示“设备未注册，请在eportal上添加认证设备”的错误信息。",
+        "问题描述": "在用户尝试连接无线网络并通过第三方服务器进行Portal认证时，认证页面无法正常加载。通过检查浏览器中的URL，发现URL中的某些特殊字符（如“-”和“.”）被转义成了“%2D”和“%2E”，导致第三方Portal服务器无法正确识别这些字符，从而无法提供Web认证页面。",
+        "结论": "问题的根本原因在于AC（AccessController）设备在生成重定向URL时，对某些特殊字符进行了转义处理，而这些转义字符无法被第三方Portal服务器识别，从而导致认证失败。",
+        "解决办法": "1.配置AC设备：在AC的系统视图下，使用命令`portalurl-unescape-chars-.`，禁止对“-”和“.”字符进行转义处理。2.验证配置：配置完成后，重新连接无线网络并尝试认证，确认URL中的“-”和“.”字符不再被转义，能够成功加载认证页面并完成认证。通过上述配置，第三方认证服务器能够正确识别URL，无线Portal认证恢复正常。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/218492",
+        "备注": ""
+    },
+    {
+        "序号": 1066,
+        "问题现象": "部分WA5320H-HI型号的AP下，终端设备无法正常关联无线网络。",
+        "问题描述": "基本信息：设备使用的是Release5433P03版本，配置为本地转发。故障现象：同型号的AP大多数工作正常，但小部分WA5320H-HI型号的AP下，终端设备无论接入5G还是2.4G频段，都无法正常关联。基本测试：-测试了不同服务模板（包括开放和加密认证），故障现象依然存在。-重启故障AP后，问题无法恢复。-故障AP的CPU和内存使用情况均正常。信息收集：通过收集终端接入过程的debug信息，发现终端已经进入认证状态（Auth），但仍然发送认证请求（authenticationrequest），而没有发送关联请求（associationrequest）。",
+        "结论": "问题根源：通过进一步排查，发现AC（无线控制器）上存在一条关于故障APIP的长静态ARP表项，且MAC地址配置错误。这条错误的静态ARP表项覆盖了正确的动态ARP表项，导致AC发送的报文目的MAC地址不正确，使终端设备的认证报文无法正确转发至故障AP，从而无法完成正常的关联过程。影响范围：现场多台故障AP均存在同样的长静态ARP表项错误，影响了这些AP下的终端设备的正常接入。",
+        "解决办法": "1.避免配置静态ARP：一般不建议在AC上配置AP的静态ARP，如果必须配置，确保信息的准确性。2.排查链路和表项：遇到类似问题时，首先排查链路状况，仔细检查涉及故障现象的每个IP对应的MAC地址，包括AC的ARP表、AP的ARP表、静态路由等。3.修改错误表项：在AC上删除或修改错误的长静态ARP表项，确保其与实际的APMAC地址匹配。4.验证效果：修改后，重新测试终端设备是否能正常关联到这些AP，确认问题是否解决。建议反馈定期检查：建议定期检查AC和AP的ARP表项，确保表项的正确性和及时更新。文档记录：对于任何手动配置的静态ARP表项，建议详细记录配置原因和时间，以便后续排查和维护。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/214881",
+        "备注": ""
+    },
+    {
+        "序号": 1067,
+        "问题现象": "在使用WX系列AC配置中文SSID时，部分终端设备（如手机、PC）上显示的中文SSID会出现乱码，甚至无法搜索到无线服务。",
+        "问题描述": "问题主要与终端设备（操作系统）所支持的中文编码方式有关。WX系列AC本身存储的SSID等配置信息是简单的十六进制编码，字符编码方式取决于串口或telnet终端的设置。由于一个SSID只能采用一种编码方式，因此不可能做到所有终端设备都能识别同一SSID的编码方式。根据测试结果，不同操作系统对中文编码方式的支持情况如下：Windows系列操作系统：大多数情况下仅支持GB2312编码，UTF-8编码会显示乱码。Android系统：大部分设备仅支持UTF-8编码，少数设备可以识别GB2312但可能显示乱码。iOS系统：仅支持UTF-8编码，GB2312编码会显示乱码或无法扫描到SSID。步步高手机：测试的两款设备对UTF-8和GB2312编码均能良好支持。",
+        "结论": "配置中文SSID时，需要根据目标终端设备的操作系统选择合适的字符编码方式。由于不同的操作系统对字符编码的支持不同，建议在配置SSID之前先了解目标终端设备的编码支持情况，以便选择合适的编码方式。",
+        "解决办法": "1.选择终端软件的字符编码方式：-使用SecureCRT等终端仿真程序时，确保选择正确的字符编码方式。-对于GB2312编码，SecureCRT默认设置即可。-对于UTF-8编码，需要在SecureCRT中设置“选项—会话选项—外观—字符编码—UTF-8”。2.AC上配置中文SSID服务模板：-GB2312编码：```plaintext[WX3010E-wlan-st-1]displaythis#wlanservice-template1clearssid无线中文bindWLAN-ESS1service-templateenable#return[WX3010E-wlan-st-1]```-UTF-8编码：-首先在SecureCRT中设置字符编码为UTF-8。-然后在AC上重新配置中文SSID：```plaintext[WX3010E-wlan-st-1]displaythis#wlanservice-template1clearssid无线中文bindWLAN-ESS1service-templateenable#return[WX3010E-wlan-st-1]```-特别注意：修改了默认编码方式后，需要重新配置中文SSID。3.终端设备的无线连接显示：-PC终端（WindowsXP/7）：建议使用GB2312编码。-Android手机：建议使用UTF-8编码。-iOS手机（iPhone）：建议使用UTF-8编码。-步步高手机（OPPO、vivo）：可以使用UTF-8或GB2312编码。通过以上步骤，可以有效地解决中文SSID在不同终端设备上显示乱码或无法搜索到的问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/3275",
+        "备注": ""
+    },
+    {
+        "序号": 1068,
+        "问题现象": "在使用WX系列无线控制器(AC)时，希望能够在特定时间自动关闭或开启指定接入点(AP)的射频口，以达到节能的目的。例如，每天的某些时段、每周的某些日子、每月的某些日期，或是特定日期和时间，能够自动执行射频口的开关操作。",
+        "问题描述": "用户希望在无人值守的情况下，通过配置定时任务来实现WX系列AC上指定AP（如ap01）的射频口自动开关，以节省能源并优化网络管理。用户的具体需求包括但不限于以下几种场景：每天08:00至20:00开启ap01的射频口，其他时间关闭。每周一至周五开启ap01的射频口，其他时间关闭。每周一至周五的08:00至20:00开启ap01的射频口，其他时间关闭。每月1日至10日开启ap01的射频口，其他时间关闭。在特定日期（如2012年6月19日00:00）关闭ap01的射频口。延迟1小时后关闭ap01的射频口。",
+        "结论": "通过创建批处理文件并配置定时任务，WX系列AC可以实现指定AP射频口的自动开关，从而达到节能和优化网络管理的目的。用户可以根据不同的需求，配置不同的定时任务，以满足不同的使用场景。",
+        "解决办法": "1.创建批处理文件：-新建文本文档`radiodisable.txt`和`radioenable.txt`。-`radio_disable.txt`内容：```#wlanapap01radio1radiodisableradio2radiodisable```-`radio_enable.txt`内容：```wlanapap01radio1radioenableradio2radioenable```-将上述两个文本文件分别保存为批处理文件`radiodisable.bat`和`radioenable.bat`。-将批处理文件上传到AC的CF卡。2.配置定时任务：-场景一：每天08:00—20:00开启ap01射频口，其他时间关闭：```shellsystem-view[AC]jobradio_disable[AC-job-radio_disable]viewsystem[AC-job-radiodisable]time1repeatingat20:00commandexecuteradiodisable.bat[AC-job-radio_disable]quit[AC]jobradio_enable[AC-job-radio_enable]viewsystem[AC-job-radioenable]time1repeatingat08:00commandexecuteradioenable.bat[AC-job-radio_enable]quit```-场景二：每周周一至周五开启ap01射频口，其他时间关闭：```shellsystem-view[AC]jobradio_disable[AC-job-radio_disable]viewsystem[AC-job-radiodisable]time1repeatingat23:59week-dayFricommandexecuteradiodisable.bat[AC-job-radio_disable]quit[AC]jobradio_enable[AC-job-radio_enable]viewsystem[AC-job-radioenable]time1repeatingat00:01week-dayMoncommandexecuteradioenable.bat[AC-job-radio_enable]quit```-场景三：每周周一至周五的08:00—20:00开启ap01射频口，其他时间关闭：```shellsystem-view[AC]jobradio_disable[AC-job-radio_disable]viewsystem[AC-job-radiodisable]time1repeatingat20:00week-dayMoncommandexecuteradiodisable.bat[AC-job-radiodisable]time2repeatingat20:00week-dayTuecommandexecuteradiodisable.bat[AC-job-radiodisable]time3repeatingat20:00week-dayWedcommandexecuteradiodisable.bat[AC-job-radiodisable]time4repeatingat20:00week-dayThucommandexecuteradiodisable.bat[AC-job-radiodisable]time5repeatingat20:00week-dayFricommandexecuteradiodisable.bat[AC-job-radio_disable]quit[AC]jobradio_enable[AC-job-radio_enable]viewsystem[AC-job-radioenable]time1repeatingat08:00week-dayMoncommandexecuteradioenable.bat[AC-job-radioenable]time2repeatingat08:00week-dayTuecommandexecuteradioenable.bat[AC-job-radioenable]time3repeatingat08:00week-dayWedcommandexecuteradioenable.bat[AC-job-radioenable]time4repeatingat08:00week-dayThucommandexecuteradioenable.bat[AC-job-radioenable]time5repeatingat08:00week-dayFricommandexecuteradioenable.bat[AC-job-radio_enable]quit```-场景四：每月1日至10日开启ap01射频口，其他时间关闭：```shellsystem-view[AC]jobradio_disable[AC-job-radio_disable]viewsystem[AC-job-radiodisable]time1repeatingat23:59month-date10commandexecuteradiodisable.bat[AC-job-radio_disable]quit[AC]jobradio_enable[AC-job-radio_enable]viewsystem[AC-job-radioenable]time1repeatingat00:01month-date1commandexecuteradioenable.bat[AC-job-radio_enable]quit```-场景五：在2012年6月19日00:00关闭ap01射频口：```shellsystem-view[AC]jobradio_disable[AC-job-radio_disable]viewsystem[AC-job-radiodisable]time1at00:002012/06/19commandexecuteradiodisable.bat[AC-job-radio_disable]quit```-场景六：延迟1小时后关闭ap01射频口：```shellsystem-view[AC]jobradio_disable[AC-job-radio_disable]viewsystem[AC-job-radiodisable]time1one-offdelay01:00commandexecuteradiodisable.bat[AC-job-radio_disable]quit```通过以上配置，用户可以灵活地控制AP的射频口开关，实现绿色节能和网络管理的自动化。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/3178",
+        "备注": ""
+    },
+    {
+        "序号": 1069,
+        "问题现象": "在某局点的Portal认证过程中，用户在输入用户名和密码后，系统提示“向设备发送请求超时”。",
+        "问题描述": "1.组网及说明：-WX5540H设备旁挂于核心路由器，结合IMC（IntelligentManagementCenter）进行Portal认证。-AC（AccessController）和IMC的相关配置已完成，能够正常弹出Portal界面。2.报文交互流程：-IMC侧向AC设备发送REQINFO报文，AC应回应ACKINFO报文。-在IMC侧检查发现，IMC向AC设备发送了REQINFO报文，但没有收到ACKINFO报文。3.IMC侧日志：-2018-05-2116:11:42.078：IMC向AC设备发送REQ_INFO报文，报文处理成功。-2018-05-2116:11:46.081：IMC侧提示“向设备发送请求超时”。4.AC侧调试信息：-开启debuggingportalall和debuggingradiusall后，发现AC的debug信息中没有收到REQ_INFO报文。5.抓包分析：-在AC连接IMC的接口上进行镜像抓包，发现发送REQ_INFO报文的源地址是172.16.100.1，而非IMC的地址10.1.1.2。-检查核心路由器的配置发现，与AC互连的接口上配置了出方向NAT（NetworkAddressTranslation），导致IMC发过来的报文源地址被转换。",
+        "结论": "问题的根本原因在于核心路由器与AC互连的接口上配置了出方向NAT，导致IMC发过来的REQ_INFO报文的源地址被转换，AC无法正确识别并回应，从而引发“向设备发送请求超时”的错误提示。",
+        "解决办法": "1.核心路由器配置调整：-在核心路由器与AC互连的接口上删除natoutbound配置。-保留其他必要的NAT配置，确保网络的正常运行。2.验证：-删除NAT配置后，重新测试Portal认证流程，确认问题是否解决。3.建议：-在遇到Portal认证失败的问题时，可以借助debug和抓包等方法，快速定位问题并解决。-检查网络设备的NAT配置，确保报文的源地址和目的地址正确无误。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/40817",
+        "备注": ""
+    },
+    {
+        "序号": 1070,
+        "问题现象": "WAP712C-LI款型的AP设备在云模式下启动时，提示可以通过Oasis平台或管理Wi-Fi接口登录设备进行管理。",
+        "问题描述": "当WAP712C-LI设备工作在云模式下，且版本为R1113P05-OASIS时，如果需要将设备的云模式切换为瘦模式（FitMode），可以在设备上电启动时通过进入EXTENDED-BOOTWARE界面完成这一切换操作。",
+        "结论": "通过在设备启动时进入EXTENDED-BOOTWARE界面并选择切换AP模式，可以成功将云模式的WAP712C-LI设备切换为瘦模式。切换成功后，设备会自动从AC下载新的系统版本并注册上线。",
+        "解决办法": "1.AC上的准备：-进入AC的系统视图。-配置AP上线前的必要信息，如AP型号和序列号。-配置DHCP服务器，确保为AP分配正确的IP地址和网关。-确认AC的AP许可证数量足够。-查看当前AP的状态，确保没有已连接的AP。2.AP上的操作：-在AP上电启动过程中，按`Ctrl+B`进入EXTENDED-BOOTWARE菜单。-按`Ctrl+Y`选择“ChangeAPMode”选项。-选择“2FitMode”进行模式切换。-等待几分钟，直到出现“Changedtofitmodesuccessfully!Pleaserebootthesystemnow!”的提示。-按`0`键重启系统。-重启后，AP将从AC下载新的系统版本并注册上线。通过以上步骤，可以成功将云模式下的AP设备切换为瘦模式，并确保其正常运行。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/146491",
+        "备注": ""
+    },
+    {
+        "序号": 1071,
+        "问题现象": "无线终端从2号楼切换到1号楼后，偶发出现无法上网的情况。",
+        "问题描述": "终端从2号楼切换到1号楼后，依然使用2号楼的IP地址（10.253.45.240）。AC通过ARP学习到终端的IP地址后，向RADIUS服务器发送了计费更新报文，RADIUS服务器联动出口防火墙放通了10.253.45.240的上网权限。然而，由于1号楼的终端无法与2号楼的网关通信，终端后续通过DHCP将IP地址更新为1号楼的IP地址（10.2.77.252），但这个新地址未在防火墙上放通，导致终端无法上网。",
+        "结论": "问题的根本原因是AC通过ARP学习到了终端在2号楼的IP地址，并使用该地址发送计费更新报文，而终端在1号楼获取的新IP地址未在防火墙上放通。",
+        "解决办法": "配置基于ACL规则学习终端IP地址，确保AC只学习1号楼的IP地址段，避免学习到2号楼的IP地址。具体配置如下：1.创建ACL规则：```plaintextaclbasic2001descriptionwhite_listrule5permitsource10.2.0.00.0.255.255ruledeny```2.在WLAN服务模板中启用基于ACL的IP地址学习：```plaintextwlanservice-template10ssidJDclientip-snoopingacl2001service-templateenable```通过上述配置，AC在学习终端IP地址时，只会学习1号楼的IP地址段（10.2.0.0/16），从而避免使用2号楼的IP地址发送计费更新报文，确保终端在切换楼栋后能够正常使用网络。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/219722",
+        "备注": ""
+    },
+    {
+        "序号": 1072,
+        "问题现象": "某地电信无线Portal认证页面在苹果终端上推送速度缓慢，甚至有时无法推送，而其他类型的终端则没有出现该问题。无线网络的覆盖和信号强度均能满足基本的上网需求，无线转发功能正常，无线优化工作已经完成，无线信号侧的问题基本可以排除。",
+        "问题描述": "1.故障发生条件：故障现象仅在苹果终端上出现，某些苹果终端上该问题为必现。2.测试与分析：-使用两台苹果手机进行模拟测试，并在设备侧进行流镜像抓包分析。-抓包结果显示，地址为10.11.40.70的苹果手机几乎无法快速推送Portal页面。-对于能推送页面但很慢的苹果终端，DNS请求captive.apple.com的响应时间为18秒，解析其他域名的响应时间为40秒，导致页面推送延迟较大。3.相关域名：主要关联的域名是captive.apple.com，该域名的解析对于苹果终端的Portal页面推送至关重要。",
+        "结论": "1.故障原因：初步判断为DNS解析问题，尤其是苹果终端连接无线网络后需要快速解析captive.apple.com，而公网DNS服务器的响应速度较慢，导致Portal页面推送延迟。2.影响范围：仅限于苹果终端，其他终端未受影响。3.验证方法：通过抓包分析发现DNS请求captive.apple.com的响应时间过长，导致页面推送速度慢或无法推送。",
+        "解决办法": "1.DNS代理配置：-在M9006设备上开启DNS代理功能。-配置静态DNS，增加以下命令：```Dnsserver220.189.127.106DnsproxyenableIphostcaptive.apple.com104.114.152.113```2.终端DNS设置：-将现场苹果终端的DNS地址设置为M9006的地址。3.效果验证：-配置完成后，苹果终端的Portal页面推送速度显著提升，几乎没有延迟。-整个下午未再出现推送慢的情况。建议1.内部DNS服务器：在内部网络中搭建一个DNS服务器，专门负责代理和快速解析captive.apple.com，以避免公网DNS服务器的响应慢问题。2.无线优化：无线网络部署后的优化工作在任何场景下都是推荐的，尤其是对于复杂组网环境和多种设备的场景。3.终端机制理解：处理无线问题时，了解终端的运行访问机制也是解决问题的一个重要思路，尤其是对于苹果终端这类特定设备的问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/30565",
+        "备注": ""
+    },
+    {
+        "序号": 1073,
+        "问题现象": "某局点的无线接入点（AP）采用二层注册方式，地址获取正常，且AP与无线控制器（AC）之间可以互相ping通，但是AP无法成功注册到AC上。",
+        "问题描述": "在AP的debug日志中，可以看到AP持续向AC发送Discovery请求报文，但未收到AC的任何回应。进一步检查AC的debug日志，发现AC确实收到了AP的Discovery请求，但返回了错误信息：“Unsupporteddiscoverytype”。具体错误信息为：“FailedtoprocessdiscoveryrequestfromAPwithserialID21980xxxxxxxxxxx2Z:Unsupporteddiscoverytype”。这表明AC不支持AP所发送的Discovery请求的类型。",
+        "结论": "问题的根源在于AC配置了单播发现策略（`wlancapwapdiscovery-policyunicast`），该策略使得AC仅对发送单播Discovery请求报文的AP进行响应，而不对发送组播或广播Discovery请求报文的AP进行响应。而该局点的AP采用的是广播或组播方式发送Discovery请求，因此AC未对其进行响应，导致AP无法完成注册过程。",
+        "解决办法": "删除AC上的单播发现策略配置命令`wlancapwapdiscovery-policyunicast`，使AC能够响应广播或组播方式的Discovery请求。完成配置修改后，AP成功注册到AC，问题得到解决。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/103214",
+        "备注": ""
+    },
+    {
+        "序号": 1074,
+        "问题现象": "：1.故障终端的共性特征为MAC地址最后两字节为0x8808。2.在相同的环境下，仅符合该特定特征的无线终端出现获取不到IP地址的故障。3.符合上述特定特征的无线终端仅在型号为WX5560H的无线控制器环境下出现故障。",
+        "问题描述": "：1.标准802.3以太报文格式：-6字节目的MAC地址-6字节源MAC地址-2字节类型2.AC设备处理过程：-802.3报文从AC的有线口进入设备后，会在报文内容前方增加一个16字节的硬件头。-在后续转发流程中，软件会判断报文是否为pause帧，正常情况下应偏移16字节+6字节+6字节，对类型字段进行判断。3.故障原因：-该型号无线控制器在该版本下，软件对硬件头处理逻辑有误，导致软件判断pause帧时少偏移了8字节。-因此，获取到的“报文类型”内容错误变成了目的MAC地址的最后2个字节。-当目的MAC地址最后两个字节为0x8808时，系统将该无线终端的正常业务报文误判为pause帧，并执行了丢弃处理。-由此，当AC入方向有线报文的目的MAC地址为8808时，该报文无法通过AC正常转发，这部分无线终端也就无法正常获取到IP地址。",
+        "结论": "：该故障是由WX5560H无线控制器在特定版本软件中对硬件头处理逻辑的错误导致的。当目的MAC地址最后两个字节为0x8808的报文被误判为pause帧并丢弃，使得这些无线终端无法正常获取IP地址。",
+        "解决办法": "：1.规避办法：-请联系400获取具体的规避方法。2.彻底解决办法：-升级到R5472及之后的版本，以彻底解决该问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/222115",
+        "备注": ""
+    },
+    {
+        "序号": 1075,
+        "问题现象": "现场终端在配置了802.1x认证后能够正常获取地址并上网，但在新增portal认证后，终端无法获取地址。",
+        "问题描述": "客户在原有网络中使用802.1x认证，本地转发模式下终端能够正常获取到业务VLAN200的地址并上网。然而，当客户新增portal认证后，尽管仍然使用本地转发模式且业务VLAN相同（VLAN200），终端却无法获取地址。通过`displaywlanclient`命令检查发现，终端并未获取到业务VLAN200。",
+        "结论": "1.排除原因：由于802.1x认证和portal认证使用相同的业务VLAN200，且802.1x认证本地转发正常，排除了MAP文件或上层设备未放通VLAN的可能性。2.问题根因：设备上没有配置要下发给终端的VLAN信息。具体表现为服务模板和radio调用服务模板时均未配置VLAN。3.客户疑问解答：-802.1x认证正常的原因：通过802.1x认证，授权服务器可以下发授权VLAN，且授权VLAN的优先级高于设备服务模板配置的VLAN，因此终端能够正常获取地址。-`clientforwardinglocationapvlan200`命令的作用：该命令仅说明VLAN200的终端在AP上转发数据报文，并不下发VLAN属性给终端。",
+        "解决办法": "规范设备侧配置，确保终端能够正确获取VLAN信息。具体配置方法如下：1.在服务模板下配置VLAN：```shell[AC]wlanservice-template1[AC-wlan-st-1]ssidservice[AC-wlan-st-1]vlan200[AC-wlan-st-1]clientforwardinglocationapvlan200[AC-wlan-st-1]quit```2.在radio下调用服务模板并配置VLAN：```shell[AC-wlan-ap-office]radio1[AC-wlan-ap-office-radio-1]service-template1vlan200[AC-wlan-ap-office-radio-1]radioenable```通过上述配置，终端在portal认证时也能够正确获取到VLAN200的地址，从而正常上网。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/105300",
+        "备注": ""
+    },
+    {
+        "序号": 1076,
+        "问题现象": "1.未开启再次连接免认证功能时，终端断开无线后再连接时未弹出认证页面，可以直接上网。2.开启再次连接免认证功能后，部分终端在第二天首次连接无线时，会弹出认证页面或手动打开网页跳转到认证页面，影响正常使用。",
+        "问题描述": "1.问题1：在未开启再次连接免认证功能的情况下，终端断开无线网络后，重新连接时并没有重新进行短信认证，而是可以直接访问互联网。2.问题2：开启再次连接免认证功能后，一些终端在第二天首次连接无线网络时，仍然需要进行短信认证，这与功能预期不符，导致用户体验不佳。",
+        "结论": "1.未开启再次连接免认证功能的情况：终端断开无线网络后，认证用户并不会立即从绿洲平台的在线用户列表中下线。如果终端在短时间内重新连接，由于时间间隔未达到平台的限制切断时长，终端仍然被视为在线用户，因此无需重新认证即可上网，这是正常现象。2.开启再次连接免认证功能的情况：再次连接免认证功能只对开启该功能后的首次认证终端有效。对于在功能开启前已经认证成功的终端，该功能不会生效。因此，这些终端在第二天首次连接时仍然需要进行短信认证。",
+        "解决办法": "1.未开启再次连接免认证功能的情况：无需特别处理，这是平台的正常行为。2.开启再次连接免认证功能的情况：-强制用户下线：可以通过绿洲平台的管理界面强制已认证的用户下线，然后重新进行短信认证。这样，再次连接免认证功能将对这些终端生效。-通知用户重新认证：在功能开启后，通知所有已认证的用户重新进行一次短信认证，以确保再次连接免认证功能能够正常生效。希望这个总结对您有所帮助。如果有任何进一步的问题或需要更多详细信息，请随时告知。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/102963",
+        "备注": ""
+    },
+    {
+        "序号": 1077,
+        "问题现象": "某局点反馈无线网络在访问外部网页时出现卡顿现象，特别是淘宝、京东等页面刷新速度很慢。然而，有线网络访问这些页面时没有问题，且无线网络ping外网也没有丢包现象。",
+        "问题描述": "初步分析认为可能是由于TCP报文分片导致的问题，通过抓包可以判断网络中是否有大量TCP重传，这可能导致页面访问速度变慢。进一步了解现场组网情况后发现，有线和无线网络使用不同的网段，但最终都通过同一台防火墙出口。使用有线网络获取无线网段地址后，同样出现了页面卡顿的问题，因此可以排除无线网络本身的问题。",
+        "结论": "问题并非出现在无线网络上，而是由于防火墙上对无线网段的策略限制导致的。具体表现为防火墙对无线网段的流量进行了限制，影响了页面的加载速度。",
+        "解决办法": "1.在网关及无线控制器（AC）上尝试修改TCPMSS值，但效果不明显。2.最终在防火墙上发现并修改了对无线网段的策略限制，业务恢复正常。3.对于无线网络使用中出现的卡顿、丢包等问题，首先需要明确问题是发生在有线侧还是无线侧，这样才能精准定位并解决问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/102437",
+        "备注": ""
+    },
+    {
+        "序号": 1078,
+        "问题现象": "某运营商局点的DHCP地址池存在大量地址冲突问题，导致终端无法正常接入无线网络。冲突列表中终端数量最多接近800个，且冲突地址以每分钟10个左右的速度增加。",
+        "问题描述": "1.组网情况：该局点使用两台WX6108EAC和289台WA2610E-GNPAP提供某省银行生产网的无线网络覆盖，终端通过Portal认证方式接入。2.DHCP配置：AC设备使用DHCPServer功能为客户端分配IP地址，地址池中有8个C网地址（每个C网地址段为256个IP地址），地址池利用率60%，高峰期关联终端数量达到1844个。3.地址冲突：在用户高峰期，由于地址池数量不足，大量终端无法正常获取IP地址，导致DHCP冲突列表中出现大量冲突地址。手工清除冲突地址后，地址冲突问题仍然持续发生，影响了终端的正常接入。",
+        "结论": "1.地址池不足：现有的8个C网地址池无法满足高峰时段1844个终端的IP地址需求，导致地址池地址不足。2.终端实现机制问题：某些终端的实现机制存在BUG，在发起DHCP申请时仍然能够回复ICMP探测，导致DHCPServer误判为地址冲突，从而将这些地址加入冲突列表。",
+        "解决办法": "1.定时清理冲突列表：在主备AC上同时执行定时清理DHCP冲突列表的脚本，以减少冲突地址的影响。脚本内容如下：```bash#jobconflictviewsystemtime1repeatingat07:00week-daySunMonTueWedThuFriSatcommandexecutecfa0:/conflict.battime2repeatingat08:00week-daySunMonTueWedThuFriSatcommandexecutecfa0:/conflict.battime3repeatingat10:00week-daySunMonTueWedThuFriSatcommandexecutecfa0:/conflict.battime4repeatingat12:00week-daySunMonTueWedThuFriSatcommandexecutecfa0:/conflict.battime5repeatingat14:00week-daySunMonTueWedThuFriSatcommandexecutecfa0:/conflict.battime6repeatingat16:00week-daySunMonTueWedThuFriSatcommandexecutecfa0:/conflict.battime7repeatingat18:00week-daySunMonTueWedThuFriSatcommandexecutecfa0:/conflict.bat#moreconflict.batquitresetdhcpserverconflictall```2.扩容地址池：建议将现有地址池数量由8个C网地址扩容为16个C网地址，以满足高峰期1844个终端的IP地址需求。3.调整租约时间：将DHCPServer地址池租约时间由默认的1天调整为2小时，以提升地址池中地址的利用率，减少地址冲突的发生。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/3005",
+        "备注": ""
+    },
+    {
+        "序号": 1079,
+        "问题现象": "某局点在WX2560H设备上安装了证书后，通过HTTPS访问1.1.1.1时，浏览器仍然提示“不安全”。",
+        "问题描述": "该局点的设备型号为WX2560H5458P03，采用集中转发模式，并结合第三方服务器进行Portal认证。尽管在AC（接入控制器）和第三方服务器上已经安装了正规授权机构颁发的证书，但HTTPS访问时浏览器仍然显示不安全的提示。",
+        "结论": "通过以下步骤分析，确定了问题的原因：1.查看证书安装结果：-使用命令`displaypkicerdomaindomain1ca`和`displaypkicertificatedomaindomain1local`确认CA证书和本地证书已经正确导入PKI域。-使用命令`displaysslserver-policymyssl`查看SSL服务器端策略信息。-使用命令`displayportalweb-servernewpt`查看PortalWeb服务器信息。2.测试重定向过程：-直接在终端浏览器中输入认证URL`https://x.x.x.x/portalproxy/2/portal`，发现终端可以直接打开认证页面，没有提示不安全。-由此推断，问题出在触发重定向过程的TLS协商。",
+        "解决办法": "前方未正确配置SSL策略并引用PKI域。正确的配置步骤如下：1.配置PKI域，导入证书：-手动导入CA证书和本地证书：```shellpkidomainxxxxxundocrlcheckenablepkiimportdomainxxxxxxpemcafilexxxxxxxpkiimportdomainxxxxxxpemlocalfilexxxxxxx```-注意证书格式，如果证书格式不是PEM，可以使用其他选项。2.配置SSL策略，引用PKI域：-配置SSL策略并引用上述PKI域：```shellsslserver-policyhttps_redirectpki-domainxxxxxcertificate-chain-sendingenable```-策略名必须是`https_redirect`，并确保下发完整证书链。修改配置后，问题得到解决。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/217634",
+        "备注": ""
+    }
+]

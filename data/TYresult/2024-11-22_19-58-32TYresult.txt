@@ -1,0 +1,182 @@
+[
+    {
+        "序号": 340,
+        "问题现象": "本地MAC认证通过后，测试终端无法获取设定好的授权VLAN。",
+        "问题描述": "现场需求：不同类型的终端通过一个服务模板接入网络，可以分别获得对应资源的访问权限。实施背景：现场无认证服务器，所有终端的MAC地址可控，数量也在AC规格范围内。推荐方案：使用本地MAC认证下发授权VLAN。",
+        "结论": "配置错误导致终端无法获取设定好的授权VLAN。具体错误配置为：```plaintextdomainlocal-macauthorization-attributeidle-cut151024authenticationlan-accesslocalauthorizationlan-accessnone\\\\此处配置错误，需要配置成authorizationlan-accesslocalaccountinglan-accessnone```",
+        "解决办法": "1.调整配置：```plaintextdomainlocal-macauthorization-attributeidle-cut151024authenticationlan-accesslocalauthorizationlan-accesslocalaccountinglan-accessnone```2.保存配置并重新启动本地MAC认证。3.通过命令`displaymac-authconnection`查看，确认测试终端可以获取设定好的授权VLAN。补充说明上述案例要求仅能用一个服务模板实现根据用户类型区分VLAN的情况。如果对无线服务模板数量无限制，也可以通过其他方案实现，例如基于user-profile限制不同用户接入不同SSID，不同SSID限制资源访问权限。具体案例参考：[MAC认证下基于user-profile限制不同用户接入不同SSID](https://zhiliao.h3c.com/Theme/details/222623)。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/226272",
+        "备注": ""
+    },
+    {
+        "序号": 341,
+        "问题现象": "某运营商局点BAC架构下，外省用户在使用Portal认证时无法使用动态密码登录。尽管这些用户能够成功获取动态密码，但在尝试登录时，Portal界面显示认证失败的提示，具体提示内容为：“认证用户139XXXX9169失败，可能原因：1、用户不在线；2、用户没有订购业务；3、用户或密码错误；4、用户已在线。”",
+        "问题描述": "1.网络拓扑：涉及某运营商局点的无线网络，采用基于BAC架构的Portal认证。2.故障分析：通过一线现场测试并收集AC（AccessController，接入控制器）上的debug信息，发现PortalServer在向AC设备发送认证请求报文时，为用户添加了`web.mobile`域名。然而，AC设备上未找到相应的认证域，导致认证请求被拒绝。3.具体报文分析：-Portal认证请求报文：-类型：3-序列号：22613-请求ID：402-属性数量：2-错误代码：0-用户IP：10.198.64.19-用户名：139XXXX9169@web.mobile-密码：08af013ccd698d118042e8c8ded95f45-AC设备拒绝认证的报文：-类型：4-序列号：22613-请求ID：402-属性数量：0-错误代码：1-用户IP：10.198.64.19-原因：NASError（未找到相应认证域）",
+        "结论": "外省用户在认证时未带域名，而PortalServer在发送认证请求时为用户添加了`web.mobile`域名。由于AC设备上不存在该认证域，导致认证请求被拒绝，从而用户无法使用动态密码登录。",
+        "解决办法": "1.认证域选择顺序：-接入模块指定的认证域-用户名中指定的ISP域-系统缺省的ISP域2.具体操作：-在AC设备上添加`domainif-unknownabc`命令。当在模块指定的认证域、用户名中指定的ISP域、系统缺省的ISP域中均未查找到该用户时，强制该用户到`abc`域中查找认证信息。-通过上述配置，确保即使用户名中未指定ISP域，也能在设备上找到相应的认证域，从而避免认证失败的问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/1448",
+        "备注": ""
+    },
+    {
+        "序号": 342,
+        "问题现象": "：某局点大量AP掉线之后无法自动上线。",
+        "问题描述": "：1.检查AP掉线原因，发现多是邻居超时导致（具体原因包括：Processedjoinrequestin、Failedtoretransmitmessage、Neighbordeadtimerexpired）。2.查看接入交换机的POE端口，发现端口有频繁的up/down信息，建议客户排查线路问题，并进行长ping大包测试，结果显示不丢包。3.在AC和AP上同时开启debug命令（debugwlancapwapall），但未发现任何异常信息输出。4.确认掉线的AP基本都是本地转发模式，初步怀疑MAP下发存在问题，但检查下发的MAP文件未发现异常。5.远程到客户AP上查看，发现AP存在配置`wlanachost-nameyx-xny`，该配置导致AP向一个不存在的域名发送单播Discover报文，无法接收到Response报文，从而导致AP无法上线。",
+        "结论": "：问题的根本原因是AP上的配置`wlanachost-nameyx-xny`导致AP向一个不存在的域名发送单播Discover报文，无法接收到Response报文，从而无法上线。该配置可能是客户在操作时误下发的。",
+        "解决办法": "：1.删除AP上的误配置`wlanachost-nameyx-xny`。2.重新启动AP或AC，确保配置生效。3.验证AP是否能够正常上线。该问题在2019年6月11日进行了修订，确认删除误配置后问题解决。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/59938",
+        "备注": ""
+    },
+    {
+        "序号": 343,
+        "问题现象": "某局点的AP设备在进行了现场误操作后，AP全部离线，无法与AC（无线控制器）建立正常通信。",
+        "问题描述": "误操作导致在下发给AP的MAP文件中配置了`undoporttrunkpermitvlan1`，这使得AP与AC之间的通信中断。尽管现场人员在修改下发的MAP文件，重新放通VLAN1，但AP在半小时后依然未能上线。进一步排查发现，现场配置了Remote-AP功能，该功能允许AP在与AC之间的隧道断开后继续为客户端提供服务，因此AP不会自动重启。",
+        "结论": "由于Remote-AP功能的存在，AP不会因隧道断开而自动重启，导致即使修正了VLAN配置，AP也无法自动恢复与AC的连接。此外，尝试通过在本体上shutdown所有WTU端口或在AC上下发命令重启本体，这些操作均无法使AP断电重启，因为这些操作不会影响WTU端口对AP的供电功能。",
+        "解决办法": "在AC的本体AP视图下执行以下命令，以实现WTU430H分体AP的断电重启：1.`[H3C-wlan-ap-WT]poewtu-port1to24disable`-关闭WTU端口的供电功能。2.`[H3C-wlan-ap-WT]poewtu-port1to24enable`-重新启用WTU端口的供电功能。通过上述操作，AP断电后重新启动，并成功在AC上上线。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/154006",
+        "备注": ""
+    },
+    {
+        "序号": 344,
+        "问题现象": "在某局点使用WX5540H设备进行Portal认证时，未认证用户在Portal页面上点击某些链接（如“热门游戏”链接）无法正常访问。这些链接理论上应该无需认证即可访问。",
+        "问题描述": "1.原配置情况：-`portalfree-rule1`放通到DNS服务器（114.114.114.114）。-`portalfree-rule53`放通到域名`*.*`。-`portalfree-rule55`放通到域名`www.baidu.com`。2.测试发现：-尽管在AC上配置了DNS服务器，并且可以正常解析和ping通`*.*`和`www.baidu.com`，但由于这些域名对应多个不同的IP地址，AC解析出来的IP地址与现场无线终端解析出来的IP地址不一致。-AC解析`*.*`的IP地址为122.228.237.158，解析`www.baidu.com`的IP地址为61.135.169.121。-现场无线终端解析`*.*`的IP地址为42.81.28.99，解析`www.baidu.com`的IP地址为220.181.112.244。",
+        "结论": "问题的根本原因在于，某些域名对应多个不同的IP地址，而AC在配置`portalfree-rule`时解析的IP地址与现场无线终端解析的IP地址不一致。因此，未认证用户在点击这些链接时，由于目标IP地址未被放通，导致无法正常访问。",
+        "解决办法": "1.修改配置：-将`portalfree-rule`的配置从放通域名改为放通具体的IP地址。-具体修改如下：-`portalfree-rule53destination42.81.28.99`（内网无线终端解析的`*.*`的IP地址）。-`portalfree-rule55destination220.181.112.244`（内网无线终端解析的`www.baidu.com`的IP地址）。2.建议：-对于那些对应多个IP地址的域名，建议在配置`portalfree-rule`时尽量采用放通目的IP地址的形式，而不是放通域名。-确保将该域名对应的所有IP地址都添加到`portalfree-rule`中，以确保未认证用户可以正常访问这些链接。通过上述修改，未认证用户在Portal页面上点击相关链接时，可以正常访问。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/25183",
+        "备注": ""
+    },
+    {
+        "序号": 345,
+        "问题现象": "在某局点使用WX3520H-F和WX2510H设备（版本7.1.064,Release5446P06）时，当LocalAC（本地AC）故障后，AP（接入点）能够成功垂直备份到中心AC。然而，当LocalAC重新上线后，AP未能自动回切到LocalAC，而是继续在中心AC上运行，只有重启AP才能恢复到正常状态。",
+        "问题描述": "1.正常状态：AP在中心AC上上线，并通过CAPWAP隧道注册到LocalAC。2.LocalAC故障：断开LocalAC的网络连接后，AP检测到与LocalAC的连接中断，重新与中心AC建立连接。3.LocalAC恢复：当LocalAC重新上线后，AP未能自动回切到LocalAC，即使在AP组视图下启用了`switch-backenable`功能。4.日志分析：-`%Oct2809:52:57:1502021WX2510HCWC/4/CWCLOCALAC_DOWN:CAPWAPtunneltocentralAC172.16.x.xwentdown.Reason:Neighbordeadtimerexpired.`-`%Oct2809:53:22:1602021WX2510HCWS/4/CWSAPDOWN:CAPWAPtunneltoAPxxxwentdown.Reason:Failedtoretransmitmessage.`-`%Oct2809:53:37:1032021WX2510HCWC/6/CWCLOCALAC_UP:CAPWAPtunneltocentralAC172.16.202.2wentup.`-`%Oct2810:01:49:2122021WX2510HSHELL/4/SHELLCMDMATCHFAIL:-User=admin-IPAddr=172.16.x.x;Commanddidiainviewsystemfailedtobematched.`-`%Oct2810:01:52:3632021WX2510HSHELL/6/SHELL_CMD:-Line=vty1-IPAddr=172.16.x.xUser=admin;Commandisdidiagnostic-information`-`%Oct2810:01:52:9602021WX2510HSHELL/6/SHELLCMDCONFIRM:Confirmoptionofcommanddidiagnostic-informationisno.`",
+        "结论": "1.配置问题：尽管在AP组视图下启用了`switch-backenable`功能，但该功能未能生效，导致AP在LocalAC恢复后未能自动回切。2.日志分析：日志显示AP在LocalAC故障后成功切换到中心AC，但在LocalAC恢复后，CAPWAP隧道未能重新建立到LocalAC，AP继续在中心AC上运行。",
+        "解决办法": "1.增加配置：在中心AC上的AP视图或AP组视图中，配置`backup-acip`命令，将备份AC的IP地址设置为LocalAC的IP地址。2.具体配置步骤：-进入系统视图。-进入WLAN视图。-进入AP组视图或AP视图。-配置`backup-acip`命令，指定LocalAC的IP地址。-保存配置并重启AP（如果需要）。示例配置：```shell<Sysname>system-view[Sysname]wlan[Sysname-wlan]ap-groupnameexample-group[Sysname-wlan-ap-group-example-group]backup-acip192.168.1.1```通过上述配置，可以确保当LocalAC重新上线后，AP能够自动回切到LocalAC，恢复正常的工作状态。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/178882",
+        "备注": ""
+    },
+    {
+        "序号": 346,
+        "问题现象": "在V5和V7AC两种环境下，当需要调整发送给AP的MAP文件，从允许VLAN20和30通过（MAP1）变化到仅允许VLAN40通过（MAP2）时，实际配置更新存在差异。",
+        "问题描述": "V5AC环境：在AC的AP模板中重新配置了新的MAP文件（从MAP1调整为MAP2），但AP不会立刻更新其配置。即使断开CAPWAP隧道，AP也只会进行增量修改，导致实际配置为VLAN20、30和40都允许通过。要使AP仅应用新的MAP文件配置，必须重启AP。V7AC环境：在AC的AP模板中重新配置了新的MAP文件后，AP会立刻更新其配置。然而，这种更新也是增量的，不会删除原有的配置。因此，如果要使AP仅应用新的MAP文件中的配置，同样需要重启AP。",
+        "结论": "无论是V5AC还是V7AC环境，仅通过在AC上修改AP模板中的MAP文件并断开CAPWAP隧道，都不能完全更新AP的配置。要确保AP仅应用新的MAP文件中的配置，必须重启AP。",
+        "解决办法": "1.V5AC环境：-修改AC上的AP模板，将MAP文件从MAP1（`vlan20vlan30intg1/0/1portlink-typetrunkporttrunkpermitvlan2030`）更新为MAP2（`vlan40intg1/0/1portlink-typetrunkporttrunkpermitvlan40`）。-断开AP与AC之间的CAPWAP隧道，命令为`undowlanapnameXXXcapwaptunnel`。-重启AP以确保其完全应用新的MAP文件配置，命令为`resetwlanapnameXXX`。2.V7AC环境：-修改AC上的AP模板，将MAP文件从MAP1更新为MAP2。-断开AP与AC之间的CAPWAP隧道，命令为`undowlanapnameXXXcapwaptunnel`。-重启AP以确保其完全应用新的MAP文件配置，命令为`resetwlanapnameXXX`。通过上述步骤，可以确保AP仅允许VLAN40通过，而不再允许VLAN20和30通过。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/124862",
+        "备注": ""
+    },
+    {
+        "序号": 347,
+        "问题现象": "客户在现场反馈，当终端连接服务模板①（集中转发，使用portalmac-trigger无感知对接IMC—LDAP服务器）时，丢包率在10%以上，而连接服务模板②（集中转发，使用portal认证对接IMC）和③（本地转发，使用PSK加密）时，使用体验正常，几乎不丢包。",
+        "问题描述": "1.初步判断：需要判断丢包的原因是来自无线侧还是有线侧。可以通过AP上行有线口交换机镜像抓包或在AP上收集ar5drv和wlanfwdebug等日志来确定丢包位置。2.快速验证：在现场，找一两个终端数量较少且空口利用率正常的AP，将三个服务模板绑定到同一个AP的同一个Radio下，用同一个终端进行ping包测试。结果显示，连接服务模板①时有丢包，而连接服务模板②和③时没有丢包，这表明丢包问题可能与无线空口无关。3.有线侧排查：由于服务模板①涉及认证，检查IMC认证服务器的配置。发现IMC在同步LDAP表项时，默认在线数量只能为1，这个优先级比IMC接入策略级别高，导致新上线的同一账号的终端顶掉了旧终端的表项，两者相互竞争上线，从而导致丢包率高。",
+        "结论": "丢包问题的主要原因是IMC在同步LDAP表项时，默认只允许一个账号在线，导致同一账号的多个终端在上线时相互竞争，顶掉旧终端的表项，从而引起丢包。",
+        "解决办法": "1.修改IMC配置：在IMC上将LDAP表项的在线数量设置为与接入策略相同的值，即3。2.验证效果：修改配置后，重新连接服务模板①，进行ping包测试，确认丢包问题是否解决。通过上述步骤，问题得以解决，终端连接服务模板①时的丢包率恢复正常。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/225052",
+        "备注": ""
+    },
+    {
+        "序号": 348,
+        "问题现象": "某银行局点反馈在其网点部署的两个无线接入点（AP）无法关联无线网络，使用信号扫描软件inssider扫描2.4G频段时，扫描到的信道为0。",
+        "问题描述": "1.配置检查：查看主备AC的配置，发现AP的射频未手工绑定信道。2.射频信息检查：通过命令行检查AP的射频信息，发现两个射频（radio1和radio2）的Beacon状态均为未使能（BeaconEnabled:NO）。3.信道选择机制：正常情况下，AP应将检测到的信道情况报告给AC，然后由AC选择一个合适的信道下发给AP。但该局点使用的AC版本不支持在收不到AP上报信息时自动选择信道的功能。",
+        "结论": "AP的射频信道配置异常，导致Beacon帧未正常发送，进而影响了无线网络的关联和扫描。由于该局点的AC版本较旧，不支持自动选择信道的功能，因此需要手动干预。",
+        "解决办法": "1.手工绑定信道：通过手动配置，将AP的射频信道绑定到一个固定信道，以确保Beacon帧能够正常发送。2.升级AC版本：考虑升级到最新版本的AC软件，以优化信道选择机制，提高网络的稳定性和可靠性。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/5430",
+        "备注": ""
+    },
+    {
+        "序号": 349,
+        "问题现象": "某局点反馈，使用无线控制器（AC）对接第三方Radius设备进行远程Portal认证时，个别客户端可以正常推送Portal页面，但提示用户认证失败。AC与Radius设备之间无报文交互信息。",
+        "问题描述": "1.日志分析：-AC日志显示，客户端连接时携带的IP地址为114.227.250.65。-AC从客户端的Cookie中获取到的IP地址为114.227.255.215。-认证过程中，AC尝试使用114.227.255.215的IP地址与Portal服务器进行交互，但失败并返回认证失败信息。-日志中还提到无法创建本地Portal用户，并且无法发送请求信息。2.DHCPSnooping表项：-客户端在AC上的DHCPSnooping表项显示，其IP地址为114.227.250.65，MAC地址为3c43-8ee4-0287。",
+        "结论": "客户端在Portal认证过程中使用的IP地址与其实际获取的IP地址不一致。具体来说，Portal页面重定向阶段使用的是114.227.250.65，但在Portal服务器与AC（BAS）交互阶段，AC从客户端的Cookie中获取到的是之前使用的缓存IP地址114.227.255.215。由于AC上配置了`portalhost-checkdhcp-snooping`命令，认证过程中会检查认证地址在DHCPSnooping表项中是否存在。由于114.227.255.215不在表项中，认证过程终止，导致认证失败。",
+        "解决办法": "1.清除客户端浏览器的缓存信息：-建议用户清除客户端浏览器的Cookie和其他缓存信息，然后重新进行Portal认证。2.确保IP地址及时更新：-确保客户端在每次获取新的IP地址后，能够及时更新其浏览器中的缓存信息，避免使用旧的IP地址进行认证。通过上述方法，可以解决由于IP地址不一致导致的Portal认证失败问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/1914",
+        "备注": ""
+    },
+    {
+        "序号": 350,
+        "问题现象": "某局点的接入控制器（AC）型号为WX1840H，版本为R5446P06。自开局以来，某些特定的接入点（AP）经常出现掉线现象，掉线规律为每30分钟掉线一次。",
+        "问题描述": "1.组网情况：现场采用双链路组网，主备AC配置一致，通过标杆配置对比工具确认无问题。2.掉线原因：通过命令`displaywlanapstatisticstunnel-down-record`查看发现，AP的掉线原因主要有两种：-`Neighbordeadtimerexpired`和`Failedtoretransmitmessage`，疑似链路问题。-`APconfigchanged`和`Backuptunnelchangedtomastertunnel`，其中`Backuptunnelchangedtomastertunnel`是备切回主的正常机制，而非外部原因。3.日志分析：AP上的日志显示，掉线时间间隔为30分钟，掉线原因是`APconfigchanged`。具体日志如下：-`%Mar114:28:02:9902023HTV-1C-AP-03CWC/4/CWCAPDOWN:MasterCAPWAPtunneltoAC10.0.0.52wentdown.Reason:APconfigchanged.`-`%Mar114:58:04:9472023HTV-1C-AP-03CWC/4/CWCAPDOWN:MasterCAPWAPtunneltoAC10.0.0.52wentdown.Reason:APconfigchanged.`-`%Mar115:08:07:0372023HTV-1C-AP-03CWC/4/CWCAPDOWN:MasterCAPWAPtunneltoAC10.0.0.53wentdown.Reason:Backuptunnelchangedtomastertunnel.`",
+        "结论": "经过分析，主要原因是超过license规格导致的问题。现场配置了104个授权，但实际上线的AP总数为118个。由于license共享机制，每30分钟会检查一次两边AC上线的AP总和，根据APID大小踢掉多余的AP，导致特定AP每30分钟掉线一次。",
+        "解决办法": "1.增加license数量：需要安装更多的license，达到或超过实际要上线的AP数量。2.调整license分配：确保每个AC的license数量与实际上线的AP数量相匹配，避免超过授权上限。3.监控AP上线情况：定期检查AP上线情况，确保没有超过license授权的AP数量，以避免因license不足导致的掉线问题。举例说明1.示例1：AC1安装62个license，AC2安装42个license，配置license共享，两边都有104个license。若有很多AP需要上线，AC1可以上线104个AP，AC2也可以上线104个AP。但在30分钟检测时，AC1会踢掉42个AP，剩余62个；AC2会踢掉62个AP，剩余42个。2.示例2：AC1安装62个license，AC2安装42个license，配置license共享，两边都有104个license。若AC1上线了58个AP，AC2上线了60个AP，加起来有118个AP，超过104个授权。在30分钟检测时，AC1不会踢掉AP，AC2会踢掉14个AP，剩余42个AP。注意事项被踢掉的AP取值是取小：两个AC多出来的AP数量和AC上多于本地安装授权的AP数量。增加license数量后，应重新配置license共享，确保所有AP都能正常上线。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/218007",
+        "备注": ""
+    },
+    {
+        "序号": 351,
+        "问题现象": "某局点的MAC认证服务器持续收到某个终端的认证失败日志，导致第三方服务器CPU使用率过高。",
+        "问题描述": "1.终端未创建认证表项：该终端在认证服务器上没有对应的认证表项，因此认证失败是预期行为。2.频繁认证请求：异常的是，该终端在1秒内发送了17次认证请求，这可能是异常攻击行为。3.服务器负载：由于频繁的认证失败日志，第三方服务器的CPU使用率持续升高，影响了系统的正常运行。",
+        "结论": "1.终端异常：终端的频繁认证请求行为疑似为异常攻击。2.设备控制：无线控制器设备侧可以对频繁认证的终端进行控制，设置静默时间或直接将该终端的MAC地址加入黑名单。",
+        "解决办法": "1.开启入侵检测模式并设置静默时间：-在无线控制器上开启入侵检测模式，设置静默时间，临时阻止非法用户上线。-配置命令示例：```plaintext<Sysname>system-view[Sysname]wlanclient-securityintrusion-protectionenable[Sysname]wlanclient-securityintrusion-protectionactiontemporary-block[Sysname]wlanclient-securityintrusion-protectiontimertemporary-blocktime```2.将频繁发起认证的MAC地址加入黑名单：-使用静态黑名单功能，将异常终端的MAC地址加入黑名单，防止其再次尝试认证。-配置命令示例：```plaintext<Sysname>system-view[Sysname]wlanstatic-blacklistmac-address001c-f0bf-9c92```通过上述措施，可以有效控制异常终端的频繁认证行为，减轻第三方认证服务器的负载，确保网络的正常运行。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/76922",
+        "备注": ""
+    },
+    {
+        "序号": 352,
+        "问题现象": "某局点使用H3CWX5540H无线控制器和WA5320等型号的AP进行无线网络部署，但在使用过程中发现部分AP无线信号不稳定，AP连接状态频繁在IDLE（I）和Run/Master（R/M）之间切换。",
+        "问题描述": "1.AC设备日志分析：-AC日志中存在大量关于AP连接断开的信息，主要原因是报文保活超时（`Failedtoretransmitmessage`、`Neighbordeadtimerexpired`）。-AP状态变为IDLE（`APwentoffline.StatechangedtoIdle`）。2.POE交换机日志分析：-POE交换机日志中包含大量接口频繁UP、DOWN的变化信息。-检查物理接口和线缆，替换POE交换机和AP，问题依然存在。3.AP日志分析：-AP日志中发现系统重启的记录，重启后接口状态变为UP。-测试AP的系统版本为`Version7.1.064,alpha2104sp21`，而无线控制器的软件版本为`Version7.1.064,Release5208P03`。-发现现场AP的版本与无线控制器的适配版本不一致，适配版本应为`CMW710-R2208P03`。4.无线控制器配置检查：-检查无线控制器配置，发现全局的无线AP软件升级功能被误关闭（`firmware-upgradedisable`）。",
+        "结论": "问题的根本原因是现场工程师误将无线控制器的全局AP软件升级功能关闭，导致AP和AC的软件版本不匹配，进而引发AP的频繁上下线和系统重启现象。",
+        "解决办法": "1.开启AP软件升级功能：-在无线控制器上执行命令`wlanglobal-configurationfirmware-upgradeenable`，开启全局AP软件升级功能。2.升级AP软件版本：-确保所有AP的软件版本与无线控制器的适配版本一致，以解决版本不匹配的问题。通过上述步骤，AP上线状态恢复正常，无线信号稳定。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/39463",
+        "备注": ""
+    },
+    {
+        "序号": 353,
+        "问题现象": "列车运行到某几个固定的地点会出现三到五分钟的网络中断，导致车载AP无法ping通地面服务器，影响了PIS（乘客信息系统）业务的正常运行。",
+        "问题描述": "1.初步排查：-检查所有轨旁AP的在线情况，发现均正常在线。-收集故障时刻车载AP和轨旁AP的空口利用率信息及mesh链路建立情况，发现主mesh链路的RSSI为54，满足信号强度要求，平均空口利用率在20%左右，排除了空口影响。2.进一步分析：-故障持续三到五分钟可恢复，怀疑是轨旁设备上的ARP表项刷新不及时导致。-在轨旁交换机上配置了`mac-addressmac-roamingenable`和`mac-addressmac-movefast-update`命令，但故障现象依然存在。-使用流统和抓包方法进一步排查，发现在故障时刻，从车载APping核心交换机的ICMP报文已经到达轨旁交换机，并由轨旁交换机发送给了核心交换机，但核心交换机没有回复。-抓包结果显示轨旁交换机将报文发送出去，但核心交换机没有收到，确认报文丢在了第三方设备上。",
+        "结论": "问题的根源在于第三方通信设备在特定地点的链路上存在丢包现象，导致车载AP无法ping通地面服务器，从而影响了PIS业务。",
+        "解决办法": "1.配置轨旁交换机：-确保轨旁的所有交换机配置了`mac-addressmac-roamingenable`和`mac-addressmac-movefast-update`命令，以优化MAC地址同步和ARP表项更新。2.排查第三方设备：-使用流统和抓包方法确认报文丢失的具体位置。-针对第三方设备进行详细检查和配置优化，确保其在特定地点的链路上不出现丢包现象。3.持续监控：-在优化配置后，持续监控网络性能，确保问题得到彻底解决。-保持对车载AP与轨旁AP建立的mesh链路的质量监控，确保RSSI至少在30以上，空口利用率保持在较低水平。附加建议在地铁网络中，确保信号质量和空口利用率是关键，可以解决大部分网络问题。定期对网络设备进行维护和检查，尤其是轨旁设备和第三方通信设备，以预防类似问题的发生。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/204555",
+        "备注": ""
+    },
+    {
+        "序号": 354,
+        "问题现象": "多个WA5320-SI型号的AP无法在AC（接入控制器）上成功注册上线，状态卡在“I”上。",
+        "问题描述": "AP进行了三层注册配置，手动配置了IP地址并指定了AC的IP地址（10.59.100.253）。经测试，AP能够ping通AC。AC上启用了DHCP，并配置了OPTION43指向AC的IP地址（10.59.100.253）。尽管AC和AP之间可以正常收发发现（discover）和请求（request）报文，但没有收到下一步的加入（join）报文，导致AP无法完成注册过程。",
+        "结论": "问题的根本原因在于AP的配置中存在多余配置项，如`option43ip-address10.59.100.253`、`firmware-upgradeenable`和`tunnelencryptionenable`。这些配置项可能导致AP在接收到AC的响应后无法正确处理，进而无法发送join报文完成注册。",
+        "解决办法": "1.删除多余配置：从AP的配置中删除以下配置项：-`option43ip-address10.59.100.253`-`firmware-upgradeenable`-`tunnelencryptionenable`2.简化模板配置：将AC上的模板配置简化，只保留AP的序列号，删除其他多余配置项。3.测试基本配置：使用最基本的配置进行测试，确保AP能够正常上线。详细步骤1.AP配置：```shellnooption43ip-address10.59.100.253nofirmware-upgradeenablenotunnelencryptionenable```2.AC配置：```shellwlanap-groupdefault-groupnovlan1nowlanap5320nowlanap5320-1```3.重新配置AP：```shellwlanap5320modelWA5320-SIserial-id219801A1B3818BE006XZwlanap5320-1modelWA5320-SIserial-id219801A1B3818BE006YP```4.重新启动AP：确保AP重启以应用新的配置。通过上述步骤，AP能够成功上线并完成注册过程。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/47685",
+        "备注": ""
+    },
+    {
+        "序号": 355,
+        "问题现象": "在戈壁油田场景中，由于该区域环境恶劣、地理位置偏远，存在数据收集和交互需求的业务场景无法通过传统的有线网络实现高效覆盖。此外，油田生产区域（如钻井平台和抽油机）和生活办公区之间需要可靠的通信网络，以确保业务连续性和人员安全。",
+        "问题描述": "1.物理位置与环境特殊性：戈壁油田位于荒漠地带，环境恶劣，钻井平台和抽油机分布广泛，需要在极端条件下进行数据收集和回传。2.数据回传与链路互通：钻井平台和抽油机的数据需要远程传输和监控，但戈壁地区传输距离长，传统有线网络难以覆盖。3.社会生态需求：大型油田形成的企业社会形态中，生活区和办公区也需要互联网连接，以满足日常办公和生活需求。4.安全监控与定位：随着无线技术的发展，油田需要部署无线监控和定位系统，以提高人身安全和资产管理的效率。5.炼油加工厂的特殊要求：炼油厂属于高危化工企业，对无线网络的部署有严格的安全要求，需要在规定区域内进行无线覆盖。",
+        "结论": "在戈壁油田场景中，无线网络是实现数据回传、远程监控、生活办公区覆盖和安全监控的最优选择。然而，由于环境恶劣和安全要求高，无线网络的部署需要进行详细的现场勘测，并选择合适的设备和方案，以确保网络的稳定性和安全性。",
+        "解决办法": "1.数据回传与链路互通：-设备选择：采用专门的网桥设备进行无线链路桥接，并配以大增益天线，以确保长距离传输的稳定性。-现场勘测：组织人员进行现场勘测，确定桥接设备和天线的安装位置、桥接点之间的距离、供电方式及相关附件配置。-链路构建：使用无线桥接设备将分散的采油点数据信息汇聚到一个中心点，实现集中监控和呈现。2.社会生态需求：-办公区与生活区覆盖：如果存在有线网络铺设，可以在此基础上进行无线网络部署，以满足日常办公和生活需求。-分支互联：对于相距较远的分支功能区域和中心管理区域，采用一对一的无线桥接方式实现通信互联，避免一对多模式带来的不稳定性和复杂性。3.安全监控与定位：-无线监控：选择支持WiFi的监控摄像头，接入无线AP，实现图像的无线回传，降低部署成本。-数据合并：根据现场监控所需流量和抽油机数据所需带宽，可以考虑将数据采集和监控流量合并，通过一个无线链路回传，进一步降低成本。4.炼油加工厂的特殊要求：-安全合规：遵守国家规定和企业要求，仅在规定区域内进行无线网络部署，禁止区域坚决杜绝。-需求定位：无线接入需求主要集中在办公区，确保办公网络的高效和安全。通过上述措施，可以有效地解决戈壁油田无线覆盖的需求，提高生产效率和安全性，同时降低网络部署和维护的成本。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/2834",
+        "备注": ""
+    },
+    {
+        "序号": 356,
+        "问题现象": "在某银行局点中，Android手机在连接到SSIDA并通过802.1X-TLS认证后，会出现以下现象：1.如果手机上保存了其他可连接的SSIDB，一段时间后，终端会主动从SSIDA断开，转而连接SSIDB。2.如果手机上存在2G/3G网络，一段时间后，终端会主动从SSIDA断开，转而使用2G/3G网络。3.如果手机上既没有保存其他可连接的SSID，也没有2G/3G网络，一段时间后，终端会掉线并重新发起802.1X认证，形成反复循环。",
+        "问题描述": "组网环境：该局点采用了WX5004结合iMC进行802.1X-TLS认证，AC的版本为R2308P10。终端类型：只有Android终端会出现上述断开无线网络连接的问题，iPhone和PC终端未出现类似现象。AC调试信息：-终端通过认证上线成功。-终端收发数据帧后，主动完成下线，断开连接的原因代码为8。-认证成功后，AC通知客户端发送EAP_SUCCESS包，随后启动密钥协商过程。-AC向iMC服务器发送计费开始请求，计费成功后，iMC回应5号报文并下发私有属性。-客户端收到带有私有属性的EAP报文后，主动disassociation。",
+        "结论": "问题原因：当AC配置选择Radius服务类型为扩展模式时，iMC服务器会下发私有属性，某些Android客户端可能会误认为这是错误信息，从而主动断开无线网络连接。实验室复现：在实验室环境中复现了这一问题，确认了在iMC下发私有属性之前一切正常，客户端收到私有属性后立即下线。解决验证：将Radius模式修改为“标准模式”后，iMC不再下发私有属性，Android手机掉线的问题得以解决。",
+        "解决办法": "修改Radius配置：在AC上将Radius服务类型从“扩展模式”修改为“标准模式”。-进入系统视图：`system-view`-进入Radius方案配置：`[Sysname]radiusschemeradius1`-修改服务器类型为标准模式：`[Sysname-radius-radius1]server-typestandard`适用场景：在不使用inode的情况下，如果与iMC配合的802.1X认证出现兼容性问题，建议修改Radius配置，使用“标准模式”。评价该案例对解决类似问题具有较高的参考价值，尤其是在处理Android终端与iMC配合的802.1X认证兼容性问题时。通过调整Radius服务类型，可以有效避免客户端因私有属性而主动断开连接的情况。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/2332",
+        "备注": ""
+    },
+    {
+        "序号": 357,
+        "问题现象": "：某局点所有终端无法接入无线网络，尽管输入了密码，但连接仍然失败。",
+        "问题描述": "：1.组网及说明：-常规组网，AC（无线控制器）无线业务本地转发。-结合IMC（智能管理中心）进行MAC认证。-本地启动PSK（预共享密钥）加密。2.现场反馈：-所有终端无法接入无线网，输入密码后无法连接。3.过程分析：-首先检查配置，常规配置无异常。-收集debug信息，如下：-`debugwlanaccess-secall`-`debugwlanusersecall`-`debugmac-authall`-`debuggingwlanmacall`-`Debugwlanclientall`-`debuggingwlanclientmacAAAA-BBBB-CCCC`-`debuggingradiusall`-从debug信息来看，终端已经完成了MAC认证的过程。-在PSK阶段的四次握手过程中，终端在Message2阶段收到了`invalidMIC`报错，这表明终端回应的密码不正确。",
+        "结论": "：终端在PSK阶段收到了`invalidMIC`报错，这通常意味着终端输入的密码错误。可能是现场管理员向用户宣告了错误的密码，导致了大面积的认证不成功。",
+        "解决办法": "：1.将设备的PSK密钥改写，并确保正确地宣告给用户使用。2.最终，终端成功认证并接入无线网络。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/217798",
+        "备注": ""
+    },
+    {
+        "序号": 358,
+        "问题现象": "在绿洲微信连WiFi的过程中，不同类型的终端（iPhone和安卓终端）表现出了不同的连接认证方式，尤其是通过扫描二维码方式进行连接时，两者之间存在明显的差异。",
+        "问题描述": "1.安卓终端连接过程-下拉菜单方式认证过程：连接SSID后，会自动弹出微信连接WiFi的登陆界面，点击连接后即可成功连接。-扫码认证方式：扫描二维码后，设备会自动搜索并连接到相关的SSID，弹出连接界面，点击连接后即可成功连接。2.苹果终端连接过程-下拉菜单方式认证过程：连接SSID后，同样会弹出微信连接WiFi的登陆界面，点击连接后即可成功连接。-扫码认证方式：扫描二维码后，需要手动弹出SSID界面并选择连接，点击连接后才能成功连接。",
+        "结论": "安卓终端：在两种连接认证方式中，无论是下拉菜单方式还是扫码认证方式，都能较为顺利地自动完成连接过程。苹果终端：在下拉菜单方式认证过程中与安卓终端一致，但在扫码认证方式中需要用户手动选择SSID并连接，不能完全自动化。",
+        "解决办法": "对于安卓终端：用户可以正常按照弹出的提示进行操作，通常不需要额外的干预。对于苹果终端：在扫描二维码后，用户需手动选择弹出的SSID并点击连接。如果遇到问题，可以参考相关产品手册或以设备实际情况为准进行操作。通用建议：如果在使用过程中遇到与本文档描述不符的情况，建议查阅相关产品手册或联系技术支持人员获取帮助。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/48713",
+        "备注": ""
+    },
+    {
+        "序号": 359,
+        "问题现象": "：进入智慧园区物联网平台时，提示“没有绑定场所”。",
+        "问题描述": "：用户在使用智慧园区物联网平台时，发现无法正常展示应用效果。经过初步分析，发现这是由于物联网平台没有调用到绿洲平台上的场所数据。通常情况下，物联网平台会显示调用的场所名称（如图所示红框中的内容），但现场反馈显示没有绑定场所。",
+        "结论": "：问题的原因是在定制应用时没有正确绑定绿洲平台的场所数据。物联网平台需要调用绿洲平台的场所接口，才能获取数据来源并正常展示应用效果。",
+        "解决办法": "：1.在应用中心页签下，进入应用商城购买“智慧园区平台”。2.在定制应用中添加数据来源，绑定所需的场所。3.完成绑定后，物联网平台将能够正常调用场所数据，问题得以解决。希望这个总结对您有帮助。如果您有任何其他问题或建议，请随时告知。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/102746",
+        "备注": ""
+    }
+]

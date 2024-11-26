@@ -1,0 +1,182 @@
+[
+    {
+        "序号": 1080,
+        "问题现象": "某局点使用WX2540H与F5010防火墙建立IPSECOVERGRE时，GRE隧道已经建立成功，但IPSEC第二阶段无法建立。",
+        "问题描述": "1.AC与防火墙之间的GRE隧道建立正常：-AC与F5010防火墙之间的GRE隧道已经成功建立。2.IPSECSA无法建立：-在AC上调试时发现以下报错信息：-`IPsecSAstatechangedfromIKEP2STATEINITtoIKEP2STATEGETSP`-`Couldnotfindtunnel,ikeprofilenameis`-`Thepolicy'saclorikeprofiledoesnotmatchtheflow,Name=zongbu,Seqnum=10`-`Receivedmessagefromipsec,messagetypeis10`-`vrf=0,src=10.2.1.2,dst=10.2.1.1/500FailedtogetIPsecpolicyforphase2responder.DeleteIPsecSA.`3.IKEProfile配置不对称：-报错信息提示IKEProfile配置不对称，导致无法匹配IKEProfile。-全局查找IKEProfile成功后，IPsec策略中绑定的IKEProfile不一致，导致第二阶段协商失败。",
+        "结论": "问题的根本原因在于AC与防火墙之间终端、感兴趣流、静态路由的掩码不一致，导致IKEProfile无法正确匹配，从而使IPSEC第二阶段协商失败。",
+        "解决办法": "1.修改终端、感兴趣流、静态路由的掩码：-确保AC与防火墙之间的终端、感兴趣流、静态路由的掩码一致。-修改AC上的配置：```plaintextacladvanced3200rule0permitipsource172.20.255.2520.0.0.3destination10.200.100.00.0.3.255iproute-static10.200.0.016Tunnel200iproute-static10.200.0.016Tunnel300preference100```2.验证配置：-修改配置后，重新检查AC与防火墙之间的IKEProfile和IPsec策略配置，确保它们一致且匹配。-使用命令`displayikesaverbose`和`displayipsecsa`验证IKESA和IPsecSA的状态。通过上述步骤，问题得到解决，IPSEC第二阶段成功建立。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/47688",
+        "备注": ""
+    },
+    {
+        "序号": 1081,
+        "问题现象": "在WA1208E设备中，管理员发现ACL规则的匹配顺序与预期不一致，导致部分流量控制策略未能正确生效。",
+        "问题描述": "WA1208E设备支持创建基本访问控制列表（ACL）和扩展访问控制列表。ACL规则的匹配顺序可以通过`match-order`参数进行设置，该参数有两个选项：`auto`（自动排序）和`config`（配置排序）。如果不指定`match-order`参数，默认为`config`。一旦指定某条ACL规则的匹配顺序，如果该规则有子规则，则不能更改其顺序。",
+        "结论": "自动排序（auto）：新增的规则节点会根据预设的排序原则自动插入到已有的规则节点中。排序原则依次为：协议范围小的靠前，源IP地址掩码小的靠前，目的IP地址掩码小的靠前，目的端口号范围小的靠前，协议类型范围小的靠前。配置排序（config）：规则节点的匹配顺序按照添加的顺序进行，管理员需要手动确保规则的合理顺序，建议将掩码小的规则放在前面。",
+        "解决办法": "1.确定匹配顺序需求：根据网络需求，确定是否需要使用自动排序（auto）或配置排序（config）。2.配置ACL规则：-自动排序（auto）：在创建ACL规则时，指定`match-orderauto`，新增规则节点会自动按排序原则插入到已有规则中。-配置排序（config）：在创建ACL规则时，指定`match-orderconfig`，手动调整规则顺序以确保合理匹配。3.验证规则顺序：配置完成后，使用设备的命令行或管理界面查看ACL规则的顺序，确保其符合预期。4.调整顺序：如果使用`config`模式，发现规则顺序不合理，可以通过删除并重新添加规则来调整顺序。通过以上步骤，可以确保WA1208E设备中的ACL规则按照预期的顺序进行匹配，从而正确实施流量控制策略。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/80753",
+        "备注": ""
+    },
+    {
+        "序号": 1082,
+        "问题现象": "某局点的WA4320E云AP设备在配置为Client模式后，无法连接到指定的无线网络SSID。",
+        "问题描述": "1.组网及说明：无具体组网信息。2.具体表现：-配置WA4320E云AP设备为Client模式，填写需要连接的无线网络SSID及密码信息。-即使核对了SSID和密码配置正确，WA4320E仍然无法连接到对应的无线网络。-配置过程中，未设置加密方式，但实际无线网络采用的是CCMP+WPA加密方式。",
+        "结论": "WA4320E云AP设备在Client模式下连接无线网络时，如果无线网络配置了加密方式，必须采用CCMP+RSN（即WPA2或WPA3）的加密方式，否则会出现无法连接的情况。",
+        "解决办法": "1.修改无线网络加密方式：将无线网络的加密方式从CCMP+WPA（WPA1）修改为CCMP+RSN（WPA2或WPA3）。2.重新配置WA4320E：在WA4320E设备上重新输入需要连接的SSID和密码信息。3.验证连接：确认WA4320E能够正常连接到修改后的无线网络。通过以上步骤，可以解决WA4320E云AP设备在Client模式下无法连接指定SSID的问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/197344",
+        "备注": ""
+    },
+    {
+        "序号": 1083,
+        "问题现象": "某局点使用WX3510H设备进行无线Portal认证，配置了本地Portal认证方式，并希望一个账号只能由一个客户端登录。然而，实际操作中发现一个账号可以同时被多个客户端登录，并且这些客户端均能正常上网。",
+        "问题描述": "1.查看用户的登录情况：通过命令`disportaluserusernameexingsi`，发现用户`exingsi`确实有两个不同的MAC地址的客户端在同时登录，并且状态均为在线。2.检查相关配置：通过命令`discu`，确认了设备版本、接口配置、服务模板配置、Portal认证配置和本地用户配置。其中，本地用户`exingsi`配置了`access-limit1`，但该限制并未生效。3.查看手册：手册中指出，`access-limit`命令用于设置使用当前本地用户名接入设备的最大用户数，但该命令仅在本地用户采用了本地计费方法的情况下生效。",
+        "结论": "问题的原因在于设备的认证域配置中未启用计费开始失败策略。具体来说，`access-limit`命令需要在本地用户采用本地计费方法的情况下才能生效。而默认的认证域配置中，计费开始失败策略未设置为“用户下线”，导致`access-limit`命令无法正常限制用户的登录数。",
+        "解决办法": "1.配置计费开始失败策略：在相应的认证域中添加`accountingstart-failoffline`命令，以确保当用户计费开始请求失败时，用户不会保持在线状态。2.重新配置本地用户：确保本地用户配置中正确设置了`access-limit1`，以限制每个账号只能由一个客户端登录。3.验证效果：重新登录并检查用户`exingsi`的登录情况，确认一个账号只能由一个客户端登录。修订记录2017-03-21：首次发表。2019-06-12：修订案例，增加了更多配置细节和解决步骤。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/17007",
+        "备注": ""
+    },
+    {
+        "序号": 1084,
+        "问题现象": "在某局点客户的H3CIAG设备中，试图在Ten-GigabitEthernet0/0.2100的子接口中启用Portal认证功能时，配置下发失败。尽管在接口视图下通过`displaythis`命令可以看到`portalserver`命令已经成功下发，但Portal认证功能未能生效，其他子接口的Portal认证功能正常。",
+        "问题描述": "客户在一台H3CIAG设备上配置Portal认证功能时，遇到了以下错误信息：```[nb-ysl-2l-iag1-Ten-GigabitEthernet0/0.2100]portalserveriNingbo-CMCCmethoddirectError:Portalenableordisableerror```尽管命令已经下发成功，但Portal认证功能处于失效状态。进一步查看日志信息，发现错误代码为`PORTALACLFAILURE`，提示输入参数错误。通过开启`debuggingportal`，发现问题是由于部分免认证MAC地址下发失败导致的。",
+        "结论": "问题的根本原因是子接口的Portal认证免认证规则中配置了一个组播MAC地址（6127-377b-71bd），而组播MAC地址不能作为免认证源地址。这一不合规的配置导致了Portal认证功能在该子接口上无法正常启用。",
+        "解决办法": "1.删除不合规的免认证规则：在设备配置中删除包含组播MAC地址的免认证规则：```shellundoportalfree-rule37source-mac6127-377b-71bddestinationany```2.重新启用Portal认证功能：删除不合规的免认证规则后，重新在子接口中启用Portal认证功能：```shell[nb-ysl-2l-iag1-Ten-GigabitEthernet0/0.2100]portalserveriNingbo-CMCCmethoddirect```3.验证配置：使用`displaythis`命令验证配置是否成功下发，并确认Portal认证功能是否正常生效。通过上述步骤，可以成功解决在H3CIAG子接口下启用Portal认证功能失败的问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/1246",
+        "备注": ""
+    },
+    {
+        "序号": 1085,
+        "问题现象": "某局点WX5540H设备通过浏览器登录WEB管理界面时，输入用户名和密码后登录失败。而远程的工程师可以正常登录。",
+        "问题描述": "1.环境：某局点WX5540H设备。2.现象：现场用户通过浏览器登录WEB管理界面，输入用户名和密码后无法成功登录。3.测试：-现场更换了多个浏览器进行测试，问题依旧。-通过SSH命令行可以正常登录设备，说明设备的连通性没有问题。4.Web界面显示：设备侧登录账号配置了`service-typeHTTPS`。5.登录页面地址：-直接输入IP地址（例如10.115.110.21）时，登录页面地址为：`https://10.115.110.21/web/frame/login.html?ssl=false`。-输入带有HTTPS协议的IP地址（例如https://10.15.110.21）时，登录页面地址为：`https://10.15.110.21/web/frame/login.html`。",
+        "结论": "问题的原因在于客户端访问设备的方式不同。当客户端直接输入设备的IP地址而不带协议（HTTP或HTTPS）时，浏览器和设备会默认使用HTTP方式进行访问，而设备的登录账号配置了仅支持HTTPS，因此导致登录失败。登录成功的客户端是通过输入带有HTTPS协议的IP地址进行访问的。",
+        "解决办法": "1.使能HTTP登录：-在AC设备上通过命令行增加登录账号的`service-type`，使其支持HTTP模式。-命令示例：```shell[H3C-luser-manage-admin]service-typehttp[H3C-luser-manage-admin]displaythis#local-useradminclassmanagepasswordhash$h$6$bh01zV+oQNL4RufN$R8Qu2dVLrwxfOWrlmPH2lrtsOyShu5EmKdl9SCvsyLhNiJ/FQZ/7AmWOgQ4UZKE3PiiW5t+VaK4X8WzyNzKHXA==service-typetelnethttphttpsauthorization-attributeuser-rolenetwork-admin```2.建议：-为避免类似问题，建议用户在访问设备WEB管理界面时，始终使用带有HTTPS协议的IP地址进行访问。-如果需要支持HTTP访问，建议在设备上同时使能HTTP和HTTPS服务，并确保用户了解如何正确访问。通过上述方法，可以解决WX5540H设备通过浏览器登录WEB管理界面失败的问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/54290",
+        "备注": ""
+    },
+    {
+        "序号": 1086,
+        "问题现象": "在使用无线控制器（AC）进行远程Portal认证时，发现不同版本的AC设备（V5与V7/V9）在处理用户输入的带有域名后缀的用户名时存在差异。具体表现为，当用户在无线终端上输入带有域名后缀的用户名（如`xxx@wlan`或`xxx@wifiint`）时，V5设备可以正确地将用户名原样传递给IMC服务器，而V7/V9设备则会将用户名统一修改为`xxx@wifiint`。",
+        "问题描述": "测试环境：第三方AC-AP提供无线服务，无线终端接入该服务，我司AC（V5和V9）配置了Interface-Vlan虚接口，通过远程Portal认证对接IMC服务器。相关配置：-V5和V9AC设备：```plaintext#interfaceVlan-interface720ipaddress10.213.220.1255.255.255.0portalenablemethoddirectportaldomainwifi_int#引用的domainname是wifi_intportalbase-ipxx.xx.xx.xxportalapplyweb-server201#domainnamewifi_intauthorization-attributeidle-cut51authenticationportalradius-schemewifi_intauthorizationportalradius-schemewifi_intaccountingportalradius-schemewifi_int#radiusschemewifi_intprimaryauthenticationxx.xx.xx.xxkeycipher$c$3$tlPwJ1jiDAGWsLhIFDxdmWjg53M7BGvKgFkCprimaryaccountingxx.xx.xx.xxkeycipher$c$3$9dessQ5LYlVC0Kz/sLg9AannSNySLBppXzugaccounting-onenablenas-ipxx.xx.xx.xx```测试结果：-V5设备：-`user-name-formatwith-domain`（默认配置）：用户名原样传递给IMC服务器，无论是否带有域名后缀。-V7/V9设备：-`user-name-formatwith-domain`（默认配置）：用户名被修改为`xxx@wifi_int`，即使用户输入的是`xxx@wlan`。-`user-name-formatkeep-original`：用户名原样传递给IMC服务器，与用户输入一致。-`user-name-formatwithout-domain`：用户名中的域名后缀被去除，仅传递账号部分。",
+        "结论": "V5设备：-`user-name-formatwith-domain`（默认配置）：无论用户输入的用户名是否带有域名后缀，AC都会原样传递给IMC服务器。V7/V9设备：-`user-name-formatwith-domain`（默认配置）：AC会将用户名中@字符之前的部分识别为账号，@字符之后的部分识别为域名，并根据Interface-Vlan接口配置的domain进行修改。如果Interface-Vlan接口配置了`portaldomainwifiint`，则用户名会被修改为`xxx@wifiint`。-`user-name-formatkeep-original`：AC会将用户名原样传递给IMC服务器。-`user-name-formatwithout-domain`：AC会将用户名中的域名后缀去除，仅传递账号部分。",
+        "解决办法": "建议配置：-如果需要在IMC服务器上显示用户输入的原始用户名（包括域名后缀），建议在V7/V9设备上将RadiusScheme的`user-name-format`配置为`keep-original`。-如果不介意用户名被统一修改为`xxx@wifi_int`，则可以保持`user-name-formatwith-domain`（默认配置）。注意事项：-不建议将无线控制器AC作为类似交换机，在Interface-Vlan接口配置远程Portal认证供有线设备使用，因为这可能会带来其他意想不到的问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/214540",
+        "备注": ""
+    },
+    {
+        "序号": 1087,
+        "问题现象": "：某局点通过SNMP读取每个SSID下连接的无线客户端数量时，发现总部AC能够正常获取客户端数量信息，而分部AC返回的客户端数量为0，尽管实际该SSID下有大量终端在线。",
+        "问题描述": "：SNMP配置检查：总部和分部的SNMP相关配置一致，包括使用相同的团体名和相同的SNMP版本（v2c/v3）。AC版本信息：总部AC使用5441P02版本，分部AC使用5439P03版本，两个版本间对SNMP功能没有显著改动。调试信息对比：-总部AC：调试日志显示SNMP服务器成功请求并收到了正确的客户端数量（4686）。-分部AC：调试日志显示SNMP服务器请求成功，但返回的客户端数量始终为0，尽管AC上显示有大量客户端在线。",
+        "结论": "：问题根源在于分部AC的无线服务模板配置中额外设置了客户端的关联点和认证点在AP上的配置（`clientassociation-locationap`和`client-securityauthentication-locationap`）。这些配置导致SNMP服务器无法正确读取到分部AC下连接的无线客户端数量。",
+        "解决办法": "：调整分部AC配置：取消分部AC无线服务模板中不必要设置的客户端关联点和认证点在AP上的配置：-`undoclientassociation-locationap`-`undoclient-securityauthentication-locationap`验证：调整配置后，SNMP服务器能够正常读取分部AC无线服务模板下连接的无线客户端数量。通过上述调整，问题得到有效解决，SNMP监控功能恢复正常。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/169168",
+        "备注": ""
+    },
+    {
+        "序号": 1088,
+        "问题现象": "客户在使用无线控制器Portal组网时，发现通过浏览器输入HTTPS域名（如https://www.baidu.com/）无法成功触发Portal重定向，导致用户无法正常访问互联网，从而引发客户投诉。而输入IP地址或HTTP域名则可以正常触发Portal重定向。",
+        "问题描述": "在Portal组网环境下，部分终端（如手机、笔记本）在输入HTTPS域名时，无法被无线控制器成功重定向到Portal认证页面。这主要发生在放通了DNS地址的情况下，导致用户在尝试访问HTTPS网站时不能完成必要的Portal认证，进而无法访问互联网。",
+        "结论": "1.V5版本：从R2509P52版本开始支持HTTPS重定向，但默认使用自签名证书，这会导致浏览器显示安全证书告警。2.V7版本：默认支持HTTPS重定向，同样使用自签名证书，也会出现安全证书告警。3.本地转发：对于128M内存的AP，本地转发时不支持HTTPS重定向；而对于256M及以上内存的AP，本地转发时支持HTTPS重定向。4.终端问题：某些终端在完成重定向后，浏览器仍可能显示重定向失败。",
+        "解决办法": "1.V5版本：-配置SSL策略：`sslserver-policyxxx`-将Portal的HTTPS重定向与SSL策略关联：`portalhttps-redirectserver-policyxxx`-SSL策略内容可以为空，使用V5自带的自签名证书，但终端浏览器会显示安全证书告警，用户需点击“继续浏览”。-如果客户反感证书告警，可以导入客户提供的证书。2.V7版本：-默认情况下不配置即可使用，使用内置的SSL策略和自签名证书，但终端浏览器会显示安全证书告警，用户需点击“继续浏览”。-如果客户反感证书告警，可以配置固定名称的SSL策略并导入客户提供的证书：```plaintextsslserver-policyhttps_redirect```3.本地转发：-对于128M内存的AP，本地转发时不支持HTTPS重定向，建议使用256M及以上内存的AP。-对于256M及以上内存的AP，本地转发时支持HTTPS重定向。4.终端问题：-如果终端在重定向后仍显示失败，可以参考KMS《部分浏览器不能进行https重定向原理分析》进行具体排查和解释。注意事项无论V5还是V7版本，不导入专门机构申请的证书时，浏览器中都会出现证书告警提示。引导用户点击“继续浏览”以完成重定向过程。确保使用支持HTTPS重定向的AP硬件配置。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/17027",
+        "备注": ""
+    },
+    {
+        "序号": 1089,
+        "问题现象": "在FITAP+AC组网环境中，进行WAPI证书认证时，终端接入后报错，认证失败。",
+        "问题描述": "1.配置检查：检查AC和FITAP的WAPI配置，未发现异常。-配置命令：```plaintext#pkidomainpki1public-keyecdsanamepki1undocrlcheckenable#wlanservice-templatetestssidtestvlan100clientmax-count64wapienablewapiauthentication-serverip10.1.1.253wapicertificate-domainpki1serial8c1e76ba2d9ed22bundowapibk-rekeyenablewapiusk-lifetime20000wapimsk-rekeymethodtime-based20000service-templateenable```2.AP在线状态：AP处于RUN状态。3.证书状态检查：AC上使用`displaypkicertificate`命令检查证书状态，未发现异常。4.调试交互过程：通过debug信息发现，认证流程在AP向终端发送WAI子类型字段值为8的报文后，终端未回应导致认证超时。具体debug信息如下：-终端进入等待AC响应状态：```plaintext*Oct2714:38:04:3762022H3CSTAMGR/7/FSM:[MAC:464a-bd48-bb8a,BSSID:bcd0-ebd5-2d01]ClientauthenticationstatemachineenteredWaitingASresponsestate.```-AP发送认证报文：```plaintext*Oct2714:38:04:4102022H3CSTAMGR/7/PktSend:[MAC:464a-bd48-bb8a,BSSID:bcd0-ebd5-2d01]Version:1Type:1Subtype:8Length:74PacketSequenceNumber:3FragmentSequenceNumber:0MoreFragmentFlag:0```-重发报文多次后达到最大重发次数，认证失败：```plaintext*Oct2714:38:08:4382022H3CSTAMGR/7/Error:[MAC:464a-bd48-bb8a,BSSID:bcd0-ebd5-2d01]Reachmaxresendtimes,errorcode25.*Oct2714:38:08:4382022H3CSTAMGR/7/FSM:[MAC:464a-bd48-bb8a,BSSID:bcd0-ebd5-2d01]ClientmainstatemachineenteredOfflinestate.```",
+        "结论": "问题出在终端侧，终端在接收到AP发送的WAI子类型字段值为8的报文后未作出响应，导致认证超时。",
+        "解决办法": "1.检查终端配置：确认终端的WAPI证书配置是否正确，包括证书是否有效、证书是否安装在正确的位置等。2.更换终端测试：尝试使用其他终端进行接入测试，以排除终端硬件或软件问题。3.终端固件更新：如果终端配置正确但仍然无法接入，考虑更新终端的固件或操作系统。4.联系终端厂商支持：如果问题依然存在，建议联系终端设备的厂商技术支持，获取进一步的帮助。希望以上总结对您有帮助。如果您有任何其他问题或建议，请随时反馈。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/215527",
+        "备注": ""
+    },
+    {
+        "序号": 1090,
+        "问题现象": "：用户在进行无线Portal认证时，输入用户名和密码后，设备提示“设备拒绝请求”。",
+        "问题描述": "：在无线Portal认证过程中，用户输入用户名和密码后，接入设备没有发送后续的RADIUS报文，而是直接回复了ackauth(4)，错误代码为1。通过抓包分析，发现Portal服务器发送reqauth(3)报文后，接入设备没有发出RADIUS报文。进一步检查配置发现，现场的服务模板中没有引用相应的domain域。",
+        "结论": "：问题的根本原因是服务模板中没有正确引用Portal认证所需的domain域。现场配置的domain域（domain1）主要用于802.1X认证和MAC认证，而不适用于Portal认证。因此，接入设备在接收到Portal服务器的req_auth(3)报文后，无法正确处理，导致认证失败。",
+        "解决办法": "：1.新建一个专门用于Portal认证的domain域（domain2）。2.在新建的domain域中配置Portal认证的RADIUS方案。3.修改服务模板（wlanservice-template123），引用新建的domain2。4.重新进行Portal认证，确认问题是否解决。最终，通过上述步骤，认证成功。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/214822",
+        "备注": ""
+    },
+    {
+        "序号": 1091,
+        "问题现象": "新到的无线控制器WX2510H-PWR无法成功迁移S5560X-30F-EI上的管理AP的授权。在提交迁移申请时，选择v7无线控制器会提示无效的卸载码，选择S5560交换机会提示输入的设备信息文件无法识别。",
+        "问题描述": "现场新到了一个无线控制器WX2510H-PWR，需要将S5560X-30F-EI上的管理AP的授权迁移到新的无线控制器上。按照常规的License迁移步骤，首先在S5560X-30F-EI上卸载了授权，但在使用卸载码进行迁移申请时遇到了问题。具体表现为：选择v7无线控制器时，提示“无效的卸载码”。选择S5560交换机时，提示“输入的设备信息文件无法识别”。",
+        "结论": "问题的原因是目前无法跨产品进行License迁移。S5560X-30F-EI上的融合ACLicense不能直接迁移到新的无线控制器WX2510H-PWR上。",
+        "解决办法": "1.卸载License-进入S5560X-30F-EI的系统视图：`system-view`-卸载激活文件（独立运行模式）：`licenseactivation-fileuninstalllicense-file`-卸载激活文件（IRF模式）：`licenseactivation-fileuninstalllicense-fileslotslot-number`-使用`displaylicense`命令获取卸载码（UninstallKey字段）。2.解除设备和License的绑定关系-登录H3C官方网站（http://www.h3c.com/cn/License）。-在导航栏中选择“设备授权卸载申请”，进入“设备授权卸载申请”页面。-选择产品分类（注意：此处应选择交换机）。-输入“UninstallKey”、“用户信息”和“验证码”等相应信息。-勾选“已阅读并同意法律声明所述服务条款各项内容”。-点击<提交>按钮，解除设备和License的绑定关系。3.将已解绑的License迁移到其他设备-对于已卸载且解除了绑定关系的License，使用授权函中的授权码申请新的License。-选择License首次激活申请，用融合AC授权函中的授权码申请新的License。-系统将提示操作成功，并附有已申请的License文件的链接。-点击链接并下载License文件到本地PC，网站也会自动将激活码（文件）发送到申请联系人的E-mail。4.安装License-进入新无线控制器WX2510H-PWR的系统视图：`system-view`-安装激活文件（独立运行模式）：`licenseactivation-fileinstalllicense-file`-安装激活文件（IRF模式）：`licenseactivation-fileinstalllicense-fileslotslot-number`通过上述步骤，可以成功将S5560X-30F-EI上的管理AP的授权迁移到新的无线控制器WX2510H-PWR上。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/136580",
+        "备注": ""
+    },
+    {
+        "序号": 1092,
+        "问题现象": "某局点的摄像头无法连接加密的无线信号，但可以连接不加密的服务模板和手机释放的加密热点。摄像头仅支持2.4G频段。",
+        "问题描述": "设备配置：无线服务模板配置了WPA2-PSK加密模式，加密套件为CCMP+RSN。调试信息：在AC上收集了终端的认证报文（auth报文）和关联报文（association报文）交互流程，以及密钥协商报文（四次握手报文）的交互过程。错误信息：终端与AP正常交互auth报文和association报文后，开始四次握手报文交互。但在第二次握手时，AC收到终端的报文后，报文被判断为无效并被丢弃，错误信息为“Invalidreplaycounter”。",
+        "结论": "问题原因：终端响应AC的第一次握手报文的时间过长（约400ms），而AC在300ms后会重传第一次握手报文。终端在AC重传报文后100ms才回复AC的第一次报文，导致AC校验报文失败并丢弃报文。解决方案：通过调整AC的四次握手报文重传时间间隔，使其超过400ms，可以解决终端响应慢的问题。",
+        "解决办法": "配置调整：在AC上增加四次握手报文交互的等待时长，具体配置如下：```shell[Sysname]wlanservice-templateservice1[Sysname-wlan-st-service1]option4-way-handshakeresend3interval500```该配置将设备发送EAPOL-Key报文的最大重传次数设置为3次，重传时间间隔设置为500毫秒。实施效果：调整后，终端可以顺利接入加密的无线信号。后续建议：如果终端响应时间超过500ms，建议联系终端厂商进行固件升级或硬件优化，以提高响应速度。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/222991",
+        "备注": ""
+    },
+    {
+        "序号": 1093,
+        "问题现象": "：某局点的终端设备无法接入网络，故障时刻同一个子局点映射相同公网IP的多个AP中仅部分设备出现终端无法接入的情况。重启AP后，问题基本可以恢复。",
+        "问题描述": "：1.组网及说明：-EWPXM2WCMD0F版本5457-APWA6520/6522H-HI版本2585P03AC-网络结构：防火墙公网光猫AP2.故障表现：-AP跨公网下有多个不同子局点，集中转发。-故障时刻，同一个子局点映射相同公网IP的多个AP中，部分AP的终端无法接入网络。-重启AP后，问题基本可以恢复。过程分析：1.查看AP状态：-AC上使用`diswlanapverbose`命令查看AP的数据隧道状态为down，说明数据隧道不通。-故障时刻，AP的源端口为54978。2.查看AP是否能正常发出数据报文：-在AP上使用`debugwlancapwappacketdatasend`命令，看到数据隧道保活报文发出正常。-同时，使用`debug`命令查看接入过程，AP也正常转发了业务报文。3.排查AC侧是否收到报文：-查看AC侧防火墙流表，没有发现源AP端口为54978发往目的端口为5247的会话，说明数据报文在到达AC之前就已经丢失。-AC侧的问题已排除。4.重启AP的效果：-AP重启后会更换源端口，甚至更新源IP，此时AP的会话在网络上成为全新的数据流，在各个层面的防火墙或路由器上都是新的会话，因此问题基本可以恢复。",
+        "结论": "：问题发生在中间链路上，数据报文在到达AC之前被丢弃。具体原因是在联通中间链路存在废弃路由，导致数据报文在运营商的CR（CoreRouter）设备上被丢弃。",
+        "解决办法": "：1.运营商逐段抓包排查：-建议运营商在中间链路逐段进行抓包排查，以确定具体的数据丢弃点。2.修改废弃路由：-协调现场排查，发现联通中间链路存在废弃路由，修改该路由后问题解决。发表日期：2023-06-26反馈：无用户反馈信息。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/219396",
+        "备注": ""
+    },
+    {
+        "序号": 1094,
+        "问题现象": "：终端从A厂商的AC设备漫游到我司无线AC设备后，无法正常上网。",
+        "问题描述": "：1.终端先连接A厂商的AC设备，正常获取IP地址a，通过A厂商服务器的认证，可以正常上网。2.终端从A厂商的AC设备漫游到我司无线AC设备后，重新获取了新的IP地址b，但在IMC服务器上，终端的认证表象仍显示为老的IP地址a，导致网络不通。3.分析发现，AC设备通过计费报文向IMC服务器报告终端的IP地址，而终端在重新获取新IP地址b之前，可能会用老的IP地址a发送ARP报文。AC设备识别并学习到这个老的ARP报文，导致计费报文中携带的是老的IP地址a，而不是新的IP地址b。",
+        "结论": "：AC设备通过ARP报文学习到了终端的老IP地址a，而没有及时更新为新的IP地址b，导致IMC服务器上的认证信息不准确，从而影响了终端的正常上网。",
+        "解决办法": "：关闭AC设备通过ARP报文学习终端IP地址的特性，仅保留通过DHCP报文学习终端IP地址的功能。具体命令如下：```undoclientipv4-snoopingarp-learningenable```执行上述命令后，AC设备将只通过DHCP报文学习终端的IP地址，避免因ARP报文导致的IP地址更新不及时问题，从而确保终端漫游后的正常上网。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/222747",
+        "备注": ""
+    },
+    {
+        "序号": 1095,
+        "问题现象": "在某局点使用LSU1WCME0和终结者AP进行无线覆盖时，分体WT1020AP无法成功注册，即使多次重启设备也未能解决问题。",
+        "问题描述": "通过调试日志（`debuggingwlancapwapall`）发现以下关键信息：1.AP发送了加入请求（`Receivedjoinrequest`），但控制器未能匹配图像数据请求（`Failedtomatchimagedatarequest`）。2.控制器尝试进入图像下载状态（`EnterImageDownloadstate`），但在处理图像数据请求时失败（`Failedtoprocessimagedatarequest`）。3.控制器报告无法打开图像文件（`Failedtoopentheimagefile/mnt/cfa0:/wt1020.ipe`）和无法获取当前目录（`Failedtogetcurrentdirectory`）。",
+        "结论": "问题的根本原因是LSU1WCME0控制器的出厂版本（Customer5109）中没有包含终结者AP（WT1020）所需的固件版本。因此，AP在注册时无法找到匹配的固件文件，导致注册失败。",
+        "解决办法": "建议将LSU1WCME0控制器升级到最新版本5109p04，该版本已包含了终结者AP（WT1020）所需的固件文件，从而解决AP无法注册的问题。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/5875",
+        "备注": ""
+    },
+    {
+        "序号": 1096,
+        "问题现象": "某局点将设备从WX3510E更换为WX3510H后，所有终端的EDUP11ac网卡均无法搜索到5G无线信号。",
+        "问题描述": "1.设备信息：-AC设备型号：5208P03-AP设备型号：WX3510H-终端网卡：EDUP11ac2.复现情况：-实验室复现了该问题，无论网卡设置为Auto模式还是强制11ac模式，均无法搜索到5G信号。-该现象与AC设备型号、AP设备型号无关，但与设备版本强相关。-版本5208P03和5215P01均出现该问题。-版本5217P01可以搜索到5G信号。3.技术细节：-经研发定位，问题主要在于报文格式不兼容。-在老版本（5208P03）中，设备发送的ProbeResponse报文中的ExtendedCapability字段长度为9。-在新版本（5217P01）中，设备发送的报文的ExtendedCapability字段长度为8。-ExtendedCapability字段长度无论是8还是9，均符合协议规定，但个别终端网卡可能不支持长度为9的报文，导致无法识别报文，从而搜不到无线信号。",
+        "结论": "问题的根本原因是老版本AC设备发送的ProbeResponse报文中的ExtendedCapability字段长度为9，而部分EDUP11ac网卡不支持该长度的报文。新版本5217P01及以后版本中，该字段长度被修改为8，以确保兼容性。",
+        "解决办法": "1.升级AC设备版本：-升级AC设备到5217P01或更高版本，以解决报文格式不兼容的问题。-该版本及以后版本中，ExtendedCapability字段长度被统一修改为8，符合大多数终端网卡的要求。2.后续建议：-在遇到类似问题时，建议首先升级到官网最新版本的AC设备。-升级后观察终端的无线信号搜索情况，确保问题得到有效解决。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/24936",
+        "备注": ""
+    },
+    {
+        "序号": 1097,
+        "问题现象": "某局点使用WBC560结合绿洲进行Portal认证时，终端能够获取到IP地址，但无法弹出Portal认证界面。",
+        "问题描述": "1.组网及说明：-使用本地转发模式。-终端能够成功获取IP地址，但Portal认证界面无法弹出。2.过程分析：-绿洲认证问题：-检查设备侧和绿洲平台的配置，确保认证域、Portal认证功能、服务模板等配置正确。-配置包括但不限于：-`domainXXXauthenticationportalnoneauthorizationportalnoneaccountingportalnone`-`wlanservice-templateXXXssidXXXvlan160clientforwarding-locationapvlan160portalenablemethoddirectportaldomaincloudportalbas-ipX.X.X.1`-`portalapplyweb-serverXXXportaltemp-passperiod20enable`-`service-templateenableportalweb-serverXXXurlhttp://X.X.X.54/portal/protocolcaptive-bypassiosoptimizeenableserver-typeoauth`-`if-matchuser-agentCaptiveNetworkSupportredirect-urlhttp://X.X.X.54/generate_404`-`if-matchuser-agentDalvik/2.1.0(Linux;U;Android7.0;HUAWEI)redirect-urlhttp://X.X.X.54/generate_404`-`if-matchoriginal-urlhttp://10.168.168.168temp-pass`-`if-matchoriginal-urlhttp://captive.apple.comuser-agentMozillatemp-pass`-`if-matchoriginal-urlhttp://www.apple.comuser-agentMozillatemp-pass`-`if-matchoriginal-urlhttp://X.X.2.54/portal/protocoltemp-pass`-`portallocal-web-serverhttpiphttpenableiphttpsenable`-`portalhost-checkenable`-`portaluserlogenable`-`portalfree-rule1destinationip114.114.114.114255.255.255.255`-`portalfree-rule2destinationipanyudp53`-`portalfree-rule3destinationipanytcp53`-`portalfree-rule4destinationipanytcp5223`-`portalfree-rule5destinationwbc.h3c.com`-`portalsafe-redirectenable`-`portalsafe-redirectmethodgetpost`-`portalsafe-redirectuser-agentAndroid`-`portalsafe-redirectuser-agentCaptiveNetworkSupport`-`portalsafe-redirectuser-agentMicroMessenger`-`portalsafe-redirectuser-agentMozilla`-`portalsafe-redirectuser-agentWeChat`-`portalsafe-redirectuser-agentiPhone`-`portalsafe-redirectuser-agentmicromessenger`-设备配置和绿洲侧配置确认无误：-按照官网WBC560多业务无线控制器本地化绿洲配置指导进行配置检查，确认无误。-后续分析确认：-经二线分析确认，问题在于终端无法解析`cloud.h3c.com`。",
+        "结论": "终端无法弹出Portal认证界面的原因是终端无法解析`cloud.h3c.com`。",
+        "解决办法": "1.开启DNS代理：-在AC上开启`dnsproxyenable`。2.配置DHCP服务器：-在设备的DHCP服务器配置中添加`dns-list`（AC的IP地址），并将终端的DNS服务器设置为AC的IP地址。通过以上配置，终端将能够正确解析`cloud.h3c.com`，从而成功弹出Portal认证界面。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/76621",
+        "备注": ""
+    },
+    {
+        "序号": 1098,
+        "问题现象": "某局点在进行无线业务开局时，将2台WX5560HAC（接入控制器）堆叠后，发现主AC每过一段时间自行重启。重启时现场无人对AC进行操作。",
+        "问题描述": "日志记录：-`%Apr1011:02:36:0312019ACWX5560HAPMGR/6/APMGRLOG_DETECTANOMALY:-Slot=1;RebootedthemasterACwhentheanomaly-triggeredtimerexpired:LIPADDR=8,PhySlot=1,Chassis=0.`-`%Apr1011:02:36:4192019ACWX5560HAPMGR/6/APMGRLOG_REBOOTCAUSE:-Slot=1;SetWlanRebootCause,SubSlot=65535,DevRebootCause=5,WlanRebootCause=9,ulRet=0.`-`%Apr1011:02:36:4732019ACWX5560HDEV/5/BOARDREBOOT:-Slot=1;Boardisrebootingonslot1.`-`%Apr1011:02:39:8502019ACWX5560HHA/5/HASTANDBYTOMASTER:Standbyboardinslot2changedtomaster.`现场情况：目前处于开局测试阶段，现场仅连接了2个AP（接入点）进行测试。AP状态：-`%Apr1010:37:56:5792019ACWX5560HCWS/4/CWSAP_DOWN:-Slot=1;CAPWAPtunneltoAPtest1wentdown.Reason:Neighbordeadtimerexpired.`-`%Apr1010:52:36:0272019ACWX5560HCWS/4/CWSAP_DOWN:-Slot=1;CAPWAPtunneltoAPtest2wentdown.Reason:Neighbordeadtimerexpired.`",
+        "结论": "主AC自行重启的原因是所有在线的AP（测试AP）因邻居超时掉线，触发了IRF（IntelligentResilientFramework）保护机制中的异常计时器。当主AC检测到所有AP掉线并且在一段时间内没有新的AP上线时，会认为主AC出现异常，从而自动重启。",
+        "解决办法": "非故障现象：这是IRFAC的正常保护机制，不属于故障。建议措施：在测试阶段，确保至少有一台AP始终在线，或者增加AP的数量，以避免触发主AC的异常计时器。配置调整：如果测试环境允许，可以考虑调整邻居超时时间或异常计时器的阈值，以减少误重启的可能性。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/64389",
+        "备注": ""
+    },
+    {
+        "序号": 1099,
+        "问题现象": "终端设备在配置了MAC认证并下发ACL之后，无法连接到无线网络。",
+        "问题描述": "现场使用IMC（IntelligentManagementCenter）进行MAC地址认证，并通过IMC下发ACL3050，以实现内网10.0.0.0网段不能互访，但可以访问外网的需求。在设备上创建的ACL3050中，放通了IMC服务器地址、DHCP服务器地址和DNS服务器地址，同时将内网10.0.0.0网段的流量拒绝。然而，配置完成后，终端设备无法连接到无线网络。",
+        "结论": "问题的原因是现场下发的ACL中没有放通终端设备的网关地址。尽管MAC地址认证可以通过，但由于终端设备无法ping通网关地址，导致无法接入无线网络。",
+        "解决办法": "在ACL3050中添加一条规则，放通终端设备的网关地址。具体配置如下：```plaintextacladvanced3050rule1permitipdestinationx.x.x.10//DHCP服务器rule2permitipdestinationx.x.x.20//DNS服务器rule3permitipdestinationx.x.x.30//IMC服务器rule4permitipdestinationx.x.x.40//IMC服务器rule5permitipdestination网关地址//网关地址rule10denyipdestination10.0.0.00.255.255.255//拒绝内网网段互访rule100permitip//允许其他流量```配置完成后，终端设备可以正常接入无线网络。",
+        "原始网站": "https://zhiliao.h3c.com/Theme/details/67854",
+        "备注": ""
+    }
+]
